@@ -31,7 +31,8 @@
   },
   "formatter": {
     "enabled": true,
-    "indentStyle": "tab"
+    "indentStyle": "tab",
+    "lineEnding": "lf"
   },
   "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "linter": {
@@ -66,7 +67,9 @@
   },
   "javascript": {
     "formatter": {
-      "quoteStyle": "double"
+      "trailingCommas": "all",
+      "quoteStyle": "double",
+      "semicolons": "always"
     }
   },
   "css": {
