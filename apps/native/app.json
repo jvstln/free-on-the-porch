@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "scheme": "free-on-the-pouch",
+    "userInterfaceStyle": "automatic",
+    "orientation": "default",
+    "web": {
+      "bundler": "metro"
+    },
+    "name": "free-on-the-pouch",
+    "slug": "free-on-the-pouch",
+    "plugins": ["expo-font"],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
