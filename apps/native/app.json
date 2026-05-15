@@ -8,7 +8,12 @@
     },
     "name": "free-on-the-pouch",
     "slug": "free-on-the-pouch",
-    "plugins": ["expo-font"],
+    "plugins": [
+      "expo-font",
+      "expo-router",
+      "expo-secure-store",
+      "expo-web-browser"
+    ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
