@@ -1,4 +1,5 @@
 import "@/global.css";
+import { PortalHost } from "@rn-primitives/portal";
 import { Stack } from "expo-router";
 import { HeroUINativeProvider } from "heroui-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -14,7 +15,10 @@ function StackLayout() {
   return (
     <Stack screenOptions={{}}>
       <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
-      <Stack.Screen name="modal" options={{ title: "Modal", presentation: "modal" }} />
+      <Stack.Screen
+        name="modal"
+        options={{ title: "Modal", presentation: "modal" }}
+      />
     </Stack>
   );
 }
@@ -27,6 +31,7 @@ export default function Layout() {
           <HeroUINativeProvider>
             <StackLayout />
           </HeroUINativeProvider>
+          <PortalHost />
         </AppThemeProvider>
       </KeyboardProvider>
     </GestureHandlerRootView>

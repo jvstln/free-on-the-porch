@@ -2,7 +2,7 @@ import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { Link } from "expo-router";
 import { Drawer } from "expo-router/drawer";
 import { useThemeColor } from "heroui-native";
-import React, { useCallback } from "react";
+import { useCallback } from "react";
 import { Pressable, Text } from "react-native";
 
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -31,7 +31,9 @@ function DrawerLayout() {
         options={{
           headerTitle: "Home",
           drawerLabel: ({ color, focused }) => (
-            <Text style={{ color: focused ? color : themeColorForeground }}>Home</Text>
+            <Text style={{ color: focused ? color : themeColorForeground }}>
+              Home
+            </Text>
           ),
           drawerIcon: ({ size, color, focused }) => (
             <Ionicons
@@ -47,7 +49,9 @@ function DrawerLayout() {
         options={{
           headerTitle: "Tabs",
           drawerLabel: ({ color, focused }) => (
-            <Text style={{ color: focused ? color : themeColorForeground }}>Tabs</Text>
+            <Text style={{ color: focused ? color : themeColorForeground }}>
+              Tabs
+            </Text>
           ),
           drawerIcon: ({ size, color, focused }) => (
             <MaterialIcons
@@ -59,7 +63,11 @@ function DrawerLayout() {
           headerRight: () => (
             <Link href="/modal" asChild>
               <Pressable className="mr-4">
-                <Ionicons name="add-outline" size={24} color={themeColorForeground} />
+                <Ionicons
+                  name="add-outline"
+                  size={24}
+                  color={themeColorForeground}
+                />
               </Pressable>
             </Link>
           ),

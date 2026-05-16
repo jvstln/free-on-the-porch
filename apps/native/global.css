@@ -3,3 +3,78 @@
 @import "heroui-native/styles";
 
 @source './node_modules/heroui-native/lib';
+
+/* ─── Design System: Digital Neighborhood Porch ─── */
+
+:root {
+  /* Surface / Background — Clean Linen (#faf9f4) */
+  --background: #faf9f4;
+  --foreground: #1b1c19;
+
+  /* Card — Surface Container Lowest (pure white) */
+  --card: #ffffff;
+  --card-foreground: #1b1c19;
+
+  /* Popover — Surface Container Low */
+  --popover: #f5f4ef;
+  --popover-foreground: #1b1c19;
+
+  /* Primary — Sage Forest (#316342) */
+  --primary: #316342;
+  --primary-foreground: #ffffff;
+
+  /* Secondary — Warm Oak (#785832) */
+  --secondary: #795932;
+  --secondary-foreground: #fed2a2;
+
+  /* Muted — Surface Container (#efeee9) */
+  --muted: #efeee9;
+  --muted-foreground: #414942;
+
+  /* Accent — Primary Container (#4a7c59) */
+  --accent: #4a7c59;
+  --accent-foreground: #e1ffe5;
+
+  /* Destructive — Error (#ba1a1a) */
+  --destructive: #ba1a1a;
+  --destructive-foreground: #ffffff;
+
+  /* Border & Input — Outline Variant (#c1c9bf) */
+  --border: #c1c9bf;
+  --input: #c1c9bf;
+  --ring: #316342;
+
+  /* Radius — Standard 0.5rem (8px) per design spec */
+  --radius: 0.5rem;
+}
+
+@theme {
+  /* ─── Colors ─── */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* ─── Radius ─── */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
