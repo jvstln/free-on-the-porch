@@ -1,22 +1,31 @@
 {
-  "expo": {
-    "scheme": "free-on-the-pouch",
-    "userInterfaceStyle": "automatic",
-    "orientation": "default",
-    "web": {
-      "bundler": "metro"
-    },
-    "name": "free-on-the-pouch",
-    "slug": "free-on-the-pouch",
-    "plugins": [
-      "expo-font",
-      "expo-router",
-      "expo-secure-store",
-      "expo-web-browser"
-    ],
-    "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
-    }
-  }
+	"expo": {
+		"scheme": "free-on-the-pouch",
+		"userInterfaceStyle": "automatic",
+		"orientation": "default",
+		"web": {
+			"bundler": "metro"
+		},
+		"android": {
+			"package": "com.free_on_the_porch.app"
+		},
+		"name": "free-on-the-pouch",
+		"slug": "free-on-the-pouch",
+		"plugins": [
+			"expo-font",
+			"expo-router",
+			"expo-secure-store",
+			"expo-web-browser"
+		],
+		"experiments": {
+			"typedRoutes": true,
+			"reactCompiler": true
+		},
+		"extra": {
+			"router": {},
+			"eas": {
+				"projectId": "3a8172f1-548d-491c-9048-3c2105515d26"
+			}
+		}
+	}
 }

@@ -1,0 +1,22 @@
+{
+	"name": "@free-on-the-pouch/shared",
+	"type": "module",
+	"exports": {
+		"./schemas": {
+			"default": "./schemas/index.ts"
+		},
+		"./utils": {
+			"default": "./utils/index.ts"
+		}
+	},
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"dependencies": {
+		"zod": "catalog:"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"packageManager": "pnpm@10.30.3"
+}

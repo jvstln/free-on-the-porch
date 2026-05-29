@@ -8,32 +8,33 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { AppThemeProvider } from "@/contexts/app-theme-context";
 
 export const unstable_settings = {
-  initialRouteName: "(drawer)",
+	initialRouteName: "(drawer)",
 };
 
 function StackLayout() {
-  return (
-    <Stack screenOptions={{}}>
-      <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
-      <Stack.Screen
+	return (
+		<Stack screenOptions={{}}>
+			<Stack.Screen name="(auth)" options={{ headerShown: false }} />
+			<Stack.Screen name="dashboard" options={{ headerShown: false }} />
+			{/* <Stack.Screen
         name="modal"
         options={{ title: "Modal", presentation: "modal" }}
-      />
-    </Stack>
-  );
+      /> */}
+		</Stack>
+	);
 }
 
 export default function Layout() {
-  return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <KeyboardProvider>
-        <AppThemeProvider>
-          <HeroUINativeProvider>
-            <StackLayout />
-          </HeroUINativeProvider>
-          <PortalHost />
-        </AppThemeProvider>
-      </KeyboardProvider>
-    </GestureHandlerRootView>
-  );
+	return (
+		<GestureHandlerRootView style={{ flex: 1 }}>
+			<KeyboardProvider>
+				<AppThemeProvider>
+					<HeroUINativeProvider>
+						<StackLayout />
+					</HeroUINativeProvider>
+					<PortalHost />
+				</AppThemeProvider>
+			</KeyboardProvider>
+		</GestureHandlerRootView>
+	);
 }

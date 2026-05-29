@@ -1,5 +1,3 @@
 {
-  "plugins": [
-    "expo-image"
-  ]
+	"plugins": ["expo-image"]
 }
