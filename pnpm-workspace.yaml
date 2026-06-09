@@ -6,3 +6,4 @@ catalog:
   zod: ^4.1.13
   better-auth: 1.6.9
   "@better-auth/expo": 1.6.9
+  typescript: ^6

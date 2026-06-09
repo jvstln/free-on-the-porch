@@ -1,16 +1,26 @@
 {
-	"name": "@free-on-the-pouch/shared",
+	"name": "@free-on-the-porch/shared",
 	"type": "module",
 	"exports": {
 		"./schemas": {
-			"default": "./schemas/index.ts"
+			"import": "./dist/schemas/index.mjs",
+			"require": "./dist/schemas/index.cjs",
+			"types": "./dist/schemas/index.d.mts"
 		},
 		"./utils": {
-			"default": "./utils/index.ts"
+			"import": "./dist/utils/index.mjs",
+			"require": "./dist/utils/index.cjs",
+			"types": "./dist/utils/index.d.mts"
+		},
+		"./constants": {
+			"import": "./dist/constants/index.mjs",
+			"require": "./dist/constants/index.cjs",
+			"types": "./dist/constants/index.d.mts"
 		}
 	},
 	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1"
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"build": "tsdown"
 	},
 	"dependencies": {
 		"zod": "catalog:"

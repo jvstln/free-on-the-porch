@@ -12,22 +12,19 @@
 		"check-types": "turbo check-types",
 		"dev:native": "turbo -F native dev",
 		"dev:server": "turbo -F server dev",
-		"db:push": "turbo -F @free-on-the-pouch/db db:push",
-		"db:studio": "turbo -F @free-on-the-pouch/db db:studio",
-		"db:generate": "turbo -F @free-on-the-pouch/db db:generate",
-		"db:migrate": "turbo -F @free-on-the-pouch/db db:migrate",
 		"check": "biome check --write .",
 		"format": "biome format --write ."
 	},
 	"dependencies": {
-		"@free-on-the-pouch/env": "workspace:*",
+		"@free-on-the-porch/env": "workspace:*",
 		"dotenv": "catalog:",
 		"zod": "catalog:"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.2.0",
-		"@free-on-the-pouch/config": "workspace:*",
+		"@free-on-the-porch/config": "workspace:*",
 		"@types/node": "^22.13.14",
+		"tsdown": "^0.22.2",
 		"turbo": "^2.8.12",
 		"typescript": "^6"
 	},

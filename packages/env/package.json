@@ -1,5 +1,5 @@
 {
-	"name": "@free-on-the-pouch/env",
+	"name": "@free-on-the-porch/env",
 	"version": "0.0.0",
 	"private": true,
 	"type": "module",
@@ -13,8 +13,8 @@
 		"zod": "catalog:"
 	},
 	"devDependencies": {
-		"@free-on-the-pouch/config": "workspace:*",
+		"@free-on-the-porch/config": "workspace:*",
 		"@types/node": "^22.13.14",
-		"typescript": "^6"
+		"typescript": "catalog:"
 	}
 }
