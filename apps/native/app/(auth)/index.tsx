@@ -1,6 +1,6 @@
-import porchImage from "@free-on-the-pouch/assets/images/porch.jpg";
-import logoIconLight from "@free-on-the-pouch/assets/logo-icon-light.svg";
-import { Link } from "expo-router";
+import porchImage from "@free-on-the-porch/assets/images/porch.jpg";
+import logoIconLight from "@free-on-the-porch/assets/logo-icon-light.svg";
+import { Link, Redirect } from "expo-router";
 import {
 	ArrowRightIcon,
 	HeartIcon,
@@ -16,6 +16,7 @@ import { Text } from "@/components/ui/text";
 import { View } from "@/components/ui/view";
 
 export default function Index() {
+	// return <Redirect href={"/dashboard/profile"} />;
 	return (
 		<View className="flex-1 bg-background p-4 pb-0">
 			<ImageBackground

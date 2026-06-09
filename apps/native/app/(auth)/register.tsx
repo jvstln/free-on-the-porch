@@ -1,18 +1,16 @@
-import logoIconLight from "@free-on-the-pouch/assets/logo-icon-light.svg";
+import logoIconLight from "@free-on-the-porch/assets/logo-icon-light.svg";
+import { registerSchema } from "@free-on-the-porch/shared/schemas";
 import { revalidateLogic } from "@tanstack/react-form";
 import { Link, useRouter } from "expo-router";
 import { Leaf, ShieldCheck, Users } from "lucide-react-native";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { FieldError } from "@/components/ui/field";
 import { useAppForm } from "@/components/ui/form";
 import { Icon } from "@/components/ui/icon";
 import { Image } from "@/components/ui/image";
-import { Label } from "@/components/ui/label";
 import { Text } from "@/components/ui/text";
 import { useToast } from "@/components/ui/toast";
 import { KeyboardAvoidingView, ScrollView, View } from "@/components/ui/view";
-import { registerSchema } from "@/features/auth/auth.schema";
 import { authClient } from "@/lib/auth-client";
 
 export default function Register() {
@@ -21,19 +19,20 @@ export default function Register() {
 
 	const form = useAppForm({
 		defaultValues: {
-			name: "John",
-			email: "doe@gmail.com",
-			password: "Passmetheword",
-			agreed: true,
+			name: "",
+			email: "",
+			password: "",
+			agreed: false,
+			// name: "John",
+			// email: "doe@gmail.com",
+			// password: "Pass@1234",
+			// agreed: true,
 		},
 		validationLogic: revalidateLogic(),
 		validators: {
 			onDynamic: registerSchema,
 		},
 		onSubmit: async ({ value, formApi }) => {
-			router.push("/dashboard");
-
-			return;
 			await authClient.signUp.email(value, {
 				onError(error) {
 					toast.show({
@@ -108,13 +107,16 @@ export default function Register() {
 							{(field) => (
 								<field.CheckboxField
 									label={
-										<Label>
+										<Text
+											type="body-sm"
+											className="flex-row items-baseline gap-1"
+										>
 											I agree to follow the{" "}
 											<Link href="/" className="text-primary underline">
 												Community Guidelines
 											</Link>{" "}
 											and be a respectful neighbor.
-										</Label>
+										</Text>
 									}
 								/>
 							)}

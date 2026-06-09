@@ -1,20 +1,17 @@
-import logoIconLight from "@free-on-the-pouch/assets/logo-icon-light.svg";
+import logoIconLight from "@free-on-the-porch/assets/logo-icon-light.svg";
+import { loginSchema } from "@free-on-the-porch/shared/schemas";
 import { revalidateLogic } from "@tanstack/react-form";
 import { Link, useRouter } from "expo-router";
 import { ArrowRightIcon } from "lucide-react-native";
-import { Pressable } from "react-native";
 import { Button, LinkButton } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { FieldError } from "@/components/ui/field";
 import { useAppForm } from "@/components/ui/form";
 import { Icon } from "@/components/ui/icon";
 import { Image } from "@/components/ui/image";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Text } from "@/components/ui/text";
 import { useToast } from "@/components/ui/toast";
 import { KeyboardAvoidingView, ScrollView, View } from "@/components/ui/view";
-import { loginSchema } from "@/features/auth/auth.schema";
 import { authClient } from "@/lib/auth-client";
 
 export default function Login() {
@@ -93,7 +90,7 @@ export default function Login() {
 									type="password"
 									label={
 										<View className="w-full flex-row items-center justify-between">
-											<Label>Password</Label>
+											<Text>Password</Text>
 											<LinkButton size="sm">Forgot Password?</LinkButton>
 										</View>
 									}

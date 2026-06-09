@@ -4,8 +4,10 @@ import { View } from "@/components/ui/view";
 const MessagesScreen = () => {
 	return (
 		<View className="flex-1 items-center justify-center bg-background">
-			<Text className="text-xl font-semibold text-primary">Messages</Text>
-			<Text className="text-muted-foreground mt-2">Chat with neighbors about porch items.</Text>
+			<Text className="font-semibold text-primary text-xl">Messages</Text>
+			<Text className="mt-2 text-muted-foreground">
+				Chat with neighbors about porch items.
+			</Text>
 		</View>
 	);
 };
