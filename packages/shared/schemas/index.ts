@@ -1,7 +1,7 @@
-import z from "zod";
-
-export const emailSchema = z.email("Enter a valid email address").trim();
-export const passwordSchema = z
-	.string()
-	.min(1, "Password is required")
-	.min(8, "Use at least 8 characters");
+export * from "./auth.schema";
+export * from "./comment.schema";
+export * from "./generic.schema";
+export * from "./listing.schema";
+export * from "./message.schema";
+export * from "./report.schema";
+export * from "./user.schema";
