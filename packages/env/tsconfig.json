@@ -1,3 +1,6 @@
 {
-	"extends": "@free-on-the-pouch/config/tsconfig.base.json"
+	"extends": "@free-on-the-porch/config/tsconfig.base.json",
+	"compilerOptions": {
+		"types": ["node"]
+	}
 }
