@@ -1,15 +1,11 @@
-import {
-	createFormHook,
-	createFormHookContexts,
-} from "@tanstack/react-form";
+import { createFormHook, createFormHookContexts } from "@tanstack/react-form";
 import * as React from "react";
 import { Switch } from "react-native";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { Field, FieldDescription, FieldError } from "./field";
+import { Field, FieldDescription, FieldError, FieldLabel } from "./field";
 import { Text } from "./text";
 import { View } from "./view";
 
@@ -24,7 +20,6 @@ export type FieldProps = {
 	label?: React.ReactNode;
 	description?: React.ReactNode;
 	placeholder?: string;
-	className?: string;
 };
 
 // ─── Field Components (for use with TanStack Form) ──────────────────────────
@@ -42,18 +37,13 @@ export type FieldProps = {
 export type InputFieldProps = FieldProps &
 	React.ComponentProps<typeof Input> & {};
 
-export function InputField({
-	label,
-	description,
-	className,
-	...props
-}: InputFieldProps) {
+export function InputField({ label, description, ...props }: InputFieldProps) {
 	const field = useFieldContext<string>();
 	const hasError = field.state.meta.errors.length > 0;
 
 	return (
-		<Field className={className}>
-			{label && <Label>{label}</Label>}
+		<Field invalid={hasError}>
+			{label && <FieldLabel>{label}</FieldLabel>}
 			<Input
 				value={field.state.value}
 				onChangeText={field.handleChange}
@@ -85,15 +75,14 @@ export function TextareaField({
 	label,
 	description,
 	placeholder,
-	className,
 	numberOfLines,
 }: TextareaFieldProps) {
 	const field = useFieldContext<string>();
 	const hasError = field.state.meta.errors.length > 0;
 
 	return (
-		<Field className={className}>
-			{label && <Label>{label}</Label>}
+		<Field invalid={hasError}>
+			{label && <FieldLabel>{label}</FieldLabel>}
 			<Textarea
 				value={field.state.value}
 				onChangeText={field.handleChange}
@@ -127,26 +116,27 @@ export function TextareaField({
 export function CheckboxField({
 	label,
 	description,
-	className,
 }: Omit<FieldProps, "placeholder">) {
 	const field = useFieldContext<boolean>();
 	const hasError = field.state.meta.errors.length > 0;
 
 	return (
-		<Field className={className}>
-			<View className="flex-row items-start gap-3">
+		<Field invalid={hasError}>
+			<View className="flex-row items-center gap-3">
 				<Checkbox
 					checked={field.state.value}
 					onCheckedChange={field.handleChange}
 					className={cn(hasError && "border-destructive")}
 				/>
-				{React.isValidElement(label) ? (
-					label
-				) : (
-					<Text className="flex-1 text-foreground text-sm leading-5">
-						{label}
-					</Text>
-				)}
+				<FieldLabel>
+					{React.isValidElement(label) ? (
+						label
+					) : (
+						<Text className="flex-1 text-foreground text-sm leading-5">
+							{label}
+						</Text>
+					)}
+				</FieldLabel>
 			</View>
 			{description && (
 				<FieldDescription className="ml-7">{description}</FieldDescription>
@@ -175,15 +165,15 @@ export function CheckboxField({
 export function SwitchField({
 	label,
 	description,
-	className,
 }: Omit<FieldProps, "placeholder">) {
 	const field = useFieldContext<boolean>();
+	const hasError = field.state.meta.errors.length > 0;
 
 	return (
-		<Field className={className}>
+		<Field invalid={hasError}>
 			<View className="flex-row items-center justify-between gap-3">
 				<View className="flex-1 gap-1">
-					{label && <Label>{label}</Label>}
+					{label && <FieldLabel>{label}</FieldLabel>}
 					{description && <FieldDescription>{description}</FieldDescription>}
 				</View>
 				<Switch
@@ -197,7 +187,6 @@ export function SwitchField({
 		</Field>
 	);
 }
-
 
 // ─── Form Hook ──────────────────────────────────────────────────────────────
 

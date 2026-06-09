@@ -101,8 +101,6 @@ export const getInheritableTextClassNames = (className = "") => {
 const Text = (props: React.ComponentProps<typeof Typography>) => {
 	const textClassName = React.useContext(TextClassContext);
 
-	console.log(props.children, textClassName);
-
 	return (
 		<Typography {...props} className={cn(textClassName, props.className)} />
 	);

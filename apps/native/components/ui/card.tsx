@@ -19,7 +19,10 @@ const CardHeader = (props: CardHeaderProps) => (
 const CardTitle = (props: CardTitleProps) => <HeroUICard.Title {...props} />;
 
 const CardDescription = (props: CardDescriptionProps) => (
-	<HeroUICard.Description {...props} />
+	<HeroUICard.Description
+		{...props}
+		className={cn("text-muted-foreground", props.className)}
+	/>
 );
 
 const CardBody = (props: CardBodyProps) => <HeroUICard.Body {...props} />;

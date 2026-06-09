@@ -1,9 +1,11 @@
-import { CircleAlert } from "lucide-react-native";
+import {
+	Description as HeroUIDescription,
+	FieldError as HeroUIFieldError,
+	Label as HeroUILabel,
+	TextField as HeroUITextField,
+} from "heroui-native";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { Icon } from "./icon";
-import { Text } from "./text";
-import { View } from "./view";
 
 // ─── Field Primitives ───────────────────────────────────────────────────────
 /**
@@ -12,11 +14,49 @@ import { View } from "./view";
 export function Field({
 	className,
 	children,
+	required,
+	invalid,
+	disabled,
 }: {
 	className?: string;
 	children: ReactNode;
+	required?: boolean;
+	invalid?: boolean;
+	disabled?: boolean;
 }) {
-	return <View className={cn("gap-2", className)}>{children}</View>;
+	return (
+		<HeroUITextField
+			isRequired={required}
+			isInvalid={invalid}
+			isDisabled={disabled}
+			className={cn("gap-2", className)}
+		>
+			{children}
+		</HeroUITextField>
+	);
+}
+
+type LabelProps = Omit<
+	React.ComponentProps<typeof HeroUILabel>,
+	"isDisabled" | "isInvalid" | "isRequired"
+> & { disabled?: boolean; invalid?: boolean; required?: boolean };
+
+export function FieldLabel({
+	disabled,
+	invalid,
+	required,
+	className,
+	...props
+}: LabelProps) {
+	return (
+		<HeroUILabel
+			isDisabled={disabled}
+			isInvalid={invalid}
+			isRequired={required}
+			className={cn(className)}
+			{...props}
+		/>
+	);
 }
 
 /**
@@ -30,9 +70,7 @@ export function FieldDescription({
 	children: ReactNode;
 }) {
 	return (
-		<Text className={cn("text-muted-foreground text-xs leading-5", className)}>
-			{children}
-		</Text>
+		<HeroUIDescription className={cn(className)}>{children}</HeroUIDescription>
 	);
 }
 
@@ -61,11 +99,8 @@ export function FieldError({
 	if (messages.length === 0) return null;
 
 	return (
-		<View className={cn("flex-row items-start gap-1.5", className)}>
-			<Icon as={CircleAlert} className="mt-0.5 size-3.5 text-destructive" />
-			<Text className="flex-1 text-destructive text-xs leading-5">
-				{messages.join(". ")}
-			</Text>
-		</View>
+		<HeroUIFieldError isInvalid className={cn("", className)}>
+			{messages[0]}
+		</HeroUIFieldError>
 	);
 }

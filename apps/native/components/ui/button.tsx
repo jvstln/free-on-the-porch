@@ -11,14 +11,14 @@ type HeroUIButtonProps = React.ComponentProps<typeof HeroUIButton>;
 type HeroUILinkButtonProps = React.ComponentProps<typeof HeroUILinkButton>;
 
 type ButtonProps = HeroUIButtonProps & {
-	disabled?: boolean;
+	disabled?: boolean | null;
 	isLoading?: boolean;
 	loadingText?: string;
 	variant?: HeroUIButtonProps["variant"];
 };
 
 type LinkButtonProps = HeroUILinkButtonProps & {
-	disabled?: boolean;
+	disabled?: boolean | null;
 	isLoading?: boolean;
 	loadingText?: string;
 	variant?: "link";
@@ -58,7 +58,7 @@ function ButtonRoot({
 	return (
 		<TextClassContextProvider value={buttonTextVariants({ variant, size })}>
 			<HeroUIButton
-				isDisabled={disabled}
+				isDisabled={disabled === null ? false : disabled}
 				variant={variant}
 				size={size}
 				{...props}
@@ -76,12 +76,16 @@ function ButtonLabel({ className, ...props }: ButtonLabelProps) {
 export const Button = Object.assign(ButtonRoot, { Label: ButtonLabel });
 
 /** Link button */
-function LinkButtonRoot({ size, ...props }: LinkButtonProps) {
+function LinkButtonRoot({ size, disabled, ...props }: LinkButtonProps) {
 	return (
 		<TextClassContextProvider
 			value={cn(buttonTextVariants({ variant: "ghost", size }))}
 		>
-			<HeroUILinkButton size={size} {...props} />
+			<HeroUILinkButton
+				size={size}
+				isDisabled={disabled === null ? false : disabled}
+				{...props}
+			/>
 		</TextClassContextProvider>
 	);
 }
