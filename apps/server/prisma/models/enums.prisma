@@ -1,0 +1,42 @@
+enum ListingCategory {
+  FURNITURE
+  ELECTRONICS
+  CLOTHING
+  BOOKS
+  TOYS
+  KITCHEN
+  SPORTS
+  TOOLS
+  GARDEN
+  OTHER
+}
+
+enum ListingCondition {
+  NEW
+  LIKE_NEW
+  GOOD
+  FAIR
+  WORN
+}
+
+enum ListingStatus {
+  AVAILABLE
+  PICKED_UP
+  EXPIRED
+  REMOVED
+}
+
+enum NotificationType {
+  NEW_NEARBY_LISTING
+  MESSAGE_RECEIVED
+  COMMENT_ON_LISTING
+  LISTING_EXPIRED
+}
+
+enum ReportReason {
+  SPAM
+  INAPPROPRIATE
+  ALREADY_TAKEN
+  FAKE
+  OTHER
+}

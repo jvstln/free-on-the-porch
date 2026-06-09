@@ -4,10 +4,21 @@ model User {
   email         String
   emailVerified Boolean   @default(false)
   image         String?
+  bio           String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
   accounts      Account[]
+
+  listings         Listing[]
+  comments         Comment[]
+  sentMessages     Message[]      @relation("SentMessages")
+  receivedMessages Message[]      @relation("ReceivedMessages")
+  notifications    Notification[]
+  reports          Report[]       @relation("ReportedBy")
+  reportedIn       Report[]       @relation("ReportedUser")
+  blockedUsers     Block[]        @relation("Blocker")
+  blockedBy        Block[]        @relation("Blocked")
 
   @@unique([email])
   @@map("user")

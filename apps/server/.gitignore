@@ -2,6 +2,7 @@
 dist/
 /build
 /out/
+/prisma/generated
 
 # dev
 .yarn/
