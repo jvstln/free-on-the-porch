@@ -1,6 +1,6 @@
 generator client {
   provider     = "prisma-client"
-  output       = "./generated/prisma"
+  output       = "../src/infrastructures/database/generated/prisma"
   moduleFormat = "cjs"
   runtime      = "nodejs"
   // previewFeatures = ["postgresqlExtensions"]

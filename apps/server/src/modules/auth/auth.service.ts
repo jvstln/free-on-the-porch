@@ -8,7 +8,7 @@ import { toNodeHandler } from "better-auth/node";
 import {
 	PrismaClient,
 	PrismaService,
-} from "../../infrastructure/database/prisma.service";
+} from "../../infrastructures/database/prisma.service";
 
 @Injectable()
 export class AuthService {

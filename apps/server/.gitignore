@@ -2,7 +2,6 @@
 dist/
 /build
 /out/
-/prisma/generated
 
 # dev
 .yarn/
@@ -21,7 +20,7 @@ dist/
 /.next/
 .vercel
 prisma/generated/
-
+src/infrastructures/database/generated/
 
 # deps
 node_modules/
