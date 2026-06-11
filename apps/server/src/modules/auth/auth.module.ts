@@ -12,5 +12,6 @@ import { AuthService } from "./auth.service";
 		PrismaService,
 		{ provide: APP_GUARD, useClass: AuthGuard },
 	],
+	exports: [AuthService],
 })
 export class AuthModule {}
