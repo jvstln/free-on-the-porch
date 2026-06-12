@@ -1,26 +1,32 @@
 {
 	"name": "@free-on-the-porch/shared",
 	"type": "module",
+	"files": [
+		"dist",
+		"assets"
+	],
 	"exports": {
 		"./schemas": {
+			"types": "./dist/schemas/index.d.mts",
 			"import": "./dist/schemas/index.mjs",
-			"require": "./dist/schemas/index.cjs",
-			"types": "./dist/schemas/index.d.mts"
+			"require": "./dist/schemas/index.cjs"
 		},
 		"./utils": {
+			"types": "./dist/utils/index.d.mts",
 			"import": "./dist/utils/index.mjs",
-			"require": "./dist/utils/index.cjs",
-			"types": "./dist/utils/index.d.mts"
+			"require": "./dist/utils/index.cjs"
 		},
 		"./constants": {
+			"types": "./dist/constants/index.d.mts",
 			"import": "./dist/constants/index.mjs",
-			"require": "./dist/constants/index.cjs",
-			"types": "./dist/constants/index.d.mts"
-		}
+			"require": "./dist/constants/index.cjs"
+		},
+		"./assets/*": "./dist/assets/*"
 	},
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
-		"build": "tsdown"
+		"build": "tsdown",
+		"check-types": "tsc --noEmit"
 	},
 	"dependencies": {
 		"zod": "catalog:"
