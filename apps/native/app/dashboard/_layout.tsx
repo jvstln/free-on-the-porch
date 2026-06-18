@@ -33,8 +33,7 @@ export default function DashboardLayout() {
 	return (
 		<Tabs className="flex-1 bg-background">
 			<TabSlot />
-
-			<TabList className="flex-row items-center justify-around gap-2 border-[#efeee9] border-t bg-[#FAF9F4] px-4 pt-2 pb-6">
+			<TabList className="flex-row items-center justify-around gap-2 border-border border-t bg-card px-4 pt-2 pb-2">
 				{tabs.map((tab) => (
 					<TabTrigger key={tab.name} name={tab.name} href={tab.href} asChild>
 						<TabButton {...tab} />
@@ -56,15 +55,15 @@ const TabButton = ({
 	return (
 		<Button
 			{...props}
-			className={cn("h-auto w-1/5 grow flex-col p-2", isFocused && "")}
-			size="sm"
-			variant={isFocused ? "primary" : "ghost"}
+			className={cn("h-auto w-1/5 grow flex-col p-2")}
+			appearance={isFocused ? "soft" : "ghost"}
+			color={isFocused ? "primary" : "neutral"}
 			feedbackVariant="scale-ripple"
 			disabled={props.disabled}
 			style={undefined}
 		>
-			<Icon as={icon} />
-			<Button.Label>{label}</Button.Label>
+			<Icon as={icon} className={cn("size-5")} />
+			<Button.Label className="text-xs">{label}</Button.Label>
 		</Button>
 	);
 };

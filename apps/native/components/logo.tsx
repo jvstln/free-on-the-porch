@@ -1,19 +1,17 @@
 import Svg, { G, Path, type SvgProps } from "react-native-svg";
 import { useCSSVariable, useResolveClassNames, withUniwind } from "uniwind";
+import { cn } from "@/lib/utils";
+import { View } from "./ui/view";
 
-type LogoProps = SvgProps & {
-	primaryColor?: string;
-	secondaryColor?: string;
-};
+type LogoProps = SvgProps & {};
 
 function LogoImpl({
-	primaryColor: _primaryColor,
-	secondaryColor: _secondaryColor,
 	width: _width,
 	height: _height,
+	className,
 	...props
 }: LogoProps) {
-	const styles = useResolveClassNames(props.className ?? "");
+	const styles = useResolveClassNames(cn(className));
 	let [primaryColor, secondaryColor] = useCSSVariable([
 		"--color-primary",
 		"--color-secondary",
@@ -23,14 +21,16 @@ function LogoImpl({
 		_width ?? (typeof styles.width === "number" ? styles.width : 597.3429);
 	const height =
 		_height ?? (typeof styles.height === "number" ? styles.height : 559.12067);
-	primaryColor = _primaryColor ?? String(styles.color) ?? String(primaryColor);
-	secondaryColor = _secondaryColor ?? String(secondaryColor);
+
+	primaryColor = String(styles.color) ?? String(primaryColor);
+	secondaryColor = String(secondaryColor);
 
 	return (
 		<Svg
 			width={width}
 			height={height}
 			viewBox="0 0 597.3429 559.12067"
+			className={className}
 			{...props}
 		>
 			<G transform="translate(-38.416889,-440.60031)">
@@ -113,3 +113,20 @@ function LogoImpl({
 }
 
 export const Logo = withUniwind(LogoImpl);
+
+export const LogoContained = ({
+	containerClassName,
+	className,
+	...props
+}: LogoProps & { containerClassName?: string }) => {
+	return (
+		<View
+			className={cn("rotate-5 rounded-xl bg-primary p-2", containerClassName)}
+		>
+			<Logo
+				className={cn("size-12 text-primary-foreground", className)}
+				{...props}
+			/>
+		</View>
+	);
+};

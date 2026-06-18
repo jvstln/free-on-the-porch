@@ -1,6 +1,5 @@
-import porchImage from "@free-on-the-porch/assets/images/porch.jpg";
-import logoIconLight from "@free-on-the-porch/assets/logo-icon-light.svg";
-import { Link, Redirect } from "expo-router";
+import porchImage from "@free-on-the-porch/shared/assets/images/porch.jpg";
+import { Link } from "expo-router";
 import {
 	ArrowRightIcon,
 	HeartIcon,
@@ -8,17 +7,17 @@ import {
 	TruckIcon,
 	UsersIcon,
 } from "lucide-react-native";
+import { LogoContained } from "@/components/logo";
 import { Badge } from "@/components/ui/badge";
 import { Button, LinkButton } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
-import { Image, ImageBackground } from "@/components/ui/image";
+import { ImageBackground } from "@/components/ui/image";
 import { Text } from "@/components/ui/text";
-import { View } from "@/components/ui/view";
+import { ScrollView, View } from "@/components/ui/view";
 
 export default function Index() {
-	// return <Redirect href={"/dashboard/profile"} />;
 	return (
-		<View className="flex-1 bg-background p-4 pb-0">
+		<ScrollView className="flex-1 bg-background p-4 pb-0">
 			<ImageBackground
 				source={porchImage}
 				imageClassName="rounded-2xl shadow-sm"
@@ -32,33 +31,33 @@ export default function Index() {
 				</View>
 			</ImageBackground>
 
-			<View className="mt-7 mb-3 rotate-5 self-center rounded-2xl bg-primary p-3 shadow-sm">
-				<Image
-					source={logoIconLight}
-					className="size-12"
-					contentFit="contain"
-				/>
-			</View>
+			<LogoContained containerClassName="self-center mt-7 mb-3" />
 
-			<Text type="h1" className="mb-3 text-center text-primary">
+			<Text type="h2" className="mb-3 text-center text-primary">
 				Free on the Porch
 			</Text>
-			<Text type="h5" className="text-center" weight="normal">
+			<Text type="body-sm" className="mb-4 text-center" weight="normal">
 				Bridging digital convenience with physical community, one neighborly
 				gift at a time.
 			</Text>
 
 			<Link href="/register" asChild>
 				<Button size="lg" className="my-2 mt-auto">
-					<Button.Label>Get Started</Button.Label>
+					Get started
 					<Icon as={ArrowRightIcon} />
 				</Button>
 			</Link>
 
 			<View className="mt-2 flex-row items-center justify-center gap-1">
-				<Text type="body">Already have an account?</Text>
+				<Text type="body-sm">Already have an account?</Text>
 				<Link href="/login" asChild>
-					<LinkButton>Log In</LinkButton>
+					<LinkButton size="sm">Log in</LinkButton>
+				</Link>
+			</View>
+
+			<View className="mt-2 flex-row items-center justify-center gap-1">
+				<Link href="/dashboard" asChild>
+					<LinkButton size="sm">Continue without an account</LinkButton>
 				</Link>
 			</View>
 
@@ -90,6 +89,6 @@ export default function Index() {
 					</Text>
 				</View>
 			</View>
-		</View>
+		</ScrollView>
 	);
 }

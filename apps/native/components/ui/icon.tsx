@@ -1,14 +1,16 @@
 import type { LucideIcon, LucideProps } from "lucide-react-native";
 import type * as React from "react";
 import { withUniwind } from "uniwind";
-import { useTextClassContext } from "@/components/ui/text";
+import { useInheritableTextClassContext } from "@/components/ui/text";
 import { cn } from "@/lib/utils";
 
-type IconProps = LucideProps & {
-	as: LucideIcon;
-} & React.RefAttributes<LucideIcon>;
+namespace Icon {
+	export type Props = LucideProps & {
+		as: LucideIcon;
+	} & React.RefAttributes<LucideIcon>;
+}
 
-function IconImpl({ as: IconComponent, ...props }: IconProps) {
+function IconImpl({ as: IconComponent, ...props }: Icon.Props) {
 	return <IconComponent {...props} />;
 }
 
@@ -43,13 +45,13 @@ const StyledIcon = withUniwind(IconImpl, {
  * @param {number} size - Icon size (overrides the size class).
  * @param {...LucideProps} ...props - Additional Lucide icon props passed to the "as" icon.
  */
-function Icon({ as: IconComponent, className, ...props }: IconProps) {
-	const textClass = useTextClassContext();
+function Icon({ as: IconComponent, className, ...props }: Icon.Props) {
+	const textClassName = useInheritableTextClassContext();
 
 	return (
 		<StyledIcon
 			as={IconComponent}
-			className={cn("size-5 text-foreground", textClass, className)}
+			className={cn("size-5 text-foreground", textClassName, className)}
 			{...props}
 		/>
 	);

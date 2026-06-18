@@ -1,17 +1,35 @@
-import { ActivityIndicator, type ActivityIndicatorProps } from "react-native";
+import { Spinner as HeroUiSpinner } from "heroui-native";
+import { LoaderCircle } from "lucide-react-native";
 import { cn } from "@/lib/utils";
+import { Logo } from "../logo";
+import { Icon } from "./icon";
+import { useInheritableTextClassContext } from "./text";
+import { View } from "./view";
 
-function Spinner({
-	className,
-	...props
-}: ActivityIndicatorProps & { className?: string }) {
+namespace Spinner {
+	export type Props = React.ComponentProps<typeof HeroUiSpinner>;
+}
+
+function Spinner({ className, ...props }: Spinner.Props) {
+	const textClassName = useInheritableTextClassContext();
+
 	return (
-		<ActivityIndicator
-			className={cn("size-4", className)}
-			// Inherit color from text context if possible, or use a default
-			{...props}
-		/>
+		<HeroUiSpinner {...props}>
+			<HeroUiSpinner.Indicator>
+				<Icon as={LoaderCircle} className={cn(textClassName, className)} />
+			</HeroUiSpinner.Indicator>
+		</HeroUiSpinner>
 	);
 }
 
-export { Spinner };
+function LoadingScreen() {
+	return (
+		<View className="flex-1 items-center justify-center">
+			<View className="rounded-xl bg-primary p-2">
+				<Logo className="size-20 text-white" />
+			</View>
+		</View>
+	);
+}
+
+export { LoadingScreen, Spinner };

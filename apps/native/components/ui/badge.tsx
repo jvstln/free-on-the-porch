@@ -2,7 +2,7 @@ import { Slot } from "@rn-primitives/slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Platform, View } from "react-native";
 import { TextClassContextProvider } from "@/components/ui/text";
-import { uiColors, uiTextColors } from "@/lib/colors";
+import { uiColors } from "@/lib/colors.util";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
@@ -16,23 +16,23 @@ const badgeVariants = cva(
 		variants: {
 			color: uiColors,
 			inverted: {
-				true: "[--bg:var(--fg-v)] [--fg:var(--bg-v)]",
-				false: "[--bg:var(--bg-v)] [--fg:var(--fg-v)]",
+				true: "[--bg-v:var(--fg)] [--fg-v:var(--bg)]",
+				false: "[--bg-v:var(--bg)] [--fg-v:var(--fg)]",
 			},
 			appearance: {
 				solid: cn(
-					"bg-(--bg) text-(--fg)",
-					Platform.select({ web: "hover:bg-(--bg)/90" }),
+					"bg-(--bg-v) text-(--fg-v)",
+					Platform.select({ web: "hover:bg-(--bg-v)/90" }),
 				),
 				outline: cn(
-					"border border-(--bg) bg-transparent text-(--bg)",
-					Platform.select({ web: "hover:bg-(--bg)/10" }),
+					"border border-(--bg-v) bg-transparent text-(--bg-v)",
+					Platform.select({ web: "hover:bg-(--bg-v)/10" }),
 				),
 				ghost: cn(
-					"bg-transparent text-(--bg)",
-					Platform.select({ web: "hover:bg-(--bg)/10" }),
+					"bg-transparent text-(--bg-v)",
+					Platform.select({ web: "hover:bg-(--bg-v)/10" }),
 				),
-				soft: "bg-(--bg)/15 text-(--bg)",
+				soft: "bg-(--bg-v)/15 text-(--bg-v)",
 			},
 			size: {
 				default: "px-3 py-1.5",
@@ -49,33 +49,6 @@ const badgeVariants = cva(
 	},
 );
 
-const badgeTextVariants = cva("font-medium", {
-	variants: {
-		color: uiTextColors,
-		inverted: {
-			true: "[--t-bg:var(--t-fg-v)] [--t-fg:var(--t-bg-v)]",
-			false: "[--t-bg:var(--t-bg-v)] [--t-fg:var(--t-fg-v)]",
-		},
-		appearance: {
-			solid: "text-(--t-fg)",
-			outline: "text-(--t-bg)",
-			ghost: "text-(--t-bg)",
-			soft: "text-(--t-bg)",
-		},
-		size: {
-			default: "text-xs",
-			sm: "text-[10px]",
-			lg: "text-sm",
-		},
-	},
-	defaultVariants: {
-		color: "primary",
-		inverted: false,
-		appearance: "solid",
-		size: "default",
-	},
-});
-
 type BadgeProps = React.ComponentProps<typeof View> &
 	React.RefAttributes<View> & {
 		asChild?: boolean;
@@ -91,9 +64,10 @@ function Badge({
 	...props
 }: BadgeProps) {
 	const Component = asChild ? Slot : View;
+
 	return (
 		<TextClassContextProvider
-			value={badgeTextVariants({ color, appearance, size, inverted })}
+			value={badgeVariants({ color, appearance, size, inverted })}
 		>
 			<Component
 				className={cn(
@@ -107,4 +81,4 @@ function Badge({
 }
 
 export type { BadgeProps };
-export { Badge, badgeTextVariants, badgeVariants };
+export { Badge, badgeVariants };

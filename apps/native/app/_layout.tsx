@@ -1,11 +1,6 @@
 import "@/global.css";
-import { PortalHost } from "@rn-primitives/portal";
 import { Stack } from "expo-router";
-import { HeroUINativeProvider } from "heroui-native";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { KeyboardProvider } from "react-native-keyboard-controller";
-
-import { AppThemeProvider } from "@/contexts/app-theme-context";
+import { RootProviders } from "@/components/providers";
 
 export const unstable_settings = {
 	initialRouteName: "(drawer)",
@@ -26,15 +21,8 @@ function StackLayout() {
 
 export default function Layout() {
 	return (
-		<GestureHandlerRootView style={{ flex: 1 }}>
-			<KeyboardProvider>
-				<AppThemeProvider>
-					<HeroUINativeProvider>
-						<StackLayout />
-					</HeroUINativeProvider>
-					<PortalHost />
-				</AppThemeProvider>
-			</KeyboardProvider>
-		</GestureHandlerRootView>
+		<RootProviders>
+			<StackLayout />
+		</RootProviders>
 	);
 }

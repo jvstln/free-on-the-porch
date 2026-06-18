@@ -1,10 +1,7 @@
 {
 	"name": "@free-on-the-porch/shared",
 	"type": "module",
-	"files": [
-		"dist",
-		"assets"
-	],
+	"private": true,
 	"exports": {
 		"./schemas": {
 			"types": "./dist/schemas/index.d.mts",
@@ -29,7 +26,8 @@
 		"check-types": "tsc --noEmit"
 	},
 	"dependencies": {
-		"zod": "catalog:"
+		"zod": "catalog:",
+		"zod-validation-error": "catalog:"
 	},
 	"keywords": [],
 	"author": "",

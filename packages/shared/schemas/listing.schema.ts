@@ -41,12 +41,12 @@ export const UpdateListingSchema = CreateListingSchema.partial().extend({
 });
 
 export const NearbyQuerySchema = z.object({
-	lat: z.number(),
-	lng: z.number(),
-	radiusKm: z.number().min(0.5).max(50).default(10),
+	lat: z.coerce.number(),
+	lng: z.coerce.number(),
+	radiusKm: z.coerce.number().min(0.5).max(50).default(10),
 	category: ListingCategory.optional(),
 	cursor: z.string().optional(), // for pagination
-	limit: z.number().min(1).max(50).default(20),
+	limit: z.coerce.number().min(1).max(50).default(20),
 });
 
 export type CreateListingDto = z.infer<typeof CreateListingSchema>;
