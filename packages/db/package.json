@@ -14,11 +14,10 @@
 	},
 	"devDependencies": {
 		"@types/pg": "^8.20.0",
-		"drizzle-kit": "^0.31.10",
-		"tsx": "^4.22.4"
+		"drizzle-kit": "^0.31.10"
 	},
 	"dependencies": {
 		"@free-on-the-porch/env": "workspace:*",
-		"drizzle-orm": "^0.45.2"
+		"drizzle-orm": "catalog:"
 	}
 }

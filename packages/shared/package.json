@@ -3,26 +3,13 @@
 	"type": "module",
 	"private": true,
 	"exports": {
-		"./schemas": {
-			"types": "./dist/schemas/index.d.mts",
-			"import": "./dist/schemas/index.mjs",
-			"require": "./dist/schemas/index.cjs"
-		},
-		"./utils": {
-			"types": "./dist/utils/index.d.mts",
-			"import": "./dist/utils/index.mjs",
-			"require": "./dist/utils/index.cjs"
-		},
-		"./constants": {
-			"types": "./dist/constants/index.d.mts",
-			"import": "./dist/constants/index.mjs",
-			"require": "./dist/constants/index.cjs"
-		},
-		"./assets/*": "./dist/assets/*"
+		"./schemas": "./schemas/index.ts",
+		"./utils": "./utils/index.ts",
+		"./constants": "./constants/index.ts",
+		"./assets/*": "./assets/*"
 	},
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
-		"build": "tsdown",
 		"check-types": "tsc --noEmit"
 	},
 	"dependencies": {
