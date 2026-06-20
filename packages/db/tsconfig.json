@@ -1,0 +1,3 @@
+{
+	"extends": "@free-on-the-porch/config/tsconfig.base.json"
+}

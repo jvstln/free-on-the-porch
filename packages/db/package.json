@@ -1,0 +1,24 @@
+{
+	"name": "@free-on-the-porch/db",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": "./index.ts"
+	},
+	"scripts": {
+		"db:push": "node --env-file=../../apps/server/.env node_modules/drizzle-kit/bin.cjs push",
+		"db:studio": "node --env-file=../../apps/server/.env node_modules/drizzle-kit/bin.cjs studio",
+		"db:generate": "node --env-file=../../apps/server/.env node_modules/drizzle-kit/bin.cjs generate",
+		"db:migrate": "node --env-file=../../apps/server/.env node_modules/drizzle-kit/bin.cjs migrate",
+		"db:seed": "node --env-file=../../apps/server/.env --import=tsx ./seed.ts"
+	},
+	"devDependencies": {
+		"@types/pg": "^8.20.0",
+		"drizzle-kit": "^0.31.10",
+		"tsx": "^4.22.4"
+	},
+	"dependencies": {
+		"@free-on-the-porch/env": "workspace:*",
+		"drizzle-orm": "^0.45.2"
+	}
+}

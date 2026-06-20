@@ -6,6 +6,8 @@ import {
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { WsException } from "@nestjs/websockets";
+import type { Request } from "express";
+import type { Socket } from "socket.io";
 import { Public } from "./auth.decorator";
 import { AuthService } from "./auth.service";
 
@@ -18,7 +20,6 @@ export class AuthGuard implements CanActivate {
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const type = context.getType<"http" | "ws">();
-		console.log("guarding", type);
 
 		const isPublic = this.reflector.getAllAndOverride(Public, [
 			context.getHandler(),
@@ -27,9 +28,11 @@ export class AuthGuard implements CanActivate {
 		if (isPublic) return true;
 
 		if (type === "http") {
-			const request = context.switchToHttp().getRequest();
+			const request = context.switchToHttp().getRequest<Request>();
 			request.session = null;
-			const authSession = await this.authService.auth.api.getSession();
+			const authSession = await this.authService.auth.api.getSession({
+				headers: request.headers,
+			});
 
 			if (!authSession) {
 				throw new UnauthorizedException();
@@ -39,9 +42,10 @@ export class AuthGuard implements CanActivate {
 		}
 
 		if (type === "ws") {
-			const client = context.switchToWs().getClient();
-			client.data = null;
-			const authSession = await this.authService.auth.api.getSession();
+			const client = context.switchToWs().getClient<Socket>();
+			const authSession = await this.authService.auth.api.getSession({
+				headers: client.handshake.headers,
+			});
 
 			if (!authSession) {
 				client.disconnect();
@@ -49,6 +53,7 @@ export class AuthGuard implements CanActivate {
 			}
 
 			client.data = authSession;
+			client.join(`userId:${authSession.user.id}`);
 		}
 
 		return true;

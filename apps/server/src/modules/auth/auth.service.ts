@@ -3,36 +3,57 @@ import { env } from "@free-on-the-porch/env/server";
 import { constants } from "@free-on-the-porch/shared/constants";
 import { Injectable } from "@nestjs/common";
 import { betterAuth } from "better-auth";
-import { prismaAdapter } from "better-auth/adapters/prisma";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { toNodeHandler } from "better-auth/node";
+import type { DrizzleService } from "../../infrastructures/database/database.service";
+import { MailService } from "../../infrastructures/mail/mail.service";
 import {
-	PrismaClient,
-	PrismaService,
-} from "../../infrastructures/database/prisma.service";
+	getEmailVerificationTemplate,
+	getResetPasswordTemplate,
+} from "../../infrastructures/mail/templates";
 
 @Injectable()
 export class AuthService {
-	auth: ReturnType<typeof createBetterAuth>;
+	private readonly drizzle!: DrizzleService;
+	private readonly mailService!: MailService;
 
-	constructor(private readonly prisma: PrismaService) {
-		this.auth = createBetterAuth(this.prisma);
-	}
-
-	getHandler() {
-		return toNodeHandler(this.auth);
-	}
-}
-
-const createBetterAuth = <T extends PrismaClient>(prisma: T) => {
-	return betterAuth({
+	readonly auth = betterAuth({
 		appName: constants.APP_NAME,
-		database: prismaAdapter(prisma, {
-			provider: "postgresql",
+		database: drizzleAdapter(this.drizzle.db, {
+			provider: "pg",
 		}),
 
 		trustedOrigins: env.CORS_ORIGIN,
 		emailAndPassword: {
 			enabled: true,
+			sendResetPassword: async ({ user, url }) => {
+				const { html, text } = getResetPasswordTemplate({
+					email: user.email,
+					url,
+				});
+				await this.mailService.sendMail({
+					to: user.email,
+					subject: `Reset your password - ${constants.APP_NAME}`,
+					html,
+					text,
+				});
+			},
+		},
+		emailVerification: {
+			sendOnSignUp: true,
+			autoSignInAfterVerification: true,
+			sendVerificationEmail: async ({ user, url }) => {
+				const { html, text } = getEmailVerificationTemplate({
+					email: user.email,
+					url,
+				});
+				await this.mailService.sendMail({
+					to: user.email,
+					subject: `Verify your email - ${constants.APP_NAME}`,
+					html,
+					text,
+				});
+			},
 		},
 		secret: env.BETTER_AUTH_SECRET,
 		baseURL: env.BETTER_AUTH_URL,
@@ -46,4 +67,8 @@ const createBetterAuth = <T extends PrismaClient>(prisma: T) => {
 		},
 		plugins: [expo()],
 	});
-};
+
+	getHandler() {
+		return toNodeHandler(this.auth);
+	}
+}
