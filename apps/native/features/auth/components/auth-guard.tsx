@@ -1,7 +1,8 @@
-import { Redirect, usePathname, useRouter } from "expo-router";
-import { LoadingScreen } from "@/components/ui/spinner";
+import { usePathname, useRouter } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import { useEffect } from "react";
 import { authClient } from "@/lib/auth-client";
-import { getIsPublicPage } from "../auth.service";
+import { getIsPublicPage } from "../auth.util";
 import { OnboardingSheet } from "./onboarding-sheet";
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -12,22 +13,17 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 	const isPublic = getIsPublicPage(pathname);
 	const isAuthenticated = !!session.data;
 
+	const isLoading = session.isPending && !isPublic;
+	useEffect(() => {
+		if (!isLoading) {
+			SplashScreen.hide();
+		}
+	}, [isLoading]);
+
+	if (isPublic || isAuthenticated) return children;
+
 	if (session.isPending) {
-		return <LoadingScreen />;
-	}
-
-	// 1. Authenticated user visiting public landing pages (login/register/index) -> redirect to dashboard
-	if (
-		isAuthenticated &&
-		(pathname === "/login" || pathname === "/register" || pathname === "/")
-	) {
-		return <Redirect href="/dashboard" />;
-	}
-
-	// 2. Unauthenticated user visiting public page -> render page directly
-	// 3. Authenticated user visiting protected page -> render page directly
-	if ((isPublic && !isAuthenticated) || isAuthenticated) {
-		return children;
+		return null; // Keep native splash screen showing by returning empty view under it
 	}
 
 	return (

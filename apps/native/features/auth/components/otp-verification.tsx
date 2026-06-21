@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
-import { useToast } from "@/components/ui/toast";
+import { toast } from "@/components/ui/toast";
 import { View } from "@/components/ui/view";
 
 type Props = {
@@ -33,7 +33,6 @@ export function OtpVerification({
 	isLoading = false,
 	verifyLabel = "Verify Code",
 }: Props) {
-	const { toast } = useToast();
 	const [otp, setOtp] = useState(["", "", "", ""]);
 
 	const otpRefs = [
@@ -71,10 +70,7 @@ export function OtpVerification({
 	const handleVerifyPress = () => {
 		const enteredOtp = otp.join("");
 		if (enteredOtp.length < 4) {
-			toast.show({
-				variant: "danger",
-				label: "Please enter the full 4-digit code.",
-			});
+			toast.error("Please enter the full 4-digit code.");
 			return;
 		}
 		onVerify(enteredOtp);

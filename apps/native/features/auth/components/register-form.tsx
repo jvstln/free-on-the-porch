@@ -1,23 +1,22 @@
+import { env } from "@free-on-the-porch/env/native";
 import { registerSchema } from "@free-on-the-porch/shared/schemas";
 import { revalidateLogic } from "@tanstack/react-form";
-import { ArrowRightIcon } from "lucide-react-native";
+import { ArrowRightIcon, LockIcon, MailIcon, UserIcon } from "lucide-react-native";
 import { Button } from "@/components/ui/button";
 import { useAppForm } from "@/components/ui/form";
 import { Icon } from "@/components/ui/icon";
 import { Separator } from "@/components/ui/separator";
 import { Text } from "@/components/ui/text";
-import { useToast } from "@/components/ui/toast";
+import { toast } from "@/components/ui/toast";
 import { View } from "@/components/ui/view";
 import { authClient } from "@/lib/auth-client";
 
 type RegisterFormProps = {
-	onSuccess?: (email: string) => void;
+	onRegister: (email: string) => void;
 	onError?: (error: unknown) => void;
 };
 
-export function RegisterForm({ onSuccess, onError }: RegisterFormProps) {
-	const { toast } = useToast();
-
+export function RegisterForm({ onRegister, onError }: RegisterFormProps) {
 	const form = useAppForm({
 		defaultValues: {
 			name: "",
@@ -35,21 +34,18 @@ export function RegisterForm({ onSuccess, onError }: RegisterFormProps) {
 					name: value.name,
 					email: value.email,
 					password: value.password,
+					callbackURL: "free-on-the-pouch://dashboard",
 				},
 				{
 					onError(error) {
-						toast.show({
-							variant: "danger",
-							label: error.error?.message || "Failed to sign up",
-						});
+						console.log("registration error", error.error);
+						toast.error(error.error?.message || "Failed to sign up");
 						onError?.(error);
 					},
-					onSuccess() {
-						toast.show({
-							variant: "success",
-							label: "Account created successfully!",
-						});
-						onSuccess?.(value.email);
+					onSuccess(ctx) {
+						console.log("registration success", ctx.data);
+						toast.success("Account created! Please verify your email.");
+						onRegister(value.email);
 						formApi.reset();
 					},
 				},
@@ -60,14 +56,21 @@ export function RegisterForm({ onSuccess, onError }: RegisterFormProps) {
 	return (
 		<View className="gap-4">
 			<form.AppField name="name">
-				{(field) => <field.InputField label="Full name" />}
+				{(field) => (
+					<field.InputField
+						label="Full name"
+						placeholder="Neighbor Name"
+						icon={UserIcon}
+					/>
+				)}
 			</form.AppField>
 			<form.AppField name="email">
 				{(field) => (
 					<field.InputField
 						label="Email address"
-						placeholder="example@gmail.com"
+						placeholder="neighbor@example.com"
 						type="email"
+						icon={MailIcon}
 					/>
 				)}
 			</form.AppField>
@@ -77,6 +80,7 @@ export function RegisterForm({ onSuccess, onError }: RegisterFormProps) {
 						type="password"
 						label="Password"
 						placeholder="At least 8 characters"
+						icon={LockIcon}
 					/>
 				)}
 			</form.AppField>
@@ -90,30 +94,35 @@ export function RegisterForm({ onSuccess, onError }: RegisterFormProps) {
 				{(isSubmitting) => (
 					<Button
 						size="lg"
-						className="mt-2 items-center justify-center"
+						className="mt-2 w-full"
 						isLoading={isSubmitting}
 						loadingText="Joining..."
 						onPress={form.handleSubmit}
 					>
 						Join neighbor
-						<Icon as={ArrowRightIcon} />
+						<Icon as={ArrowRightIcon} className="size-5" />
 					</Button>
 				)}
 			</form.Subscribe>
 
 			{/* Social Divider */}
-			<View className="my-5 flex-row items-center gap-3">
-				<Separator className="grow" />
-				<Text type="body-xs">Or continue with</Text>
-				<Separator className="grow" />
+			<View className="my-3 flex-row items-center gap-3 px-1">
+				<Separator className="grow border-border/30 border-t bg-muted" />
+				<Text
+					type="body-xs"
+					className="font-medium text-muted-foreground uppercase tracking-wider"
+				>
+					Or continue with
+				</Text>
+				<Separator className="grow border-border/30 border-t bg-muted" />
 			</View>
 
 			{/* Social buttons */}
 			<View className="flex-row gap-3">
-				<Button variant="outline" className="flex-1 justify-center">
+				<Button appearance="outline" color="neutral" className="flex-1">
 					Google
 				</Button>
-				<Button variant="outline" className="flex-1 justify-center">
+				<Button appearance="outline" color="neutral" className="flex-1">
 					Apple
 				</Button>
 			</View>

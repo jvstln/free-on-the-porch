@@ -92,7 +92,7 @@ import { cn } from "@/lib/utils";
 export const getInheritableTextClassNames = (className = "") => {
 	return className
 		.split(" ")
-		.filter((c) => /^text-.+$|^\[--.+$/.test(c))
+		.filter((c) => /^text-.+$|^\[--.+|underline$/.test(c))
 		.join(" ");
 };
 

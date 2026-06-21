@@ -1,4 +1,5 @@
 import { createFormHook, createFormHookContexts } from "@tanstack/react-form";
+import { ControlField } from "heroui-native";
 import * as React from "react";
 import { Switch } from "react-native";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -121,20 +122,21 @@ export function CheckboxField({
 	const hasError = field.state.meta.errors.length > 0;
 
 	return (
-		<Field invalid={hasError}>
+		<ControlField
+			isSelected={field.state.value}
+			onSelectedChange={field.handleChange}
+			isInvalid={hasError}
+			className="flex-col items-start gap-1"
+		>
 			<View className="flex-row items-center gap-3">
-				<Checkbox
-					checked={field.state.value}
-					onCheckedChange={field.handleChange}
-					className={cn(hasError && "border-destructive")}
-				/>
-				<FieldLabel>
+				<ControlField.Indicator>
+					<Checkbox />
+				</ControlField.Indicator>
+				<FieldLabel className="flex-1">
 					{React.isValidElement(label) ? (
 						label
 					) : (
-						<Text className="flex-1 text-foreground text-sm leading-5">
-							{label}
-						</Text>
+						<Text className="text-foreground text-sm leading-5">{label}</Text>
 					)}
 				</FieldLabel>
 			</View>
@@ -142,7 +144,7 @@ export function CheckboxField({
 				<FieldDescription className="ml-7">{description}</FieldDescription>
 			)}
 			<FieldError errors={field.state.meta.errors} className="ml-7" />
-		</Field>
+		</ControlField>
 	);
 }
 

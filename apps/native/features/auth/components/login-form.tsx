@@ -1,30 +1,31 @@
 import { loginSchema } from "@free-on-the-porch/shared/schemas";
 import { revalidateLogic } from "@tanstack/react-form";
 import { Link } from "expo-router";
-import { ArrowRightIcon } from "lucide-react-native";
+import { ArrowRightIcon, LockIcon, MailIcon } from "lucide-react-native";
 import { Button, LinkButton } from "@/components/ui/button";
 import { useAppForm } from "@/components/ui/form";
 import { Icon } from "@/components/ui/icon";
 import { Separator } from "@/components/ui/separator";
 import { Text } from "@/components/ui/text";
-import { useToast } from "@/components/ui/toast";
+import { toast } from "@/components/ui/toast";
 import { View } from "@/components/ui/view";
 import { authClient } from "@/lib/auth-client";
 
 type LoginFormProps = {
-	onSuccess?: () => void;
+	onLogin?: () => void;
 	onError?: (error: unknown) => void;
+	onUnverifiedEmail?: (email: string) => void;
 };
 
-export function LoginForm({ onSuccess, onError }: LoginFormProps) {
-	const { toast } = useToast();
-
+export function LoginForm({
+	onLogin,
+	onError,
+	onUnverifiedEmail,
+}: LoginFormProps) {
 	const form = useAppForm({
 		defaultValues: {
 			email: "",
 			password: "",
-			// email: "johndoe@gmail.com",
-			// password: "Pass@1234",
 		},
 		validationLogic: revalidateLogic(),
 		validators: {
@@ -33,19 +34,21 @@ export function LoginForm({ onSuccess, onError }: LoginFormProps) {
 		onSubmit: async ({ value, formApi }) => {
 			await authClient.signIn.email(value, {
 				onError(error) {
-					toast.show({
-						variant: "danger",
-						label: error.error?.message || "Failed to log in",
-					});
-					onError?.(error);
+					if (error.error?.code === "EMAIL_NOT_VERIFIED") {
+						toast.warning({
+							title: error.error.message,
+							description: "Please verify your email to log in.",
+						});
+						onUnverifiedEmail?.(value.email);
+					} else {
+						toast.error(error.error?.message || "Failed to log in");
+						onError?.(error);
+					}
 				},
 				onSuccess() {
 					formApi.reset();
-					toast.show({
-						variant: "success",
-						label: "Welcome back!",
-					});
-					onSuccess?.();
+					toast.success("Welcome back!");
+					onLogin?.();
 				},
 			});
 		},
@@ -59,6 +62,7 @@ export function LoginForm({ onSuccess, onError }: LoginFormProps) {
 						label="Email Address"
 						placeholder="neighbor@example.com"
 						type="email"
+						icon={MailIcon}
 					/>
 				)}
 			</form.AppField>
@@ -66,9 +70,12 @@ export function LoginForm({ onSuccess, onError }: LoginFormProps) {
 				{(field) => (
 					<field.InputField
 						type="password"
+						icon={LockIcon}
 						label={
-							<View className="w-full flex-row items-center justify-between">
-								<Text>Password</Text>
+							<View className="w-full flex-row items-center justify-between pb-0.5">
+								<Text className="font-semibold text-foreground text-sm">
+									Password
+								</Text>
 								<Link href="/forgot-password" asChild>
 									<LinkButton size="sm">Forgot?</LinkButton>
 								</Link>
@@ -82,47 +89,35 @@ export function LoginForm({ onSuccess, onError }: LoginFormProps) {
 				{(isSubmitting) => (
 					<Button
 						size="lg"
-						className="mt-2 items-center justify-center"
+						className="mt-3 w-full"
 						isLoading={isSubmitting}
 						loadingText="Logging in..."
 						onPress={form.handleSubmit}
 					>
-						<Button.Label>Log In</Button.Label>
-						<Icon as={ArrowRightIcon} />
+						Log In
+						<Icon as={ArrowRightIcon} className="size-5" />
 					</Button>
 				)}
 			</form.Subscribe>
 
-			<View className="flex-row items-center justify-center gap-1">
-				<Text type="body-sm">Don't have an account?</Text>
-				<Link href="/register" asChild>
-					<LinkButton size="sm">Sign Up</LinkButton>
-				</Link>
-			</View>
-
 			{/* Social Divider */}
-			<View className="my-5 flex-row items-center gap-3">
-				<Separator className="grow" />
-				<Text type="body-xs">Or continue with</Text>
-				<Separator className="grow" />
+			<View className="my-4 flex-row items-center gap-3 px-1">
+				<Separator className="grow border-border/30 border-t bg-muted" />
+				<Text
+					type="body-xs"
+					className="font-medium text-muted-foreground uppercase tracking-wider"
+				>
+					Or continue with
+				</Text>
+				<Separator className="grow border-border/30 border-t bg-muted" />
 			</View>
 
 			{/* Social buttons */}
 			<View className="flex-row gap-3">
-				<Button
-					variant="outline"
-					appearance="outline"
-					color="neutral"
-					className="flex-1"
-				>
+				<Button appearance="outline" color="neutral" className="flex-1">
 					Google
 				</Button>
-				<Button
-					variant="outline"
-					appearance="outline"
-					color="neutral"
-					className="flex-1"
-				>
+				<Button appearance="outline" color="neutral" className="flex-1">
 					Apple
 				</Button>
 			</View>
