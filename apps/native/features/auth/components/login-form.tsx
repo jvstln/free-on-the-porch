@@ -1,4 +1,4 @@
-import { loginSchema } from "@free-on-the-porch/shared/schemas";
+import { LoginSchema } from "@free-on-the-porch/shared/schemas";
 import { revalidateLogic } from "@tanstack/react-form";
 import { Link } from "expo-router";
 import { ArrowRightIcon, LockIcon, MailIcon } from "lucide-react-native";
@@ -29,7 +29,7 @@ export function LoginForm({
 		},
 		validationLogic: revalidateLogic(),
 		validators: {
-			onDynamic: loginSchema,
+			onDynamic: LoginSchema,
 		},
 		onSubmit: async ({ value, formApi }) => {
 			await authClient.signIn.email(value, {
@@ -89,13 +89,12 @@ export function LoginForm({
 				{(isSubmitting) => (
 					<Button
 						size="lg"
-						className="mt-3 w-full"
 						isLoading={isSubmitting}
 						loadingText="Logging in..."
 						onPress={form.handleSubmit}
 					>
 						Log In
-						<Icon as={ArrowRightIcon} className="size-5" />
+						<Icon as={ArrowRightIcon} />
 					</Button>
 				)}
 			</form.Subscribe>

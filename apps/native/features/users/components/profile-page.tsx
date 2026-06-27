@@ -1,3 +1,4 @@
+import type { CurrentUserDto } from "@free-on-the-porch/shared/schemas";
 import { useRouter } from "expo-router";
 import { Edit, Gift, LogOut, Settings, Tag } from "lucide-react-native";
 import { FlatList, RefreshControl } from "react-native";
@@ -27,7 +28,7 @@ export function ProfilePage() {
 		isRefetching,
 	} = useMyListings();
 
-	const user = (session?.user || MOCK_USER) as any;
+	const user = (session?.user || MOCK_USER) as unknown as CurrentUserDto;
 	const joinedDate = user.createdAt
 		? new Date(user.createdAt)
 		: new Date(MOCK_USER.createdAt);
@@ -51,7 +52,7 @@ export function ProfilePage() {
 	};
 
 	const handleListingPress = (id: string) => {
-		router.push(`/listings/${id}` as any);
+		router.push(`/dashboard/listings/${id}` as any);
 	};
 
 	return (
@@ -133,7 +134,7 @@ export function ProfilePage() {
 									color="primary"
 									size="sm"
 									className="flex-1 flex-row items-center gap-1.5 rounded-xl py-2.5"
-									onPress={() => router.push("/profile/edit" as any)}
+									onPress={() => router.push("/dashboard/profile/edit" as any)}
 								>
 									<Icon as={Edit} className="size-4" />
 									<Button.Label className="font-bold text-xs">

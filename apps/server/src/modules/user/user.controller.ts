@@ -1,3 +1,4 @@
+import type { CurrentUserDto } from "@free-on-the-porch/shared/schemas";
 import { UpdateProfileSchema } from "@free-on-the-porch/shared/schemas";
 import { Body, Controller, Get, Patch } from "@nestjs/common";
 import { ZodValidationPipe } from "../../common/pipes/zod.pipe";
@@ -10,7 +11,7 @@ export class UserController {
 	constructor(private readonly userService: UserService) {}
 
 	@Get("me")
-	async getMe(@Session() session: UserSession) {
+	async getMe(@Session() session: UserSession): Promise<CurrentUserDto | null> {
 		return session?.user;
 	}
 

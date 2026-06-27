@@ -1,3 +1,4 @@
+import { env } from "@free-on-the-porch/env/public";
 import * as Linking from "expo-linking";
 import { ArrowRightIcon, MailIcon, RefreshCwIcon } from "lucide-react-native";
 import { useState } from "react";
@@ -24,7 +25,7 @@ export function EmailVerificationView({
 		await authClient.sendVerificationEmail(
 			{
 				email,
-				callbackURL: "free-on-the-pouch://dashboard",
+				callbackURL: `${env.PUBLIC_SCHEME}://dashboard`,
 			},
 			{
 				onSuccess() {

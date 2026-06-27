@@ -1,7 +1,8 @@
 import { getInitials } from "@free-on-the-porch/shared/utils";
+import { useRouter } from "expo-router";
 import { LogOut, Settings, Tag, UserCircle } from "lucide-react-native";
 import type React from "react";
-import { isValidElement } from "react";
+import { isValidElement, useState } from "react";
 import { Pressable } from "react-native";
 import { Avatar } from "@/components/ui/avatar";
 import {
@@ -13,24 +14,54 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Separator } from "@/components/ui/separator";
 import { Text } from "@/components/ui/text";
+import { toast } from "@/components/ui/toast";
 import { View } from "@/components/ui/view";
-import { OnboardingSheet } from "@/features/auth/components/onboarding-sheet";
 import { authClient } from "@/lib/auth-client";
+import { useGlobalStore } from "@/store/global.store";
 
 type Item = { label: string; icon: Icon.Props["as"]; onPress?: () => void };
 
 export const UserMenu = () => {
 	const session = authClient.useSession();
+	const router = useRouter();
+	const setAuthSheetView = useGlobalStore((state) => state.setAuthSheetView);
+	const [isOpen, setIsOpen] = useState(false);
 
 	const user = session.data?.user;
 	const initials = getInitials(user?.name ?? "");
 
 	const items: Array<Item | React.ReactNode> = [
-		{ label: "My Profile", icon: UserCircle, onPress: () => {} },
-		{ label: "My Listings", icon: Tag, onPress: () => {} },
-		{ label: "Settings", icon: Settings, onPress: () => {} },
+		{
+			label: "My Profile",
+			icon: UserCircle,
+			onPress: () => router.push("/dashboard/profile"),
+		},
+		{
+			label: "My Listings",
+			icon: Tag,
+			onPress: () => router.push("/dashboard/listings"),
+		},
+		{
+			label: "Settings",
+			icon: Settings,
+			onPress: () => router.push("/settings"),
+		},
 		<Separator key="separator" className="my-3" />,
-		{ label: "Log out", icon: LogOut, onPress: () => {} },
+		{
+			label: "Log out",
+			icon: LogOut,
+			onPress: async () => {
+				const toastId = toast.loading("Logging out...");
+				try {
+					await authClient.signOut();
+					toast.success("Logged out successfully", { id: toastId });
+					router.replace("/login");
+				} catch (err) {
+					console.error("Log out failed:", err);
+					toast.error("Failed to log out");
+				}
+			},
+		},
 	];
 
 	const isMenuItem = (item: (typeof items)[0]): item is Item => {
@@ -46,14 +77,14 @@ export const UserMenu = () => {
 
 	if (!user) {
 		return (
-			<OnboardingSheet>
-				<Pressable>{userAvatar}</Pressable>
-			</OnboardingSheet>
+			<Pressable onPress={() => setAuthSheetView("login")}>
+				{userAvatar}
+			</Pressable>
 		);
 	}
 
 	return (
-		<BottomSheet>
+		<BottomSheet isOpen={isOpen} onOpenChange={setIsOpen}>
 			<BottomSheetTrigger>{userAvatar}</BottomSheetTrigger>
 			<BottomSheetContent>
 				<View className="mb-3 flex-row items-center gap-3">
@@ -80,7 +111,10 @@ export const UserMenu = () => {
 								appearance={"ghost"}
 								color={"neutral"}
 								className="justify-start"
-								onPress={item.onPress}
+								onPress={() => {
+									item.onPress?.();
+									setIsOpen(false);
+								}}
 							>
 								<Icon as={item.icon} className="" />
 								{item.label}

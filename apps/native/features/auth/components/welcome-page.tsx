@@ -1,5 +1,5 @@
 import porchImage from "@free-on-the-porch/shared/assets/images/porch.jpg";
-import { Link, Redirect } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import {
 	ArrowRightIcon,
 	HeartIcon,
@@ -21,15 +21,15 @@ import { useGlobalStore } from "@/store/global.store";
 export function WelcomePage() {
 	const isFirstLaunch = useGlobalStore((state) => state.isFirstLaunch);
 	const setIsFirstLaunch = useGlobalStore((state) => state.setIsFirstLaunch);
-
-	useEffect(() => {
-		setIsFirstLaunch(false);
-	}, [setIsFirstLaunch]);
+	const router = useRouter();
 
 	// Users are only meant to see this screen only once when the app is launched for the first time
-	if (!isFirstLaunch) {
-		return <Redirect href="/dashboard" />;
-	}
+	useEffect(() => {
+		if (!isFirstLaunch) {
+			router.replace("/dashboard/listings");
+		}
+		return () => setIsFirstLaunch(false);
+	}, [isFirstLaunch, setIsFirstLaunch, router.replace]);
 
 	return (
 		<ScrollView

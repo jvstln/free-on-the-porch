@@ -35,7 +35,7 @@ export class AuthGuard implements CanActivate {
 			});
 
 			if (!authSession) {
-				throw new UnauthorizedException();
+				throw new UnauthorizedException("Unauthorized. User not logged in");
 			}
 
 			request.session = authSession;

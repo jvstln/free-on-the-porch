@@ -1,9 +1,13 @@
-import type { UpdateProfileDto } from "@free-on-the-porch/shared/schemas";
+import type {
+	CurrentUserDto,
+	PublicUserDto,
+	UpdateProfileDto,
+} from "@free-on-the-porch/shared/schemas";
 import { api } from "@/lib/api";
 import { MOCK_USER } from "../mock/mock-data";
 
 export const usersService = {
-	async updateMe(data: UpdateProfileDto): Promise<any> {
+	async updateMe(data: UpdateProfileDto): Promise<CurrentUserDto> {
 		try {
 			const { data: response } = await api.patch("/users/me", data);
 			return response;
@@ -14,11 +18,11 @@ export const usersService = {
 			if (data.name !== undefined) MOCK_USER.name = data.name;
 			if (data.bio !== undefined) MOCK_USER.bio = data.bio ?? "";
 			if (data.image !== undefined) MOCK_USER.image = data.image;
-			return MOCK_USER;
+			return MOCK_USER as unknown as CurrentUserDto;
 		}
 	},
 
-	async getUser(id: string): Promise<any> {
+	async getUser(id: string): Promise<PublicUserDto> {
 		try {
 			const { data: response } = await api.get(`/users/${id}`);
 			return response;

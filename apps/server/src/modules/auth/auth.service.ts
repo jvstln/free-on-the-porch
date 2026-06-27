@@ -1,6 +1,5 @@
 import { expo } from "@better-auth/expo";
-import { env } from "@free-on-the-porch/env/server";
-import { constants } from "@free-on-the-porch/shared/constants";
+import { env } from "@free-on-the-porch/env/private";
 import { Injectable } from "@nestjs/common";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
@@ -21,7 +20,7 @@ export class AuthService {
 		private readonly mailService: MailService,
 	) {
 		this.auth = betterAuth({
-			appName: constants.APP_NAME,
+			appName: env.PUBLIC_APP_NAME,
 			database: drizzleAdapter(this.drizzle.db, {
 				provider: "pg",
 			}),
@@ -37,7 +36,7 @@ export class AuthService {
 					});
 					this.mailService.sendMail({
 						to: user.email,
-						subject: `Reset your password - ${constants.APP_NAME}`,
+						subject: `Reset your password - ${env.PUBLIC_APP_NAME}`,
 						html,
 						text,
 					});
@@ -53,7 +52,7 @@ export class AuthService {
 					});
 					this.mailService.sendMail({
 						to: user.email,
-						subject: `Verify your email - ${constants.APP_NAME}`,
+						subject: `Verify your email - ${env.PUBLIC_APP_NAME}`,
 						html,
 						text,
 					});
@@ -68,6 +67,7 @@ export class AuthService {
 					secure: true,
 					httpOnly: true,
 				},
+				disableCSRFCheck: env.NODE_ENV === "development",
 			},
 			plugins: [expo()],
 		});

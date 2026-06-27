@@ -14,7 +14,7 @@ import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { Spinner } from "@/components/ui/spinner";
 import { Text } from "@/components/ui/text";
-import { useToast } from "@/components/ui/toast";
+import { toast } from "@/components/ui/toast";
 import { View } from "@/components/ui/view";
 import { ListingCard } from "@/features/listings/components/listing-card";
 import { useNearbyListings } from "@/features/listings/hooks/use-listings";
@@ -32,23 +32,24 @@ type Props = {
 export function PublicProfilePage({ id }: Props) {
 	const router = useRouter();
 	const insets = useSafeAreaInsets();
-	const { toast } = useToast();
 
 	// Fetch user details
 	const { data: user, isLoading: isUserLoading, error } = useUserProfile(id);
 
 	// Fetch all nearby listings to filter this user's listings
 	const {
-		data: allListings = [],
+		data,
 		isLoading: isListingsLoading,
 		refetch,
 		isRefetching,
 	} = useNearbyListings({
 		lat: 40.7312,
 		lng: -74.2738, // default map coordinates
-		radiusKm: 50,
+		radiusMeters: 50,
 		limit: 100,
 	});
+
+	const allListings = data?.listings ?? [];
 
 	if (isUserLoading) {
 		return (
@@ -85,7 +86,7 @@ export function PublicProfilePage({ id }: Props) {
 	);
 
 	const handleListingPress = (listingId: string) => {
-		router.push(`/listings/${listingId}` as any);
+		router.push(`/dashboard/listings/${listingId}` as any);
 	};
 
 	// Start or continue messaging flow
@@ -98,7 +99,7 @@ export function PublicProfilePage({ id }: Props) {
 		);
 
 		if (existingThread) {
-			router.push(`/messages/${existingThread.id}` as any);
+			router.push(`/dashboard/messages/${existingThread.id}` as any);
 		} else {
 			// Generate new thread dynamically
 			const newThreadId = `thread-${Date.now()}`;
@@ -152,7 +153,7 @@ export function PublicProfilePage({ id }: Props) {
 			};
 			INITIAL_MESSAGES[newThreadId] = [];
 
-			router.push(`/messages/${newThreadId}` as any);
+			router.push(`/dashboard/messages/${newThreadId}` as any);
 		}
 	};
 
@@ -187,10 +188,7 @@ export function PublicProfilePage({ id }: Props) {
 					text: "Block",
 					style: "destructive",
 					onPress: () => {
-						toast.show({
-							variant: "success",
-							label: `${user.name} has been blocked.`,
-						});
+						toast.success(`${user.name} has been blocked.`);
 						router.back();
 					},
 				},
@@ -217,10 +215,9 @@ export function PublicProfilePage({ id }: Props) {
 	};
 
 	const submitReport = (reason: string) => {
-		toast.show({
-			variant: "success",
-			label: `Neighbor reported for: ${reason}. Our moderation team is reviewing it.`,
-		});
+		toast.success(
+			`Neighbor reported for: ${reason}. Our moderation team is reviewing it.`,
+		);
 	};
 
 	const joinedDate = user.createdAt ? new Date(user.createdAt) : new Date();

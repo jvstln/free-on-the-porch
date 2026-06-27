@@ -1,7 +1,12 @@
-import { env } from "@free-on-the-porch/env/native";
-import { registerSchema } from "@free-on-the-porch/shared/schemas";
+import { env } from "@free-on-the-porch/env/public";
+import { RegisterSchema } from "@free-on-the-porch/shared/schemas";
 import { revalidateLogic } from "@tanstack/react-form";
-import { ArrowRightIcon, LockIcon, MailIcon, UserIcon } from "lucide-react-native";
+import {
+	ArrowRightIcon,
+	LockIcon,
+	MailIcon,
+	UserIcon,
+} from "lucide-react-native";
 import { Button } from "@/components/ui/button";
 import { useAppForm } from "@/components/ui/form";
 import { Icon } from "@/components/ui/icon";
@@ -26,7 +31,7 @@ export function RegisterForm({ onRegister, onError }: RegisterFormProps) {
 		},
 		validationLogic: revalidateLogic(),
 		validators: {
-			onDynamic: registerSchema,
+			onDynamic: RegisterSchema,
 		},
 		onSubmit: async ({ value, formApi }) => {
 			await authClient.signUp.email(
@@ -34,7 +39,7 @@ export function RegisterForm({ onRegister, onError }: RegisterFormProps) {
 					name: value.name,
 					email: value.email,
 					password: value.password,
-					callbackURL: "free-on-the-pouch://dashboard",
+					callbackURL: `${env.PUBLIC_SCHEME}://dashboard`,
 				},
 				{
 					onError(error) {

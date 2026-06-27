@@ -1,3 +1,4 @@
+import { env } from "@free-on-the-porch/env/public";
 import { emailSchema } from "@free-on-the-porch/shared/schemas";
 import { revalidateLogic } from "@tanstack/react-form";
 import * as Linking from "expo-linking";
@@ -38,7 +39,7 @@ export function ForgotPasswordPage() {
 			await authClient.requestPasswordReset(
 				{
 					email: value.email,
-					redirectTo: "free-on-the-pouch://reset-password",
+					redirectTo: `${env.PUBLIC_SCHEME}://reset-password`,
 				},
 				{
 					onSuccess() {
@@ -61,7 +62,7 @@ export function ForgotPasswordPage() {
 		await authClient.requestPasswordReset(
 			{
 				email,
-				redirectTo: "free-on-the-pouch://reset-password",
+				redirectTo: `${env.PUBLIC_SCHEME}://reset-password`,
 			},
 			{
 				onSuccess() {

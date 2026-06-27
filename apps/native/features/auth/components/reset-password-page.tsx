@@ -1,7 +1,12 @@
-import { passwordSchema } from "@free-on-the-porch/shared/schemas";
+import { PasswordSchema } from "@free-on-the-porch/shared/schemas";
 import { revalidateLogic } from "@tanstack/react-form";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { AlertTriangle, ArrowLeft, CheckCircle2, Key } from "lucide-react-native";
+import {
+	AlertTriangle,
+	ArrowLeft,
+	CheckCircle2,
+	Key,
+} from "lucide-react-native";
 import { useState } from "react";
 import z from "zod";
 import { Button } from "@/components/ui/button";
@@ -15,7 +20,7 @@ import { OnboardingLayout } from "./onboarding-layout";
 
 const resetFormSchema = z
 	.object({
-		password: passwordSchema,
+		password: PasswordSchema,
 		confirmPassword: z.string().min(1, "Please confirm your password"),
 	})
 	.refine((data) => data.password === data.confirmPassword, {

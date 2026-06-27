@@ -1,3 +1,4 @@
+import type { CurrentUserDto } from "@free-on-the-porch/shared/schemas";
 import { revalidateLogic } from "@tanstack/react-form";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Camera, Check } from "lucide-react-native";
@@ -10,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { useAppForm } from "@/components/ui/form";
 import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
-import { useToast } from "@/components/ui/toast";
+import { toast } from "@/components/ui/toast";
 import { KeyboardAvoidingView, ScrollView, View } from "@/components/ui/view";
 import { MOCK_USER } from "@/features/mock/mock-data";
 import { authClient } from "@/lib/auth-client";
@@ -31,11 +32,10 @@ const MOCK_PORTRAIT =
 export function EditProfilePage() {
 	const router = useRouter();
 	const insets = useSafeAreaInsets();
-	const { toast } = useToast();
 	const updateMutation = useUpdateProfile();
 	const { data: session } = authClient.useSession();
 
-	const user = (session?.user || MOCK_USER) as any;
+	const user = (session?.user || MOCK_USER) as unknown as CurrentUserDto;
 
 	const [image, setImage] = useState<string>(user.image || "");
 
@@ -43,10 +43,7 @@ export function EditProfilePage() {
 		// Toggle image simulator
 		const nextImage = image === user.image ? MOCK_PORTRAIT : user.image || "";
 		setImage(nextImage);
-		toast.show({
-			variant: "success",
-			label: "Simulated profile photo selected!",
-		});
+		toast.success("Simulated profile photo selected!");
 	};
 
 	const form = useAppForm({
@@ -66,16 +63,10 @@ export function EditProfilePage() {
 					image: image || undefined,
 				});
 
-				toast.show({
-					variant: "success",
-					label: "Profile updated successfully!",
-				});
+				toast.success("Profile updated successfully!");
 				router.back();
 			} catch (_err) {
-				toast.show({
-					variant: "danger",
-					label: "Failed to save profile changes.",
-				});
+				toast.error("Failed to save profile changes.");
 			}
 		},
 	});

@@ -11,30 +11,25 @@ import {
 import { LinkButton } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import { View } from "@/components/ui/view";
+import { useGlobalStore } from "@/store/global.store";
 import { EmailVerificationView } from "./email-verification-view";
 import { LoginForm } from "./login-form";
 import { RegisterForm } from "./register-form";
 
-export const OnboardingSheet = ({
-	isOpen,
-	onOpenChange,
-	isDefaultOpen,
+export const AuthSheetProvider = ({
 	children,
-}: Pick<
-	BottomSheet.BottomSheetProps,
-	"isOpen" | "onOpenChange" | "isDefaultOpen" | "children"
->) => {
-	const [view, setView] = useState<"login" | "register" | "verify">("login");
+}: {
+	children?: React.ReactNode;
+}) => {
+	const view = useGlobalStore((state) => state.authSheetView);
+	const setView = useGlobalStore((state) => state.setAuthSheetView);
+
 	const [email, setEmail] = useState("");
 
 	const showHeaderAndFooter = view !== "verify";
 
 	return (
-		<BottomSheet
-			isDefaultOpen={isDefaultOpen}
-			isOpen={isOpen}
-			onOpenChange={onOpenChange}
-		>
+		<BottomSheet isOpen={!!view} onOpenChange={() => setView(null)}>
 			{children && <BottomSheetTrigger asChild>{children}</BottomSheetTrigger>}
 			<BottomSheetContent
 				snapPoints={["90%"]}
@@ -70,6 +65,7 @@ export const OnboardingSheet = ({
 								setEmail(unverifiedEmail);
 								setView("verify");
 							}}
+							onLogin={() => setView(null)}
 						/>
 					)}
 
@@ -89,7 +85,9 @@ export const OnboardingSheet = ({
 							</Text>
 							<LinkButton
 								size="sm"
-								onPress={() => setView(view === "register" ? "login" : "register")}
+								onPress={() =>
+									setView(view === "register" ? "login" : "register")
+								}
 							>
 								{view === "register" ? "Log in here" : "Join the community"}
 							</LinkButton>

@@ -24,14 +24,13 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Text } from "@/components/ui/text";
-import { useToast } from "@/components/ui/toast";
+import { toast } from "@/components/ui/toast";
 import { View } from "@/components/ui/view";
 import { authClient } from "@/lib/auth-client";
 
 export function SettingsPage() {
 	const router = useRouter();
 	const insets = useSafeAreaInsets();
-	const { toast } = useToast();
 
 	// Local Settings states (simulation)
 	const [nearbyNotifications, setNearbyNotifications] = useState(true);
@@ -47,10 +46,7 @@ export function SettingsPage() {
 	const handleSignOut = async () => {
 		try {
 			await authClient.signOut();
-			toast.show({
-				variant: "success",
-				label: "Signed out successfully.",
-			});
+			toast.success("Signed out successfully.");
 			router.replace("/login");
 		} catch (err) {
 			console.error("[Settings] Failed to sign out:", err);
@@ -71,16 +67,10 @@ export function SettingsPage() {
 						try {
 							// Simulate account deletion
 							await authClient.signOut();
-							toast.show({
-								variant: "success",
-								label: "Your account has been deleted.",
-							});
+							toast.success("Your account has been deleted.");
 							router.replace("/login");
 						} catch (_err) {
-							toast.show({
-								variant: "danger",
-								label: "Failed to delete account.",
-							});
+							toast.error("Failed to delete account.");
 						}
 					},
 				},
@@ -90,10 +80,7 @@ export function SettingsPage() {
 
 	const handleUnblock = (id: string, name: string) => {
 		setBlockedUsers((prev) => prev.filter((user) => user.id !== id));
-		toast.show({
-			variant: "success",
-			label: `${name} has been unblocked.`,
-		});
+		toast.success(`${name} has been unblocked.`);
 	};
 
 	return (
