@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Spinner } from "@/components/ui/spinner";
 import { Text } from "@/components/ui/text";
-import { useToast } from "@/components/ui/toast";
+import { toast } from "@/components/ui/toast";
 import { View } from "@/components/ui/view";
 import { authClient } from "@/lib/auth-client";
 import { useListingDetail, useUpdateListing } from "../hooks/use-listings";
@@ -19,7 +19,6 @@ type Props = {
 export function EditListingPage({ id }: Props) {
 	const router = useRouter();
 	const insets = useSafeAreaInsets();
-	const { toast } = useToast();
 	const { data: session } = authClient.useSession();
 
 	const { data: listing, isLoading, error } = useListingDetail(id);
@@ -80,17 +79,11 @@ export function EditListingPage({ id }: Props) {
 				status: values.status,
 			});
 
-			toast.show({
-				variant: "success",
-				label: "Listing updated successfully!",
-			});
+			toast.success("Listing updated successfully!");
 
 			router.back();
 		} catch (_err) {
-			toast.show({
-				variant: "danger",
-				label: "Failed to update listing. Please try again.",
-			});
+			toast.error("Failed to update listing. Please try again.");
 		}
 	};
 

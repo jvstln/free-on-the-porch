@@ -1,3 +1,7 @@
+import type {
+	ListingDto,
+	NearbyListingsQueryDto,
+} from "@free-on-the-porch/shared/schemas";
 import { useRouter } from "expo-router";
 import { Compass, Tag } from "lucide-react-native";
 import { useState } from "react";
@@ -7,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Image } from "@/components/ui/image";
 import { SearchInput } from "@/components/ui/input";
+import { QueryState } from "@/components/ui/query-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { ScrollView, View } from "@/components/ui/view";
@@ -14,8 +19,6 @@ import { UserMenu } from "@/features/users/components/user-menu";
 import { resolveColorAlias } from "@/lib/colors.util";
 import { cn } from "@/lib/utils";
 import {
-	CATEGORIES,
-	CATEGORY_MAP,
 	CONDITION_LABEL,
 	DEFAULT_COORDS,
 	DEFAULT_LOCATION,
@@ -26,169 +29,19 @@ import {
 	FeaturedCard,
 	FeaturedCardSkeleton,
 	ListingCard,
-	type ListingCardItem,
 	RecentListRow,
 	RecentListRowSkeleton,
 } from "./listing-card";
+import {
+	CategoryFilter,
+	RadiusFilter,
+	TABS,
+	type Tab,
+	TabFilter,
+} from "./listing-filters";
 import { MapView, NativeMap, WebMapFallback } from "./listings-map";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-type Tab = "Feed" | "Map";
-const TABS: Tab[] = ["Feed", "Map"];
-
-const RADIUS_OPTIONS = [1, 5, 15, 25];
-
-// ─── Location Banner ──────────────────────────────────────────────────────────
-
-type LocationBannerProps = {
-	location: string;
-	activeTab: Tab;
-	onTabChange: (tab: Tab) => void;
-};
-
-function LocationBanner({
-	location,
-	activeTab,
-	onTabChange,
-}: LocationBannerProps) {
-	return (
-		<View className="mb-4 flex-row items-center justify-between">
-			<View className="flex-row items-center gap-1.5">
-				<Icon as={Compass} className="size-4 text-muted-foreground" />
-				<Text type="body-sm" className="font-medium text-muted-foreground">
-					Nearby:{" "}
-					<Text type="body-sm" className="font-bold text-primary">
-						{location}
-					</Text>
-				</Text>
-			</View>
-
-			<View className="flex-row rounded-full bg-[#efeee9] p-0.5">
-				{TABS.map((tab) => {
-					const isActive = activeTab === tab;
-					return (
-						<Pressable
-							key={tab}
-							onPress={() => onTabChange(tab)}
-							className={cn(
-								"rounded-full px-4 py-1.5",
-								isActive ? "bg-primary" : "bg-transparent",
-							)}
-						>
-							<Text
-								type="body-xs"
-								className={cn(
-									"font-bold",
-									isActive
-										? "text-primary-foreground"
-										: "text-muted-foreground",
-								)}
-							>
-								{tab}
-							</Text>
-						</Pressable>
-					);
-				})}
-			</View>
-		</View>
-	);
-}
-
-// ─── Category Pills ───────────────────────────────────────────────────────────
-
-type CategoryPillsProps = {
-	categories: readonly string[];
-	activeCategory: string;
-	onCategoryChange: (category: string) => void;
-	className?: string;
-};
-
-function CategoryPills({
-	categories,
-	activeCategory,
-	onCategoryChange,
-	className,
-}: CategoryPillsProps) {
-	return (
-		<ScrollView
-			horizontal
-			showsHorizontalScrollIndicator={false}
-			className={cn("-mx-4 mb-4 flex-row", className)}
-			contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}
-		>
-			{categories.map((category) => {
-				const isActive = activeCategory === category;
-				return (
-					<Button
-						key={category}
-						onPress={() => onCategoryChange(category)}
-						color={isActive ? "primary" : "neutral"}
-						appearance={"soft"}
-						className="rounded-full"
-						size="sm"
-					>
-						{category}
-					</Button>
-				);
-			})}
-		</ScrollView>
-	);
-}
-
-// ─── Radius Selector ──────────────────────────────────────────────────────────
-
-function RadiusSelector({
-	selected,
-	onSelect,
-}: {
-	selected: number;
-	onSelect: (radius: number) => void;
-}) {
-	return (
-		<View className="mb-4 flex-row items-center gap-2">
-			<Text
-				type="body-xs"
-				className="font-bold text-muted-foreground uppercase tracking-wider"
-			>
-				Radius:
-			</Text>
-			<ScrollView
-				horizontal
-				showsHorizontalScrollIndicator={false}
-				contentContainerStyle={{ gap: 6 }}
-			>
-				{RADIUS_OPTIONS.map((rad) => {
-					const isActive = selected === rad;
-					return (
-						<Pressable
-							key={rad}
-							onPress={() => onSelect(rad)}
-							className={cn(
-								"rounded-full border px-3 py-1 transition-all duration-200",
-								isActive
-									? "border-primary bg-primary"
-									: "border-border bg-card",
-							)}
-						>
-							<Text
-								type="body-xs"
-								className={cn(
-									"font-bold",
-									isActive
-										? "text-primary-foreground"
-										: "text-muted-foreground",
-								)}
-							>
-								{rad} km
-							</Text>
-						</Pressable>
-					);
-				})}
-			</ScrollView>
-		</View>
-	);
-}
 
 // ─── Skeleton Loading State Page ──────────────────────────────────────────────
 
@@ -201,18 +54,18 @@ function LoadingState() {
 			{/* Bento grid loading skeleton */}
 			<View className="gap-4">
 				<View className="flex-row gap-4">
-					<Skeleton className="aspect-[3/4] flex-1" />
+					<Skeleton className="aspect-3/4 flex-1" />
 					<View className="flex-1 gap-4">
-						<Skeleton className="aspect-[16/10]" />
-						<Skeleton className="aspect-[16/10]" />
+						<Skeleton className="aspect-16/10" />
+						<Skeleton className="aspect-16/10" />
 					</View>
 				</View>
 				<View className="flex-row gap-4">
 					<View className="flex-1 gap-4">
-						<Skeleton className="aspect-[16/10]" />
-						<Skeleton className="aspect-[16/10]" />
+						<Skeleton className="aspect-16/10" />
+						<Skeleton className="aspect-16/10" />
 					</View>
-					<Skeleton className="aspect-[3/4] flex-1" />
+					<Skeleton className="aspect-3/4 flex-1" />
 				</View>
 			</View>
 
@@ -226,28 +79,13 @@ function LoadingState() {
 	);
 }
 
-function EmptyState() {
-	return (
-		<View className="flex-1 items-center justify-center px-6 py-20">
-			<Icon as={Tag} className="mb-3 size-12 text-muted-foreground" />
-			<Text type="h4" className="mb-2 font-bold text-foreground">
-				Nothing on the porch nearby
-			</Text>
-			<Text type="body-sm" className="text-center text-muted-foreground">
-				Be the first to post a free item in this category or expand your search
-				radius!
-			</Text>
-		</View>
-	);
-}
-
 // ─── Bento Grid Card Layout ───────────────────────────────────────────────────
 
 function BentoGrid({
 	items,
 	onPress,
 }: {
-	items: ListingCardItem[];
+	items: ListingDto[];
 	onPress: (id: string) => void;
 }) {
 	return (
@@ -314,7 +152,7 @@ function BentoGrid({
 }
 
 type RecentSectionProps = {
-	items: ListingCardItem[];
+	items: ListingDto[];
 	onPress: (id: string) => void;
 };
 
@@ -340,31 +178,33 @@ function RecentSection({ items, onPress }: RecentSectionProps) {
 export const ListingsPage = () => {
 	const router = useRouter();
 	const [activeTab, setActiveTab] = useState<Tab>("Feed");
-	const [activeCategory, setActiveCategory] = useState<string>("All Items");
-	const [radiusKm, setRadiusKm] = useState<number>(15);
-	const [selectedListing, setSelectedListing] =
-		useState<ListingCardItem | null>(null);
+	const [filters, setFilters] = useState<
+		Pick<NearbyListingsQueryDto, "category" | "radiusMeters">
+	>({ category: "", radiusMeters: "closest" });
+	const [selectedListing, setSelectedListing] = useState<ListingDto | null>(
+		null,
+	);
 
-	const mappedCategory = CATEGORY_MAP[activeCategory];
-
-	// Query nearby listings
-	const {
-		data: apiListings = [],
-		isLoading,
-		isRefetching,
-		refetch,
-	} = useNearbyListings({
+	// Query nearby listings with cursor-based infinite scroll
+	const nearbyListingsQuery = useNearbyListings({
 		lat: DEFAULT_COORDS.lat,
 		lng: DEFAULT_COORDS.lng,
-		radiusKm,
-		category: mappedCategory,
-		limit: 30,
+		...filters,
 	});
 
-	const listings = apiListings;
+	const {
+		data,
+		isRefetching,
+		refetch,
+		fetchNextPage,
+		hasNextPage,
+		isFetchingNextPage,
+	} = nearbyListingsQuery;
+
+	const listings = data?.listings ?? [];
 
 	const handleListingPress = (id: string) => {
-		router.push(`/listings/${id}` as any);
+		router.push(`/dashboard/listings/${id}`);
 	};
 
 	const [featuredItem, ...rest] = listings;
@@ -374,7 +214,7 @@ export const ListingsPage = () => {
 	return (
 		<View className="flex-1 bg-background">
 			{/* Listings header */}
-			<View className="flex-row items-center gap-2 border-border border-b bg-card px-3 py-2">
+			<View className="flex-row items-center gap-2 border-border border-b px-3 py-2">
 				<SearchInput className="grow" />
 				<UserMenu />
 			</View>
@@ -383,49 +223,109 @@ export const ListingsPage = () => {
 				{activeTab === "Feed" ? (
 					<ScrollView
 						className="flex-1 px-4"
-						showsVerticalScrollIndicator={false}
 						contentContainerClassName="pt-3 pb-8"
 						refreshControl={
 							<RefreshControl refreshing={isRefetching} onRefresh={refetch} />
 						}
 					>
-						<LocationBanner
-							location={DEFAULT_LOCATION}
-							activeTab={activeTab}
-							onTabChange={setActiveTab}
+						<View className="mb-4 flex-row items-center justify-between">
+							<View className="flex-row items-center gap-1.5">
+								<Icon as={Compass} className="size-4 text-muted-foreground" />
+								<Text
+									type="body-sm"
+									className="font-medium text-muted-foreground"
+								>
+									Nearby:{" "}
+									<Text type="body-sm" className="font-bold text-primary">
+										{DEFAULT_LOCATION}
+									</Text>
+								</Text>
+							</View>
+
+							<TabFilter value={activeTab} onValueChange={setActiveTab} />
+						</View>
+
+						<CategoryFilter
+							value={filters.category}
+							onValueChange={(category) => {
+								setFilters((f) => ({
+									...f,
+									category,
+								}));
+							}}
+							className="-mx-4 mb-4"
 						/>
 
-						<CategoryPills
-							categories={CATEGORIES}
-							activeCategory={activeCategory}
-							onCategoryChange={setActiveCategory}
-						/>
+						<View className="mb-4 flex-row items-center gap-2">
+							<Text
+								type="body-xs"
+								className="font-bold text-muted-foreground uppercase tracking-wider"
+							>
+								Radius:
+							</Text>
+							<RadiusFilter
+								value={filters.radiusMeters}
+								onValueChange={(radius) => {
+									setFilters((f) => ({
+										...f,
+										radiusMeters: radius,
+									}));
+								}}
+							/>
+						</View>
 
-						<RadiusSelector selected={radiusKm} onSelect={setRadiusKm} />
-
-						{isLoading ? (
-							<LoadingState />
-						) : listings.length === 0 ? (
-							<EmptyState />
-						) : (
-							<>
-								{featuredItem && (
-									<FeaturedCard
-										item={featuredItem}
-										onPress={handleListingPress}
-									/>
-								)}
-
-								{bentoItems.length > 0 && (
-									<BentoGrid items={bentoItems} onPress={handleListingPress} />
-								)}
-
-								<RecentSection
-									items={recentItems}
+						<QueryState
+							query={nearbyListingsQuery}
+							getIsLoading={(q) => (q.isLoading ? <LoadingState /> : false)}
+							getIsEmpty={(q) => {
+								return q.data?.listings?.length === 0
+									? {
+											title: "Nothing on the porch nearby",
+											description:
+												"Be the first to post a free item in this category or expand your search radius!",
+											cta: (
+												<Button
+													onPress={() => {
+														setFilters({
+															category: "",
+															radiusMeters: "closest",
+														});
+													}}
+													appearance="soft"
+													color="primary"
+												>
+													Clear Filters
+												</Button>
+											),
+										}
+									: false;
+							}}
+						>
+							{featuredItem && (
+								<FeaturedCard
+									item={featuredItem}
 									onPress={handleListingPress}
 								/>
-							</>
-						)}
+							)}
+							{bentoItems.length > 0 && (
+								<BentoGrid items={bentoItems} onPress={handleListingPress} />
+							)}
+							<RecentSection items={recentItems} onPress={handleListingPress} />
+							{hasNextPage && (
+								<Button
+									color="neutral"
+									appearance="soft"
+									size="sm"
+									className="mb-4 self-center"
+									onPress={() => fetchNextPage()}
+									disabled={isFetchingNextPage}
+								>
+									<Button.Label>
+										{isFetchingNextPage ? "Loading…" : "Load more"}
+									</Button.Label>
+								</Button>
+							)}
+						</QueryState>
 					</ScrollView>
 				) : (
 					<View className="relative flex-1">
@@ -445,10 +345,14 @@ export const ListingsPage = () => {
 
 						{/* Overlaid category chips at the top */}
 						<View className="absolute top-4 right-0 left-0">
-							<CategoryPills
-								categories={CATEGORIES}
-								activeCategory={activeCategory}
-								onCategoryChange={setActiveCategory}
+							<CategoryFilter
+								value={filters.category}
+								onValueChange={(category) =>
+									setFilters((f) => ({
+										...f,
+										category,
+									}))
+								}
 							/>
 						</View>
 
@@ -538,7 +442,7 @@ export const ListingsPage = () => {
 										className="flex-1 py-2"
 										onPress={() => setSelectedListing(null)}
 									>
-										<Button.Label>Close</Button.Label>
+										Close
 									</Button>
 									<Button
 										color="primary"
@@ -547,7 +451,7 @@ export const ListingsPage = () => {
 										className="flex-1 py-2"
 										onPress={() => handleListingPress(selectedListing.id)}
 									>
-										<Button.Label>View Details</Button.Label>
+										View Details
 									</Button>
 								</View>
 							</View>

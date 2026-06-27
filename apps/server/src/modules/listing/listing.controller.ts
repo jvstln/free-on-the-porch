@@ -1,8 +1,8 @@
 import {
 	type CreateListingDto,
 	CreateListingSchema,
-	type NearbyQueryDto,
-	NearbyQuerySchema,
+	type NearbyListingsQueryOutputDto,
+	NearbyListingsQuerySchema,
 	type UpdateListingDto,
 	UpdateListingSchema,
 } from "@free-on-the-porch/shared/schemas";
@@ -18,6 +18,7 @@ import {
 	Session,
 } from "@nestjs/common";
 import { ZodValidationPipe } from "../../common/pipes/zod.pipe";
+import { Public } from "../auth/auth.decorator";
 import type { UserSession } from "../auth/auth.type";
 import { ListingService } from "./listing.service";
 
@@ -35,8 +36,10 @@ export class ListingController {
 	}
 
 	@Get("nearby")
+	@Public()
 	findNearby(
-		@Query(new ZodValidationPipe(NearbyQuerySchema)) query: NearbyQueryDto,
+		@Query(new ZodValidationPipe(NearbyListingsQuerySchema))
+		query: NearbyListingsQueryOutputDto,
 	) {
 		return this.listingService.findNearby(query);
 	}
@@ -47,8 +50,14 @@ export class ListingController {
 	}
 
 	@Get(":id")
+	@Public()
 	findOne(@Param("id") id: string) {
-		return this.listingService.findOne(id);
+		return this.listingService.findOne({ id });
+	}
+
+	@Post(":id/claim")
+	claim(@Param("id") id: string, @Session() session: UserSession) {
+		return this.listingService.claim(id, session.user.id);
 	}
 
 	@Patch(":id")

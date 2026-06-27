@@ -20,7 +20,7 @@ export function MyListingsPage() {
 	} = useMyListings();
 
 	const handleListingPress = (id: string) => {
-		router.push(`/listings/${id}` as any);
+		router.push(`/dashboard/listings/${id}` as any);
 	};
 
 	return (
@@ -43,7 +43,7 @@ export function MyListingsPage() {
 						variant="primary"
 						size="sm"
 						className="flex-row items-center gap-1 rounded-full bg-[#316342] px-3 py-2"
-						onPress={() => router.push("/dashboard/post")}
+						onPress={() => router.push("/dashboard/listings/new")}
 					>
 						<Icon as={Plus} className="size-4 text-white" />
 						<Button.Label className="font-bold text-white text-xs">
@@ -74,7 +74,7 @@ export function MyListingsPage() {
 						<Button
 							variant="primary"
 							className="rounded-xl bg-[#316342] px-6 py-3"
-							onPress={() => router.push("/dashboard/post")}
+							onPress={() => router.push("/dashboard/listings/new")}
 						>
 							<Button.Label className="font-bold text-white">
 								Post your first item

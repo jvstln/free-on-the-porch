@@ -1,57 +1,109 @@
 import { z } from "zod";
+import type {
+	ListingCategoryDto,
+	ListingConditionDto,
+	ListingStatusDto,
+} from "./enum.schema";
+import {
+	ListingCategorySchema,
+	ListingConditionSchema,
+	ListingStatusSchema,
+} from "./enum.schema";
+import { PaginationQuerySchema } from "./generic.schema";
+import type { PublicUserDto } from "./user.schema";
 
-export const ListingCondition = z.enum([
-	"NEW",
-	"LIKE_NEW",
-	"GOOD",
-	"FAIR",
-	"WORN",
-]);
-export const ListingStatus = z.enum([
-	"AVAILABLE",
-	"PICKED_UP",
-	"EXPIRED",
-	"REMOVED",
-]);
-export const ListingCategory = z.enum([
-	"FURNITURE",
-	"ELECTRONICS",
-	"CLOTHING",
-	"BOOKS",
-	"TOYS",
-	"KITCHEN",
-	"SPORTS",
-	"TOOLS",
-	"GARDEN",
-	"OTHER",
-]);
+// ─── Request schemas ──────────────────────────────────────────────────────────
 
 export const CreateListingSchema = z.object({
 	title: z.string().min(3).max(80),
 	description: z.string().max(500).optional(),
-	category: ListingCategory,
-	condition: ListingCondition,
+	category: ListingCategorySchema,
+	condition: ListingConditionSchema,
 	lat: z.number().min(-90).max(90),
 	lng: z.number().min(-180).max(180),
-	address: z.string().max(200).optional(), // human-readable, optional
+	address: z.string().max(200).optional(),
 });
 
 export const UpdateListingSchema = CreateListingSchema.partial().extend({
-	status: ListingStatus.optional(),
+	status: ListingStatusSchema.optional(),
 });
 
-export const NearbyQuerySchema = z.object({
+export const NearbyListingsQuerySchema = z.object({
 	lat: z.coerce.number(),
 	lng: z.coerce.number(),
-	radiusKm: z.coerce.number().min(0.5).max(50).default(10),
-	category: ListingCategory.optional(),
-	cursor: z.string().optional(), // for pagination
-	limit: z.coerce.number().min(1).max(50).default(20),
+	radiusMeters: z
+		.union([z.enum(["closest"]), z.coerce.number<number>().min(0)])
+		.default("closest"),
+	category: z
+		.union([ListingCategorySchema, z.literal("")])
+		.transform((val) => val || undefined)
+		.optional(),
+	cursor: z.string().optional(),
+	limit: PaginationQuerySchema.shape.limit,
 });
+
+// ─── Inferred request DTOs ────────────────────────────────────────────────────
 
 export type CreateListingDto = z.infer<typeof CreateListingSchema>;
 export type UpdateListingDto = z.infer<typeof UpdateListingSchema>;
-export type NearbyQueryDto = z.infer<typeof NearbyQuerySchema>;
-export type ListingConditionType = z.infer<typeof ListingCondition>;
-export type ListingStatusType = z.infer<typeof ListingStatus>;
-export type ListingCategoryType = z.infer<typeof ListingCategory>;
+export type NearbyListingsQueryDto = z.input<typeof NearbyListingsQuerySchema>;
+export type NearbyListingsQueryOutputDto = z.infer<
+	typeof NearbyListingsQuerySchema
+>;
+
+// ─── Shared sub-types ─────────────────────────────────────────────────────────
+
+export interface ListingImageDto {
+	url: string;
+}
+
+export interface ListingCommentDto {
+	id: string;
+	body: string;
+	createdAt: string | Date;
+	updatedAt: string | Date;
+	userId: string;
+	listingId: string;
+	user: PublicUserDto | null;
+}
+
+// ─── Response DTOs ────────────────────────────────────────────────────────────
+
+/**
+ * Minimal listing shape used in card/list views (feed, my-listings, map pins).
+ * Returned by GET /listings/nearby and GET /listings/mine.
+ */
+export interface ListingDto {
+	id: string;
+	title: string;
+	description?: string | null;
+	category: ListingCategoryDto;
+	condition: ListingConditionDto;
+	status: ListingStatusDto;
+	address?: string | null;
+	distanceMeters?: number | null;
+	images: ListingImageDto[];
+	user: PublicUserDto | null;
+	createdAt: string | Date;
+	userId: string;
+	location?: { lat: number; lng: number } | null;
+	claimedByUserId?: string | null;
+}
+
+export interface ListingClaimRequestDto {
+	id: string;
+	listingId: string;
+	userId: string;
+	createdAt: string | Date;
+	updatedAt: string | Date;
+	user: PublicUserDto;
+}
+
+/**
+ * Full listing shape used in detail view.
+ * Returned by GET /listings/:id — extends ListingDto with comments.
+ */
+export interface ListingDetailDto extends ListingDto {
+	comments: ListingCommentDto[];
+	pendingClaims: ListingClaimRequestDto[];
+}

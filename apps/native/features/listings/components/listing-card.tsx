@@ -1,8 +1,4 @@
-import type {
-	ListingCategoryType,
-	ListingConditionType,
-	ListingStatusType,
-} from "@free-on-the-porch/shared/schemas";
+import type { ListingDto } from "@free-on-the-porch/shared/schemas";
 import { ChevronRight, MapPin, Tag } from "lucide-react-native";
 import { Pressable } from "react-native";
 import { Badge } from "@/components/ui/badge";
@@ -20,27 +16,11 @@ import {
 	formatDistance,
 } from "../constants/listings.constants";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-export type ListingCardItem = {
-	id: string;
-	title: string;
-	category: ListingCategoryType;
-	condition: ListingConditionType;
-	status: ListingStatusType;
-	address?: string | null;
-	distanceMeters?: number | null;
-	images: { url: string }[];
-	user: { name: string; image?: string | null };
-	createdAt: string;
-	userId?: string;
-};
-
 // ─── Variants ─────────────────────────────────────────────────────────────────
 
 // 1. Standard Listing Card
 type ListingCardProps = {
-	item: ListingCardItem;
+	item: ListingDto;
 	onPress: (id: string) => void;
 	className?: string;
 	aspectRatioClassName?: string;
@@ -61,7 +41,7 @@ export function ListingCard({
 			className={cn("active:opacity-80", className)}
 		>
 			<View className="overflow-hidden rounded-2xl bg-card shadow-black/10 shadow-sm">
-				<View className={cn("aspect-[4/3] bg-muted", aspectRatioClassName)}>
+				<View className={cn("aspect-4/3 bg-muted", aspectRatioClassName)}>
 					{thumb ? (
 						<Image
 							source={{ uri: thumb }}
@@ -125,7 +105,7 @@ export function ListingCard({
 
 // 2. Featured Listing Card
 type FeaturedCardProps = {
-	item: ListingCardItem;
+	item: ListingDto;
 	onPress: (id: string) => void;
 };
 
@@ -185,7 +165,7 @@ export function FeaturedCard({ item, onPress }: FeaturedCardProps) {
 
 // 3. Recent Listing List Row
 type RecentListRowProps = {
-	item: ListingCardItem;
+	item: ListingDto;
 	onPress: (id: string) => void;
 };
 
@@ -240,7 +220,7 @@ export function ListingCardSkeleton({ className }: { className?: string }) {
 				className,
 			)}
 		>
-			<Skeleton className="aspect-[4/3] w-full" />
+			<Skeleton className="aspect-4/3 w-full" />
 			<View className="gap-2 px-3 pt-2.5 pb-3">
 				<Skeleton className="h-4 w-3/4" />
 				<View className="flex-row items-center justify-between">

@@ -1,4 +1,15 @@
+import { ListingStatusSchema } from "@free-on-the-porch/shared/schemas";
 import {
+	and,
+	inArray,
+	isNotNull,
+	isNull,
+	notInArray,
+	or,
+	sql,
+} from "drizzle-orm";
+import {
+	check,
 	customType,
 	index,
 	integer,
@@ -78,16 +89,53 @@ export const listing = pgTable(
 		status: listingStatusEnum().default("AVAILABLE").notNull(),
 		location: geographyPoint().notNull(),
 		address: varchar({ length: 200 }),
-		expiresAt: timestamp({ mode: "date" }).notNull(),
+		expiresAt: timestamp().notNull(),
 		userId: text()
 			.notNull()
 			.references(() => user.id, { onDelete: "cascade" }),
+		claimedByUserId: text().references(() => user.id),
 		...timestamps,
 	},
 	(table) => [
+		// If claimed by a user, status must be PICKED_UP or RESERVED.
+		// If not claimed, status cannot be PICKED_UP or RESERVED.
+		check(
+			"status_claimed_by_user_id_check",
+			or(
+				and(
+					inArray(table.status, [
+						ListingStatusSchema.enum.PICKED_UP,
+						ListingStatusSchema.enum.RESERVED,
+					]),
+					isNotNull(table.claimedByUserId),
+				),
+				and(
+					notInArray(table.status, [
+						ListingStatusSchema.enum.PICKED_UP,
+						ListingStatusSchema.enum.RESERVED,
+					]),
+					isNull(table.claimedByUserId),
+				),
+			) ?? sql`false`,
+		),
 		index("listing_status_expiresAt_idx").on(table.status, table.expiresAt),
+		index("listing_user_idx").on(table.userId),
+		index("listing_category_idx").on(table.category),
 	],
 );
+
+export const listingClaimRequest = pgTable("listing_claim_request", {
+	id: text()
+		.primaryKey()
+		.$defaultFn(() => crypto.randomUUID()),
+	listingId: text()
+		.notNull()
+		.references(() => listing.id, { onDelete: "cascade" }),
+	userId: text()
+		.notNull()
+		.references(() => user.id, { onDelete: "cascade" }),
+	...timestamps,
+});
 
 export const listingImage = pgTable("listing_image", {
 	id: text()

@@ -1,3 +1,4 @@
+import type { ListingDto } from "@free-on-the-porch/shared/schemas";
 import { Tag } from "lucide-react-native";
 import { useRef, useState } from "react";
 import { Platform, Pressable } from "react-native";
@@ -5,7 +6,6 @@ import { Icon } from "@/components/ui/icon";
 import { Image } from "@/components/ui/image";
 import { Text } from "@/components/ui/text";
 import { View } from "@/components/ui/view";
-import type { ListingCardItem } from "./listing-card";
 
 // ─── Native Map Conditionally Loaded ──────────────────────────────────────────
 
@@ -28,8 +28,8 @@ export function WebMapFallback({
 	onSelectPin,
 	centerCoords,
 }: {
-	listings: ListingCardItem[];
-	onSelectPin: (item: ListingCardItem) => void;
+	listings: ListingDto[];
+	onSelectPin: (item: ListingDto) => void;
 	centerCoords: { lat: number; lng: number };
 }) {
 	const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -258,8 +258,8 @@ export function NativeMap({
 	onSelectPin,
 	centerCoords,
 }: {
-	listings: ListingCardItem[];
-	onSelectPin: (item: ListingCardItem) => void;
+	listings: ListingDto[];
+	onSelectPin: (item: ListingDto) => void;
 	centerCoords: { lat: number; lng: number };
 }) {
 	const mapRef = useRef<any>(null);

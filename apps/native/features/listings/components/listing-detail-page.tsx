@@ -1,32 +1,29 @@
-import type {
-	ListingCategoryType,
-	ListingConditionType,
-} from "@free-on-the-porch/shared/schemas";
+import { getInitials } from "@free-on-the-porch/shared/utils";
+import { format } from "date-fns";
 import { useRouter } from "expo-router";
 import {
 	Calendar,
 	CheckCircle,
 	ChevronLeft,
 	Edit,
-	MapPin,
 	MessageSquare,
 	Tag,
 	Trash2,
-	User as UserIcon,
 } from "lucide-react-native";
 import { useRef, useState } from "react";
 import { Alert, Dimensions, FlatList, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { Image } from "@/components/ui/image";
 import { ImageViewer } from "@/components/ui/image-viewer";
 import { Spinner } from "@/components/ui/spinner";
 import { Text } from "@/components/ui/text";
-import { useToast } from "@/components/ui/toast";
+import { toast } from "@/components/ui/toast";
 import { ScrollView, View } from "@/components/ui/view";
+import { AuthGuardPressable } from "@/features/auth/components/auth-guard";
 import { authClient } from "@/lib/auth-client";
 import { resolveColorAlias } from "@/lib/colors.util";
 import {
@@ -34,29 +31,28 @@ import {
 	CONDITION_LABEL,
 } from "../constants/listings.constants";
 import {
+	useClaimListing,
 	useDeleteListing,
 	useListingDetail,
 	useUpdateListing,
 } from "../hooks/use-listings";
+import { ListingLocationMap } from "./listing-location-map";
 
 type Props = {
 	id: string;
 };
-
-const MAP_MOCK =
-	"file:///C:/Users/Jvstln/.gemini/antigravity-ide/brain/0612514b-d3dc-485f-9030-e7bffd3bf88f/pickup_map_mock_1780101925282.png";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export function ListingDetailPage({ id }: Props) {
 	const router = useRouter();
 	const insets = useSafeAreaInsets();
-	const { toast } = useToast();
 	const { data: session } = authClient.useSession();
 
 	const { data: listing, isLoading, error } = useListingDetail(id);
 	const updateMutation = useUpdateListing(id);
 	const deleteMutation = useDeleteListing();
+	const claimMutation = useClaimListing(id);
 
 	const [viewerVisible, setViewerVisible] = useState(false);
 	const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -93,8 +89,8 @@ export function ListingDetailPage({ id }: Props) {
 				<Text type="body-sm" className="mb-6 text-center text-muted-foreground">
 					The listing may have been removed or is no longer available.
 				</Text>
-				<Button onPress={() => router.back()} variant="primary">
-					<Button.Label>Go Back</Button.Label>
+				<Button onPress={() => router.navigate("/dashboard/listings")}>
+					Back to listings
 				</Button>
 			</View>
 		);
@@ -102,32 +98,79 @@ export function ListingDetailPage({ id }: Props) {
 
 	const isOwner = session?.user?.id === listing.userId;
 	const isAvailable = listing.status === "AVAILABLE";
+	const pendingClaimsCount = listing.pendingClaims?.length || 0;
+	const hasRequestedClaim = listing.pendingClaims?.some(
+		(c) => c.userId === session?.user?.id,
+	);
+	const isClaimedByMe = listing.claimedByUserId === session?.user?.id;
 
 	// Handlers
-	const handleClaim = () => {
-		// Redirect to message flow
-		router.push({
-			pathname: "/dashboard/messages",
-			params: {
-				userId: listing.userId,
-				listingId: listing.id,
-				userName: listing.user?.name || "Neighbor",
-			},
-		});
+	const navigateToThread = async () => {
+		// router.push("/dashboard/messages");
+		router.push(
+			`/dashboard/messages/dm-${listing.userId}?listingId=${listing.id}`,
+		);
 	};
+
+	const handleClaim = async () => {
+		try {
+			const res = await claimMutation.mutateAsync();
+			router.push(`/dashboard/messages/${res.id}`);
+		} catch {}
+	};
+
+	// Determine right button properties based on claim and availability status
+	let buttonText = "Claim";
+	let buttonColor: "primary" | "neutral" | "warning" = "primary";
+	let isButtonDisabled = false;
+	let handleButtonPress = handleClaim;
+
+	if (listing.status === "EXPIRED" || listing.status === "REMOVED") {
+		buttonText = listing.status === "EXPIRED" ? "Expired" : "Removed";
+		buttonColor = "neutral";
+		isButtonDisabled = true;
+	} else if (isClaimedByMe) {
+		if (listing.status === "RESERVED") {
+			buttonText = "Reserved for You";
+			buttonColor = "warning";
+			isButtonDisabled = false;
+			handleButtonPress = navigateToThread;
+		} else if (listing.status === "PICKED_UP") {
+			buttonText = "Claimed by You";
+			buttonColor = "neutral";
+			isButtonDisabled = true;
+		}
+	} else if (hasRequestedClaim) {
+		if (listing.status === "AVAILABLE") {
+			buttonText = "Requested";
+			buttonColor = "neutral";
+			isButtonDisabled = false;
+			handleButtonPress = navigateToThread;
+		} else {
+			buttonText = listing.status === "RESERVED" ? "Reserved" : "Already Picked Up";
+			buttonColor = "neutral";
+			isButtonDisabled = true;
+		}
+	} else {
+		if (listing.status === "AVAILABLE") {
+			buttonText = "Claim";
+			buttonColor = "primary";
+			isButtonDisabled = false;
+			handleButtonPress = handleClaim;
+		} else {
+			buttonText = listing.status === "RESERVED" ? "Reserved" : "Already Picked Up";
+			buttonColor = "neutral";
+			isButtonDisabled = true;
+		}
+	}
+
 
 	const handleMarkPickedUp = async () => {
 		try {
 			await updateMutation.mutateAsync({ status: "PICKED_UP" });
-			toast.show({
-				variant: "success",
-				label: "Listing marked as Picked Up!",
-			});
+			toast.success("Listing marked as Picked Up!");
 		} catch (_err) {
-			toast.show({
-				variant: "danger",
-				label: "Failed to update listing status.",
-			});
+			toast.error("Failed to update listing status.");
 		}
 	};
 
@@ -143,30 +186,15 @@ export function ListingDetailPage({ id }: Props) {
 					onPress: async () => {
 						try {
 							await deleteMutation.mutateAsync(listing.id);
-							toast.show({
-								variant: "success",
-								label: "Listing deleted successfully.",
-							});
+							toast.success("Listing deleted successfully.");
 							router.back();
 						} catch (_err) {
-							toast.show({
-								variant: "danger",
-								label: "Failed to delete listing.",
-							});
+							toast.error("Failed to delete listing.");
 						}
 					},
 				},
 			],
 		);
-	};
-
-	const formatDate = (dateStr: string) => {
-		const date = new Date(dateStr);
-		return date.toLocaleDateString(undefined, {
-			month: "short",
-			day: "numeric",
-			year: "numeric",
-		});
 	};
 
 	return (
@@ -178,7 +206,7 @@ export function ListingDetailPage({ id }: Props) {
 				contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
 			>
 				{/* Hero Image Section */}
-				<View className="relative h-80 w-full bg-muted">
+				<View className="relative h-80 w-full overflow-hidden bg-muted">
 					{listing.images && listing.images.length > 0 ? (
 						<>
 							<FlatList
@@ -215,10 +243,18 @@ export function ListingDetailPage({ id }: Props) {
 							)}
 						</>
 					) : (
-						<View className="flex-1 items-center justify-center gap-2">
-							<Icon as={Tag} className="size-16 text-muted-foreground" />
-							<Text type="body-sm" className="text-muted-foreground">
+						<View className="flex-1 items-center justify-center gap-3 rounded-2xl border border-border/10 bg-muted/40 p-6">
+							<View className="size-16 items-center justify-center rounded-full bg-muted shadow-sm">
+								<Icon as={Tag} className="size-8 text-muted-foreground" />
+							</View>
+							<Text type="body-sm" className="font-semibold text-foreground">
 								No photos uploaded
+							</Text>
+							<Text
+								type="body-xs"
+								className="px-4 text-center text-muted-foreground"
+							>
+								The owner didn't add any images. Ask them for photos via chat!
 							</Text>
 						</View>
 					)}
@@ -229,23 +265,65 @@ export function ListingDetailPage({ id }: Props) {
 						style={{ top: Math.max(insets.top, 16) }}
 					>
 						{/* Back Button */}
-						<Pressable
-							onPress={() => router.back()}
-							className="size-10 items-center justify-center rounded-full bg-background/90 shadow-black/20 shadow-md active:bg-background"
+						<Button
+							onPress={() => {
+								if (router.canGoBack()) {
+									router.back();
+								} else {
+									router.replace("/dashboard/listings");
+								}
+							}}
+							size="icon-lg"
+							color="default"
+							className="rounded-full"
 						>
 							<Icon as={ChevronLeft} className="size-6 text-foreground" />
-						</Pressable>
+						</Button>
 					</View>
 
 					{/* Status Overlay */}
 					{!isAvailable && (
-						<View className="absolute inset-0 z-40 items-center justify-center bg-black/40">
-							<Text
-								type="h3"
-								className="font-extrabold text-white uppercase tracking-wider"
-							>
-								{listing.status === "PICKED_UP" ? "Picked Up" : "Unavailable"}
-							</Text>
+						<View className="absolute inset-0 z-40 items-center justify-center bg-black/50 backdrop-blur-sm">
+							<View className="items-center justify-center gap-2 rounded-2xl border border-border/20 bg-background/95 px-6 py-4 shadow-xl">
+								<Badge
+									color={
+										listing.status === "RESERVED" ? "warning" : "destructive"
+									}
+									appearance="solid"
+									size="lg"
+									className="rounded-full"
+								>
+									<Text className="font-bold text-sm uppercase tracking-wide">
+										{listing.status === "PICKED_UP" && (isClaimedByMe ? "Claimed by You" : "Picked Up")}
+										{listing.status === "RESERVED" && (isClaimedByMe ? "Reserved for You" : "Reserved")}
+										{listing.status === "EXPIRED" && "Expired"}
+										{listing.status === "REMOVED" && "Removed"}
+										{!["PICKED_UP", "RESERVED", "EXPIRED", "REMOVED"].includes(
+											listing.status,
+										) && "Unavailable"}
+									</Text>
+								</Badge>
+								<Text
+									type="body-xs"
+									className="px-2 text-center font-medium text-muted-foreground"
+								>
+									{listing.status === "PICKED_UP" &&
+										(isClaimedByMe
+											? "You have successfully picked up this item. Enjoy!"
+											: "This item has been successfully claimed and picked up.")}
+									{listing.status === "RESERVED" &&
+										(isClaimedByMe
+											? "The owner has reserved this item for you. Coordinate pickup details via chat!"
+											: "This item is currently on hold for another neighbor.")}
+									{listing.status === "EXPIRED" &&
+										"This listing has expired and is no longer active."}
+									{listing.status === "REMOVED" &&
+										"This listing has been deleted by the owner."}
+									{!["PICKED_UP", "RESERVED", "EXPIRED", "REMOVED"].includes(
+										listing.status,
+									) && "This item is no longer available."}
+								</Text>
+							</View>
 						</View>
 					)}
 				</View>
@@ -258,7 +336,7 @@ export function ListingDetailPage({ id }: Props) {
 							type="body-sm"
 							className="font-bold text-muted-foreground uppercase tracking-wider"
 						>
-							{CATEGORY_LABEL[listing.category as ListingCategoryType]}
+							{CATEGORY_LABEL[listing.category]}
 						</Text>
 
 						<View className="flex-row gap-2">
@@ -268,7 +346,7 @@ export function ListingDetailPage({ id }: Props) {
 								size="sm"
 							>
 								<Text className="font-bold text-xs uppercase">
-									{CONDITION_LABEL[listing.condition as ListingConditionType]}
+									{CONDITION_LABEL[listing.condition]}
 								</Text>
 							</Badge>
 
@@ -276,6 +354,15 @@ export function ListingDetailPage({ id }: Props) {
 								<Badge color="neutral" appearance="soft" size="sm">
 									<Text className="font-bold text-xs uppercase">
 										{listing.status}
+									</Text>
+								</Badge>
+							)}
+
+							{pendingClaimsCount > 0 && (
+								<Badge color="warning" appearance="soft" size="sm">
+									<Text className="font-bold text-xs uppercase">
+										{pendingClaimsCount}{" "}
+										{pendingClaimsCount === 1 ? "Request" : "Requests"}
 									</Text>
 								</Badge>
 							)}
@@ -294,20 +381,15 @@ export function ListingDetailPage({ id }: Props) {
 
 					{/* Poster Profile Row */}
 					<Pressable
-						onPress={() => router.push(`/user/${listing.userId}` as any)}
+						onPress={() => router.push(`/dashboard/user/${listing.userId}`)}
 						className="flex-row items-center gap-3 border-border border-t border-b py-4 active:bg-muted/20"
 					>
-						{listing.user?.image ? (
-							<Image
-								source={{ uri: listing.user.image }}
-								className="size-12 rounded-full bg-muted"
-								contentFit="cover"
-							/>
-						) : (
-							<View className="size-12 items-center justify-center rounded-full bg-muted">
-								<Icon as={UserIcon} className="size-6 text-muted-foreground" />
-							</View>
-						)}
+						<Avatar>
+							<Avatar.Image src={listing.user?.image} />
+							<Avatar.Fallback>
+								{getInitials(listing.user?.name ?? "")}
+							</Avatar.Fallback>
+						</Avatar>
 						<View className="flex-1 justify-center">
 							<Text type="body-sm" className="font-bold text-foreground">
 								Posted by {listing.user?.name || "Neighbor"}
@@ -318,7 +400,7 @@ export function ListingDetailPage({ id }: Props) {
 									className="size-3.5 text-muted-foreground"
 								/>
 								<Text type="body-xs" className="text-muted-foreground">
-									Active since {formatDate(listing.createdAt)}
+									Posted on {format(listing.createdAt, "MMM d, yyyy")}
 								</Text>
 							</View>
 						</View>
@@ -340,23 +422,10 @@ export function ListingDetailPage({ id }: Props) {
 							Estimated Pickup Area
 						</Text>
 
-						<Card className="relative h-48 w-full overflow-hidden rounded-2xl border border-border bg-muted p-0 shadow-sm">
-							<Image
-								source={{ uri: MAP_MOCK }}
-								className="h-full w-full opacity-90"
-								contentFit="cover"
-							/>
-							{/* Location overlay */}
-							<View className="absolute right-3 bottom-3 left-3 flex-row items-center gap-2 rounded-xl border border-border bg-card/95 p-3 shadow-sm">
-								<Icon as={MapPin} className="size-5 text-primary" />
-								<Text
-									type="body-xs"
-									className="flex-1 font-semibold text-foreground"
-								>
-									{listing.address || "Maplewood Neighborhood"}
-								</Text>
-							</View>
-						</Card>
+						<ListingLocationMap
+							location={listing.location ?? null}
+							address={listing.address ?? null}
+						/>
 					</View>
 				</View>
 			</ScrollView>
@@ -370,56 +439,64 @@ export function ListingDetailPage({ id }: Props) {
 					// Owner Actions
 					<View className="flex-1 flex-row gap-3">
 						<Button
-							appearance="soft"
-							color="neutral"
-							className="items-center justify-center rounded-xl px-4 py-3.5"
-							onPress={() => router.push(`/listings/${listing.id}/edit` as any)}
+							appearance="outline"
+							onPress={() =>
+								router.push(`/dashboard/listings/${listing.id}/edit`)
+							}
 						>
-							<Icon as={Edit} className="size-5" />
+							<Icon as={Edit} />
 						</Button>
 						{isAvailable && (
 							<Button
-								appearance="solid"
-								color="primary"
-								className="flex-1 rounded-xl py-3.5"
+								className="flex-1"
 								onPress={handleMarkPickedUp}
 								isLoading={updateMutation.isPending}
 							>
-								<Icon as={CheckCircle} className="size-5" />
-								<Button.Label className="font-bold">
-									Mark Picked Up
-								</Button.Label>
+								<Icon as={CheckCircle} />
+								Mark Picked Up
 							</Button>
 						)}
 						<Button
-							appearance="soft"
+							appearance="outline"
 							color="destructive"
-							className="items-center justify-center rounded-xl px-4 py-3.5"
 							onPress={handleDelete}
 							isLoading={deleteMutation.isPending}
 						>
-							<Icon as={Trash2} className="size-5" />
+							<Icon as={Trash2} />
 						</Button>
 					</View>
 				) : (
-					// Public Claim
-					<Button
-						appearance="solid"
-						color="primary"
-						className="flex-1 rounded-xl py-4"
-						disabled={!isAvailable}
-						onPress={handleClaim}
-					>
-						<Icon as={MessageSquare} className="size-5" />
-						<Button.Label className="font-bold">
-							{isAvailable ? "Message Owner to Claim" : "Already Picked Up"}
-						</Button.Label>
-					</Button>
+					// Public Claim & Message Owner
+					<View className="flex-1 flex-row gap-3">
+						<AuthGuardPressable>
+							<Button
+								appearance="outline"
+								onPress={() => {
+									navigateToThread();
+								}}
+							>
+								<Icon as={MessageSquare} className="size-5" />
+							</Button>
+						</AuthGuardPressable>
+
+						<AuthGuardPressable>
+							<Button
+								appearance="solid"
+								color={buttonColor}
+								disabled={isButtonDisabled}
+								onPress={handleButtonPress}
+								isLoading={claimMutation.isPending}
+							>
+								<Icon as={CheckCircle} />
+								{buttonText}
+							</Button>
+						</AuthGuardPressable>
+					</View>
 				)}
 			</View>
 
 			<ImageViewer
-				images={listing.images?.map((img: any) => img.url) || []}
+				images={listing.images?.map((img) => img.url) || []}
 				visible={viewerVisible}
 				onClose={() => setViewerVisible(false)}
 				initialIndex={activeImageIndex}

@@ -1,7 +1,7 @@
 import type {
-	ListingCategoryType,
-	ListingConditionType,
-	ListingStatusType,
+	ListingCategoryDto,
+	ListingConditionDto,
+	ListingStatusDto,
 } from "@free-on-the-porch/shared/schemas";
 import { revalidateLogic } from "@tanstack/react-form";
 import {
@@ -20,7 +20,7 @@ import { useAppForm } from "@/components/ui/form";
 import { Icon } from "@/components/ui/icon";
 import { Image } from "@/components/ui/image";
 import { Text } from "@/components/ui/text";
-import { useToast } from "@/components/ui/toast";
+import { toast } from "@/components/ui/toast";
 import { KeyboardAvoidingView, View } from "@/components/ui/view";
 import { cn } from "@/lib/utils";
 
@@ -39,7 +39,7 @@ const FORM_CATEGORIES = [
 	"Other",
 ];
 
-const CATEGORY_MAP: Record<string, ListingCategoryType> = {
+const CATEGORY_MAP: Record<string, ListingCategoryDto> = {
 	Furniture: "FURNITURE",
 	Kitchen: "KITCHEN",
 	Toys: "TOYS",
@@ -52,7 +52,7 @@ const CATEGORY_MAP: Record<string, ListingCategoryType> = {
 };
 
 // Reverse map to find category label by value
-const REVERSE_CATEGORY_MAP: Record<ListingCategoryType, string> = {
+const REVERSE_CATEGORY_MAP: Record<ListingCategoryDto, string> = {
 	FURNITURE: "Furniture",
 	KITCHEN: "Kitchen",
 	TOYS: "Toys",
@@ -65,7 +65,7 @@ const REVERSE_CATEGORY_MAP: Record<ListingCategoryType, string> = {
 	SPORTS: "Other",
 };
 
-const CONDITIONS: ListingConditionType[] = [
+const CONDITIONS: ListingConditionDto[] = [
 	"NEW",
 	"LIKE_NEW",
 	"GOOD",
@@ -73,7 +73,7 @@ const CONDITIONS: ListingConditionType[] = [
 	"WORN",
 ];
 
-const CONDITION_LABELS: Record<ListingConditionType, string> = {
+const CONDITION_LABELS: Record<ListingConditionDto, string> = {
 	NEW: "New",
 	LIKE_NEW: "Like New",
 	GOOD: "Good",
@@ -81,15 +81,16 @@ const CONDITION_LABELS: Record<ListingConditionType, string> = {
 	WORN: "Worn",
 };
 
-const STATUS_OPTIONS: ListingStatusType[] = [
+const STATUS_OPTIONS: ListingStatusDto[] = [
 	"AVAILABLE",
 	"PICKED_UP",
 	"EXPIRED",
 	"REMOVED",
 ];
 
-const STATUS_LABELS: Record<ListingStatusType, string> = {
+const STATUS_LABELS: Record<ListingStatusDto, string> = {
 	AVAILABLE: "Available",
+	RESERVED: "Reserved",
 	PICKED_UP: "Picked Up (Claimed)",
 	EXPIRED: "Expired",
 	REMOVED: "Removed",
@@ -106,9 +107,9 @@ const listingFormSchema = z.object({
 type ListingFormValues = {
 	title: string;
 	description: string;
-	category: ListingCategoryType;
-	condition: ListingConditionType;
-	status?: ListingStatusType;
+	category: ListingCategoryDto;
+	condition: ListingConditionDto;
+	status?: ListingStatusDto;
 };
 
 type Props = {
@@ -116,9 +117,9 @@ type Props = {
 	onSubmit: (values: {
 		title: string;
 		description: string;
-		category: ListingCategoryType;
-		condition: ListingConditionType;
-		status?: ListingStatusType;
+		category: ListingCategoryDto;
+		condition: ListingConditionDto;
+		status?: ListingStatusDto;
 	}) => Promise<void>;
 	isSubmitting: boolean;
 	submitLabel?: string;
@@ -132,8 +133,6 @@ export function ListingForm({
 	submitLabel = "Post Item",
 	showStatusSelector = false,
 }: Props) {
-	const { toast } = useToast();
-
 	// Initialize states
 	const [activeCategory, setActiveCategory] = useState<string>(() => {
 		if (initialValues?.category) {
@@ -142,11 +141,11 @@ export function ListingForm({
 		return "Furniture";
 	});
 
-	const [activeCondition, setActiveCondition] = useState<ListingConditionType>(
+	const [activeCondition, setActiveCondition] = useState<ListingConditionDto>(
 		() => initialValues?.condition || "GOOD",
 	);
 
-	const [activeStatus, setActiveStatus] = useState<ListingStatusType>(
+	const [activeStatus, setActiveStatus] = useState<ListingStatusDto>(
 		() => initialValues?.status || "AVAILABLE",
 	);
 
@@ -172,10 +171,7 @@ export function ListingForm({
 	});
 
 	const handleSimulatePhoto = () => {
-		toast.show({
-			variant: "success",
-			label: "Simulated photo attached!",
-		});
+		toast.success("Simulated photo attached!");
 	};
 
 	return (

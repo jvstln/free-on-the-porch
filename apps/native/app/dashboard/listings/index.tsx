@@ -1,5 +1,5 @@
-import { MyListingsPage } from "@/features/listings/components/my-listings-page";
+import { ListingsPage } from "@/features/listings/components/listings-page";
 
-export default function ListingRoute() {
-	return <MyListingsPage />;
+export default function ListingsRoute() {
+	return <ListingsPage />;
 }

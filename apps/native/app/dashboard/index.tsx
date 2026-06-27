@@ -1,5 +1,5 @@
-import { ListingsPage } from "@/features/listings/components/listings-page";
+import { Redirect } from "expo-router";
 
 export default function DashboardIndexRoute() {
-	return <ListingsPage />;
+	return <Redirect href="/dashboard/listings" />;
 }

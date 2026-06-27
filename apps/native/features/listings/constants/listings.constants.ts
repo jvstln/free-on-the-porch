@@ -1,6 +1,6 @@
 import type {
-	ListingCategoryType,
-	ListingConditionType,
+	ListingCategoryDto,
+	ListingConditionDto,
 } from "@free-on-the-porch/shared/schemas";
 
 // ─── Location ─────────────────────────────────────────────────────────────────
@@ -14,7 +14,7 @@ export const DEFAULT_COORDS = {
 
 // ─── Labels ───────────────────────────────────────────────────────────────────
 
-export const CONDITION_LABEL: Record<ListingConditionType, string> = {
+export const CONDITION_LABEL: Record<ListingConditionDto, string> = {
 	NEW: "New",
 	LIKE_NEW: "Like new",
 	GOOD: "Good",
@@ -22,7 +22,7 @@ export const CONDITION_LABEL: Record<ListingConditionType, string> = {
 	WORN: "Worn",
 };
 
-export const CATEGORY_LABEL: Record<ListingCategoryType, string> = {
+export const CATEGORY_LABEL: Record<ListingCategoryDto, string> = {
 	FURNITURE: "Furniture",
 	ELECTRONICS: "Electronics",
 	CLOTHING: "Clothing",
@@ -35,25 +35,7 @@ export const CATEGORY_LABEL: Record<ListingCategoryType, string> = {
 	OTHER: "Other",
 };
 
-// ─── Filter Config ────────────────────────────────────────────────────────────
-
-export const CATEGORIES = [
-	"All Items",
-	"Furniture",
-	"Electronics",
-	"Clothing",
-	"Books",
-	"Toys",
-	"Kitchen",
-	"Sports",
-	"Tools",
-	"Plants",
-	"Other",
-] as const;
-
-export type CategoryLabel = (typeof CATEGORIES)[number];
-
-export const CATEGORY_MAP: Record<string, ListingCategoryType | undefined> = {
+export const CATEGORY_MAP: Record<string, ListingCategoryDto | undefined> = {
 	"All Items": undefined,
 	Furniture: "FURNITURE",
 	Electronics: "ELECTRONICS",
