@@ -1,134 +1,425 @@
-import type { SendMessageDto } from "@free-on-the-porch/shared/schemas";
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { PrismaService } from "../../infrastructures/database/prisma.service";
+import {
+	db,
+	listing,
+	message,
+	publicUserSelectFields,
+	thread,
+	threadMember,
+	user,
+} from "@free-on-the-porch/db";
+import {
+	type ConversationDto,
+	type ConversationQueryOutputDto,
+	ConversationSchema,
+	type PaginatedResponse,
+	type SendMessageDto,
+	type ThreadDto,
+	type ThreadsQueryOutputDto,
+} from "@free-on-the-porch/shared/schemas";
+import {
+	BadRequestException,
+	Injectable,
+	NotFoundException,
+} from "@nestjs/common";
+import { and, asc, desc, eq, exists, isNull, max, ne, sql } from "drizzle-orm";
+import {
+	buildResponse,
+	decodeCursor,
+} from "../../common/utils/pagination.util";
+import { DrizzleService } from "../../infrastructures/database/database.service";
 
 @Injectable()
 export class MessagingService {
-	constructor(private readonly prisma: PrismaService) {}
+	constructor(private readonly drizzle: DrizzleService) {}
 
 	async sendMessage(senderId: string, dto: SendMessageDto) {
-		// Ensure receiver exists
-		const receiver = await this.prisma.user.findUnique({
-			where: { id: dto.receiverId },
-			select: { id: true },
-		});
-		if (!receiver) throw new NotFoundException("Receiver not found");
+		let threadId = dto.threadId;
 
-		const message = await this.prisma.message.create({
-			data: {
+		if (threadId) {
+			// Verify that the thread exists and the sender is a member of it
+			const isMember = await this.drizzle.db.query.threadMember.findFirst({
+				where: {
+					threadId,
+					userId: senderId,
+				},
+			});
+			if (!isMember) {
+				throw new BadRequestException("User is not a member of this thread");
+			}
+		} else {
+			// Either listingId or receiverId is required
+			if (!dto.listingId && !dto.receiverId) {
+				throw new BadRequestException(
+					"Either threadId, listingId, or receiverId must be provided",
+				);
+			}
+
+			let receiverId = dto.receiverId;
+
+			if (dto.listingId) {
+				const foundListing = await this.drizzle.db.query.listing.findFirst({
+					where: {
+						id: dto.listingId,
+					},
+				});
+				if (!foundListing) throw new NotFoundException("Listing not found");
+
+				if (!receiverId) {
+					receiverId = foundListing.userId;
+				}
+
+				// Find existing LISTING thread with both members
+				const existingThread = await this.drizzle.db.query.thread.findFirst({
+					where: {
+						type: "LISTING",
+						listingId: dto.listingId,
+						RAW: (t: any) =>
+							and(
+								exists(
+									this.drizzle.db
+										.select()
+										.from(threadMember)
+										.where(
+											and(
+												eq(threadMember.threadId, t.id),
+												eq(threadMember.userId, senderId),
+											),
+										),
+								),
+								exists(
+									this.drizzle.db
+										.select()
+										.from(threadMember)
+										.where(
+											and(
+												eq(threadMember.threadId, t.id),
+												eq(threadMember.userId, receiverId!),
+											),
+										),
+								),
+							) as any,
+					},
+				});
+
+				if (existingThread) {
+					threadId = existingThread.id;
+				} else {
+					// Create new listing thread
+					const [newThread] = await this.drizzle.db
+						.insert(thread)
+						.values({
+							type: "LISTING",
+							listingId: dto.listingId,
+						})
+						.returning();
+					if (!newThread) throw new Error("Failed to create listing thread");
+
+					await this.drizzle.db.insert(threadMember).values([
+						{ threadId: newThread.id, userId: senderId },
+						{ threadId: newThread.id, userId: receiverId },
+					]);
+
+					threadId = newThread.id;
+				}
+			} else {
+				// DM thread
+				if (!receiverId) {
+					throw new BadRequestException(
+						"Receiver ID is required for direct messages",
+					);
+				}
+
+				const receiverExists = await this.drizzle.db.query.user.findFirst({
+					where: {
+						id: receiverId,
+					},
+				});
+				if (!receiverExists) throw new NotFoundException("Receiver not found");
+
+				// Find existing DM thread with both members
+				const existingThread = await this.drizzle.db.query.thread.findFirst({
+					where: {
+						type: "DM",
+						RAW: (t: any) =>
+							and(
+								exists(
+									this.drizzle.db
+										.select()
+										.from(threadMember)
+										.where(
+											and(
+												eq(threadMember.threadId, t.id),
+												eq(threadMember.userId, senderId),
+											),
+										),
+								),
+								exists(
+									this.drizzle.db
+										.select()
+										.from(threadMember)
+										.where(
+											and(
+												eq(threadMember.threadId, t.id),
+												eq(threadMember.userId, receiverId!),
+											),
+										),
+								),
+							) as any,
+					},
+				});
+
+				if (existingThread) {
+					threadId = existingThread.id;
+				} else {
+					// Create new DM thread
+					const [newThread] = await this.drizzle.db
+						.insert(thread)
+						.values({
+							type: "DM",
+						})
+						.returning();
+					if (!newThread) throw new Error("Failed to create DM thread");
+
+					await this.drizzle.db.insert(threadMember).values([
+						{ threadId: newThread.id, userId: senderId },
+						{ threadId: newThread.id, userId: receiverId },
+					]);
+
+					threadId = newThread.id;
+				}
+			}
+		}
+
+		if (!threadId) {
+			throw new BadRequestException(
+				"Failed to resolve or create conversation thread",
+			);
+		}
+
+		// Insert message
+		const [newMessage] = await this.drizzle.db
+			.insert(message)
+			.values({
 				body: dto.body,
 				senderId,
-				receiverId: dto.receiverId,
-				listingId: dto.listingId ?? null,
-			},
-			include: {
-				sender: { select: { id: true, name: true, image: true } },
-				listing: { select: { id: true, title: true } },
-			},
-		});
+				threadId,
+			})
+			.returning();
 
-		return message;
+		if (!newMessage) {
+			throw new Error("Failed to send message");
+		}
+
+		// Update thread updatedAt
+		await this.drizzle.db
+			.update(thread)
+			.set({ updatedAt: new Date() })
+			.where(eq(thread.id, threadId));
+
+		// Find members of the thread to return to gateway for broadcasting
+		const members = await this.drizzle.db
+			.select({ userId: threadMember.userId })
+			.from(threadMember)
+			.where(eq(threadMember.threadId, threadId));
+
+		return {
+			message: newMessage,
+			memberIds: members.map((m) => m.userId),
+		};
 	}
 
-	/**
-	 * Returns all messages between two users, optionally scoped to a listing.
-	 * Ordered oldest → newest for display.
-	 */
 	async getConversation(
 		userId: string,
-		otherUserId: string,
-		listingId?: string,
-		cursor?: string,
-		limit = 30,
-	) {
-		const messages = await this.prisma.message.findMany({
+		query: ConversationQueryOutputDto,
+	): Promise<PaginatedResponse<ConversationDto>> {
+		const getCursor = (message: ConversationDto["messages"][0]) => ({
+			id: message.id,
+			createdAt: message.createdAt,
+		});
+		const decodedCursor = decodeCursor<ReturnType<typeof getCursor>>(
+			query.cursor,
+		);
+
+		const conversation = await this.drizzle.db.query.thread.findFirst({
 			where: {
-				OR: [
-					{ senderId: userId, receiverId: otherUserId },
-					{ senderId: otherUserId, receiverId: userId },
-				],
-				...(listingId ? { listingId } : {}),
+				threadMembers: {
+					OR: [
+						{ userId },
+						...(query.type === "users" ? [{ userId: query.id }] : []),
+					],
+				},
+				...(query.type === "threads"
+					? { id: query.id }
+					: query.type === "listings"
+						? { listingId: query.id }
+						: query.type === "users"
+							? { type: "DM" }
+							: null),
 			},
-			include: {
-				sender: { select: { id: true, name: true, image: true } },
+			with: {
+				messages: {
+					where: {
+						...(decodedCursor
+							? {
+									OR: [
+										{ createdAt: { lt: new Date(decodedCursor.createdAt) } },
+										{
+											createdAt: { eq: new Date(decodedCursor.createdAt) },
+											id: { lt: decodedCursor.id },
+										},
+									],
+								}
+							: null),
+					},
+					orderBy: { createdAt: "desc", id: "desc" },
+					limit: query.limit + 1,
+				},
+				members: {
+					columns: publicUserSelectFields,
+					orderBy: (t) => eq(t.id, userId),
+				},
+				listing: { with: { images: true } },
 			},
-			orderBy: { createdAt: "desc" },
-			take: limit,
-			...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
 		});
 
-		// Mark unread messages as read
-		await this.prisma.message.updateMany({
-			where: {
-				senderId: otherUserId,
-				receiverId: userId,
-				read: false,
-			},
-			data: { read: true },
-		});
+		if (!conversation) {
+			if (query.type === "users") {
+				// Retrieve the other user to populate members
+				const otherUserObj = await this.drizzle.db.query.user.findFirst({
+					where: {
+						id: query.id,
+					},
+					columns: publicUserSelectFields,
+				});
+				if (!otherUserObj) throw new NotFoundException("User not found");
 
-		return messages.reverse(); // oldest first for the UI
+				const currentUserObj = await this.drizzle.db.query.user.findFirst({
+					where: {
+						id: userId,
+					},
+					columns: publicUserSelectFields,
+				});
+
+				return {
+					data: ConversationSchema.parse({
+						id: `dm-${query.id}`,
+						type: "DM",
+						listingId: null,
+						createdAt: new Date(),
+						updatedAt: new Date(),
+						members: [otherUserObj, currentUserObj!],
+						messages: [],
+						listing: null,
+					}),
+					pagination: {
+						nextCursor: null,
+					},
+				};
+			}
+
+			throw new NotFoundException(
+				`Conversation ${query.type}:${query.id} not found`,
+			);
+		}
+
+		const { pagination, data: messages } = buildResponse(
+			conversation.messages,
+			{ type: "cursor", limit: query.limit, getCursor },
+		);
+
+		return {
+			data: ConversationSchema.parse({ ...conversation, messages }),
+			pagination,
+		};
 	}
 
-	/**
-	 * Returns a list of conversations (one entry per unique contact),
-	 * with the latest message and unread count.
-	 */
-	async getInbox(userId: string) {
-		// Raw query for efficient "latest message per thread" pattern
-		const threads = await this.prisma.$queryRaw<
-			{
-				contact_id: string;
-				contact_name: string;
-				contact_image: string | null;
-				last_message: string;
-				last_message_at: Date;
-				unread_count: bigint;
-				listing_id: string | null;
-				listing_title: string | null;
-			}[]
-		>`
-      SELECT DISTINCT ON (contact_id)
-        CASE
-          WHEN m."senderId" = ${userId} THEN m."receiverId"
-          ELSE m."senderId"
-        END AS contact_id,
-        u.name AS contact_name,
-        u.image AS contact_image,
-        m.body AS last_message,
-        m."createdAt" AS last_message_at,
-        (
-          SELECT COUNT(*) FROM message unread
-          WHERE unread."receiverId" = ${userId}
-            AND unread."senderId" = CASE
-              WHEN m."senderId" = ${userId} THEN m."receiverId"
-              ELSE m."senderId"
-            END
-            AND unread.read = false
-        ) AS unread_count,
-        m."listingId" AS listing_id,
-        l.title AS listing_title
-      FROM message m
-      JOIN "user" u ON u.id = CASE
-        WHEN m."senderId" = ${userId} THEN m."receiverId"
-        ELSE m."senderId"
-      END
-      LEFT JOIN listing l ON l.id = m."listingId"
-      WHERE m."senderId" = ${userId} OR m."receiverId" = ${userId}
-      ORDER BY contact_id, m."createdAt" DESC
-    `;
+	async getThreads(
+		userId: string,
+		query: ThreadsQueryOutputDto,
+	): Promise<PaginatedResponse<ThreadDto[]>> {
+		const getCursor = (t: ThreadDto) => ({
+			id: t.id,
+			lastMessageUpdatedAt: t.messages[0]?.updatedAt ?? t.updatedAt,
+		});
+		const decodedCursor = decodeCursor<ReturnType<typeof getCursor>>(
+			query.cursor,
+		);
 
-		return threads.map((t) => ({
-			...t,
-			unread_count: Number(t.unread_count), // BigInt → number
-		}));
+		const threads = await this.drizzle.db.query.thread.findMany({
+			where: {
+				type: query.type,
+				threadMembers: {
+					userId,
+				},
+				...(decodedCursor
+					? {
+							OR: [
+								{
+									messages: {
+										updatedAt: {
+											lt: new Date(decodedCursor.lastMessageUpdatedAt),
+										},
+									},
+								},
+								{
+									id: { lt: decodedCursor.id },
+									messages: {
+										updatedAt: {
+											eq: new Date(decodedCursor.lastMessageUpdatedAt),
+										},
+									},
+								},
+							],
+						}
+					: null),
+			},
+			with: {
+				members: {
+					columns: publicUserSelectFields,
+					orderBy: (t) => eq(t.id, userId), // Makes the current user the last item in the array
+				},
+				listing: { with: { images: true } },
+				messages: {
+					orderBy: {
+						updatedAt: "desc",
+						id: "desc",
+					},
+					limit: 5,
+				},
+			},
+			orderBy: (t) =>
+				desc(
+					this.drizzle.db
+						.select({ val: max(message.updatedAt) })
+						.from(message)
+						.where(eq(message.threadId, t.id)),
+				).append(sql` NULLS LAST`),
+			limit: query.limit + 1,
+		});
+
+		return buildResponse(threads, {
+			type: "cursor",
+			getCursor,
+			limit: query.limit,
+		});
 	}
 
-	async markRead(userId: string, senderId: string) {
-		await this.prisma.message.updateMany({
-			where: { senderId, receiverId: userId, read: false },
-			data: { read: true },
-		});
+	async markRead(userId: string, senderId: string, threadId?: string) {
+		const conditions = [
+			eq(message.senderId, senderId),
+			// eq(message.receiverId, userId),
+			eq(message.read, false),
+		];
+		if (threadId) {
+			conditions.push(eq(message.threadId, threadId));
+		} else {
+			conditions.push(isNull(message.threadId));
+		}
+
+		await this.drizzle.db
+			.update(message)
+			.set({ read: true })
+			.where(and(...conditions));
 		return { success: true };
 	}
 }

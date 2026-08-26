@@ -1,4 +1,4 @@
-import { env } from "@free-on-the-porch/env/server";
+import { env } from "@free-on-the-porch/env/private";
 import { NestFactory } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { AppModule } from "./app.module";

@@ -3,8 +3,9 @@ import {
 	listingClaimRequest,
 	listingImage,
 	message,
-	publicUserColumns,
+	publicUserSelectFields,
 	thread,
+	threadMember,
 	user,
 } from "@free-on-the-porch/db";
 import type {
@@ -13,7 +14,7 @@ import type {
 	ListingDto,
 	NearbyListingsQueryOutputDto,
 	PaginatedResponse,
-	ThreadDto,
+	ThreadMinimalDto,
 	UpdateListingDto,
 } from "@free-on-the-porch/shared/schemas";
 import {
@@ -28,6 +29,7 @@ import {
 	asc,
 	desc,
 	eq,
+	exists,
 	gt,
 	inArray,
 	isNull,
@@ -78,7 +80,7 @@ export class ListingService {
 				description: data.description ?? null,
 				category: data.category,
 				condition: data.condition,
-				location: { lat: data.lat, lng: data.lng },
+				location: data.location,
 				address: data.address ?? null,
 				userId,
 				expiresAt,
@@ -113,14 +115,14 @@ export class ListingService {
 			: null;
 
 		// Fetch limit + 1 to detect if a next page exists
-		const rows = await this.drizzle.db.query.listing.findMany({
+		const nearbyListings = await this.drizzle.db.query.listing.findMany({
 			extras: {
 				distanceMeters: (t) =>
 					sql<number>`ST_Distance(${t.location}, ${pointSql})`,
 			},
 			with: {
 				user: {
-					columns: publicUserColumns,
+					columns: publicUserSelectFields,
 				},
 				images: true,
 				pendingClaims: true,
@@ -155,7 +157,7 @@ export class ListingService {
 			limit: query.limit + 1,
 		});
 
-		return buildResponse(rows, {
+		return buildResponse(nearbyListings, {
 			type: "cursor",
 			limit: query.limit,
 			getCursor: (l) => ({ d: l.distanceMeters, id: l.id }),
@@ -171,20 +173,20 @@ export class ListingService {
 			where: whereCondition,
 			with: {
 				user: {
-					columns: publicUserColumns,
+					columns: publicUserSelectFields,
 				},
 				images: true,
 				comments: {
 					with: {
 						user: {
-							columns: publicUserColumns,
+							columns: publicUserSelectFields,
 						},
 					},
 				},
 				pendingClaims: {
 					with: {
 						user: {
-							columns: publicUserColumns,
+							columns: publicUserSelectFields,
 						},
 					},
 				},
@@ -199,7 +201,7 @@ export class ListingService {
 	async claim(
 		listingId: string,
 		userId: string,
-	): Promise<PaginatedResponse<ThreadDto>> {
+	): Promise<PaginatedResponse<ThreadMinimalDto>> {
 		const foundListing = await this.drizzle.db.query.listing.findFirst({
 			where: { id: listingId },
 		});
@@ -236,18 +238,26 @@ export class ListingService {
 			let foundThread = await this.drizzle.db.query.thread.findFirst({
 				where: {
 					listingId,
-					creatorId: userId,
-					receiverId: foundListing.userId,
+					RAW: (thread) =>
+						exists(
+							this.drizzle.db
+								.select()
+								.from(threadMember)
+								.where(
+									and(
+										eq(threadMember.userId, userId),
+										eq(threadMember.threadId, thread.id),
+									),
+								),
+						),
 				},
 			});
-
 			if (!foundThread) {
 				const [newThread] = await tx
 					.insert(thread)
 					.values({
+						type: "LISTING",
 						listingId,
-						creatorId: userId,
-						receiverId: foundListing.userId,
 					})
 					.returning();
 
@@ -256,6 +266,11 @@ export class ListingService {
 				}
 
 				foundThread = newThread;
+
+				await tx.insert(threadMember).values([
+					{ userId, threadId: foundThread.id },
+					{ userId: foundListing.userId, threadId: foundThread.id },
+				]);
 			}
 
 			await tx.insert(listingClaimRequest).values({
@@ -266,7 +281,6 @@ export class ListingService {
 			await tx.insert(message).values({
 				body: `Hi! I would like to claim your listing: ${foundListing.title}`,
 				senderId: userId,
-				receiverId: foundListing.userId,
 				threadId: foundThread.id,
 			});
 
@@ -293,8 +307,8 @@ export class ListingService {
 		if (data.condition !== undefined) updateData.condition = data.condition;
 		if (data.status !== undefined) updateData.status = data.status;
 		if (data.address !== undefined) updateData.address = data.address;
-		if (data.lat !== undefined && data.lng !== undefined) {
-			updateData.location = { lat: data.lat, lng: data.lng };
+		if (data.location) {
+			updateData.location = data.location;
 		}
 
 		const [[updatedListing], images] = await Promise.all([

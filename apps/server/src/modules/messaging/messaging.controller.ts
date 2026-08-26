@@ -1,6 +1,12 @@
 import {
+	type ConversationQueryDto,
+	type ConversationQueryOutputDto,
+	ConversationQuerySchema,
 	type SendMessageDto,
 	SendMessageSchema,
+	type ThreadsQueryDto,
+	type ThreadsQueryOutputDto,
+	ThreadsQuerySchema,
 } from "@free-on-the-porch/shared/schemas";
 import {
 	Body,
@@ -20,7 +26,7 @@ import { MessagingService } from "./messaging.service";
 export class MessagingController {
 	constructor(
 		private readonly messagingService: MessagingService,
-		// private readonly messagingGateway: MessagingGateway,
+		private readonly messagingGateway: MessagingGateway,
 	) {}
 
 	@Post()
@@ -28,41 +34,53 @@ export class MessagingController {
 		@Session() session: UserSession,
 		@Body(new ZodValidationPipe(SendMessageSchema)) body: SendMessageDto,
 	) {
-		const message = await this.messagingService.sendMessage(
+		const { message, memberIds } = await this.messagingService.sendMessage(
 			session.user.id,
 			body,
 		);
 
-		// If recipient is connected via socket, push immediately
-		// this.messagingGateway.pushMessage(body.receiverId, message);
+		this.messagingGateway.broadcastMessage(memberIds, message);
 
 		return message;
 	}
 
-	@Get("inbox")
-	getInbox(@Session() session: UserSession) {
-		return this.messagingService.getInbox(session.user.id);
+	@Get("threads")
+	getThreads(
+		@Session() session: UserSession,
+		@Query(new ZodValidationPipe(ThreadsQuerySchema))
+		query: ThreadsQueryOutputDto,
+	) {
+		return this.messagingService.getThreads(session.user.id, query);
 	}
 
-	@Get(":userId")
-	getConversation(
+	@Get("conversations/:type/:id")
+	getConversations(
 		@Session() session: UserSession,
-		@Param("userId") otherUserId: string,
-		@Query("listingId") listingId?: string,
-		@Query("cursor") cursor?: string,
-		@Query("limit") limit?: string,
+		@Param(
+			new ZodValidationPipe(
+				ConversationQuerySchema.pick({ type: true, id: true }),
+			),
+		)
+		params: Pick<ConversationQueryOutputDto, "type" | "id">,
+		@Query(
+			new ZodValidationPipe(
+				ConversationQuerySchema.omit({ type: true, id: true }),
+			),
+		)
+		query: Omit<ConversationQueryOutputDto, "type" | "id">,
 	) {
-		return this.messagingService.getConversation(
-			session.user.id,
-			otherUserId,
-			listingId,
-			cursor,
-			limit ? Number.parseInt(limit, 10) : 30,
-		);
+		return this.messagingService.getConversation(session.user.id, {
+			...params,
+			...query,
+		});
 	}
 
 	@Post(":userId/read")
-	markRead(@Session() session: UserSession, @Param("userId") senderId: string) {
-		return this.messagingService.markRead(session.user.id, senderId);
+	markRead(
+		@Session() session: UserSession,
+		@Param("userId") senderId: string,
+		@Query("threadId") threadId?: string,
+	) {
+		return this.messagingService.markRead(session.user.id, senderId, threadId);
 	}
 }

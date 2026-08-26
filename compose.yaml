@@ -4,14 +4,14 @@ services:
     ports:
       - "${DATABASE_PORT}:5432"
     env_file:
-      - ./apps/server/.env
+      - .env
+      - .env.public
     environment: 
       POSTGRES_USER: "${DATABASE_USER}"
       POSTGRES_PASSWORD: "${DATABASE_PASSWORD}"
       POSTGRES_DB: "${DATABASE_NAME}"
     volumes:
-      - pgdata-temp:/var/lib/postgresql
-      - ./packages/db/drizzle/0000_init.sql:/docker-entrypoint-initdb.d/init.sql
+      - pgdata:/var/lib/postgresql
 
 volumes:
-  pgdata-temp:
+  pgdata:

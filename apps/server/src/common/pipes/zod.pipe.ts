@@ -1,3 +1,4 @@
+import { fromZodError } from "@free-on-the-porch/shared/schemas";
 import {
 	BadRequestException,
 	Injectable,
@@ -13,9 +14,11 @@ export class ZodValidationPipe implements PipeTransform {
 		const result = this.schema.safeParse(value);
 
 		if (!result.success) {
+			const betterError = fromZodError(result.error);
+
 			throw new BadRequestException({
-				message: "Validation failed",
-				errors: result.error,
+				message: betterError.toString(),
+				details: betterError.details,
 			});
 		}
 

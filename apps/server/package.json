@@ -22,6 +22,7 @@
 		"check-types": "tsc --noEmit"
 	},
 	"dependencies": {
+		"@better-auth/drizzle-adapter": "catalog:",
 		"@better-auth/expo": "catalog:",
 		"@free-on-the-porch/config": "workspace:*",
 		"@free-on-the-porch/db": "workspace:*",
@@ -37,7 +38,7 @@
 		"@nestjs/websockets": "^11.1.26",
 		"better-auth": "catalog:",
 		"cloudinary": "^2.10.0",
-		"drizzle-orm": "^0.45.2",
+		"drizzle-orm": "catalog:",
 		"pg": "^8.20.0",
 		"reflect-metadata": "^0.2.2",
 		"rxjs": "^7.8.1",
