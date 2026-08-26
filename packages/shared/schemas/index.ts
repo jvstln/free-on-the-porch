@@ -1,5 +1,6 @@
 export * from "./auth.schema";
 export * from "./comment.schema";
+export * from "./enum.schema";
 export * from "./generic.schema";
 export * from "./listing.schema";
 export * from "./message.schema";

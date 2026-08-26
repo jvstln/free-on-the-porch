@@ -1,36 +1,40 @@
 import { z } from "zod";
-import type {
-	ListingCategoryDto,
-	ListingConditionDto,
-	ListingStatusDto,
-} from "./enum.schema";
 import {
 	ListingCategorySchema,
 	ListingConditionSchema,
 	ListingStatusSchema,
 } from "./enum.schema";
-import { PaginationQuerySchema } from "./generic.schema";
-import type { PublicUserDto } from "./user.schema";
+import {
+	CursorPaginationSchema,
+	TimestampSchema,
+	UrlSchema,
+} from "./generic.schema";
+import { PublicUserSchema } from "./user.schema";
 
-// ─── Request schemas ──────────────────────────────────────────────────────────
+const PointSchema = z.object({
+	lat: z.coerce.number().min(-90).max(90),
+	lng: z.coerce.number().min(-180).max(180),
+});
 
 export const CreateListingSchema = z.object({
 	title: z.string().min(3).max(80),
-	description: z.string().max(500).optional(),
+	description: z.string().max(500).nullish(),
 	category: ListingCategorySchema,
 	condition: ListingConditionSchema,
-	lat: z.number().min(-90).max(90),
-	lng: z.number().min(-180).max(180),
 	address: z.string().max(200).optional(),
+	location: PointSchema,
 });
 
-export const UpdateListingSchema = CreateListingSchema.partial().extend({
+export type CreateListingDto = z.infer<typeof CreateListingSchema>;
+
+export const UpdateListingSchema = z.object({
+	...CreateListingSchema.partial().shape,
 	status: ListingStatusSchema.optional(),
 });
 
+export type UpdateListingDto = z.infer<typeof UpdateListingSchema>;
+
 export const NearbyListingsQuerySchema = z.object({
-	lat: z.coerce.number(),
-	lng: z.coerce.number(),
 	radiusMeters: z
 		.union([z.enum(["closest"]), z.coerce.number<number>().min(0)])
 		.default("closest"),
@@ -38,34 +42,32 @@ export const NearbyListingsQuerySchema = z.object({
 		.union([ListingCategorySchema, z.literal("")])
 		.transform((val) => val || undefined)
 		.optional(),
-	cursor: z.string().optional(),
-	limit: PaginationQuerySchema.shape.limit,
+	...PointSchema.shape,
+	...CursorPaginationSchema.shape,
 });
 
-// ─── Inferred request DTOs ────────────────────────────────────────────────────
-
-export type CreateListingDto = z.infer<typeof CreateListingSchema>;
-export type UpdateListingDto = z.infer<typeof UpdateListingSchema>;
 export type NearbyListingsQueryDto = z.input<typeof NearbyListingsQuerySchema>;
 export type NearbyListingsQueryOutputDto = z.infer<
 	typeof NearbyListingsQuerySchema
 >;
 
-// ─── Shared sub-types ─────────────────────────────────────────────────────────
+export const ListingImageSchema = z.object({
+	url: UrlSchema,
+});
 
-export interface ListingImageDto {
-	url: string;
-}
+export type ListingImageDto = z.infer<typeof ListingImageSchema>;
 
-export interface ListingCommentDto {
-	id: string;
-	body: string;
-	createdAt: string | Date;
-	updatedAt: string | Date;
-	userId: string;
-	listingId: string;
-	user: PublicUserDto | null;
-}
+export const ListingCommentSchema = z.object({
+	id: z.string(),
+	body: z.string(),
+	createdAt: z.union([z.string(), z.date()]),
+	updatedAt: z.union([z.string(), z.date()]),
+	userId: z.string(),
+	listingId: z.string(),
+	user: PublicUserSchema.nullable(),
+});
+
+export type ListingCommentDto = z.infer<typeof ListingCommentSchema>;
 
 // ─── Response DTOs ────────────────────────────────────────────────────────────
 
@@ -73,37 +75,45 @@ export interface ListingCommentDto {
  * Minimal listing shape used in card/list views (feed, my-listings, map pins).
  * Returned by GET /listings/nearby and GET /listings/mine.
  */
-export interface ListingDto {
-	id: string;
-	title: string;
-	description?: string | null;
-	category: ListingCategoryDto;
-	condition: ListingConditionDto;
-	status: ListingStatusDto;
-	address?: string | null;
-	distanceMeters?: number | null;
-	images: ListingImageDto[];
-	user: PublicUserDto | null;
-	createdAt: string | Date;
-	userId: string;
-	location?: { lat: number; lng: number } | null;
-	claimedByUserId?: string | null;
-}
+export const ListingSchema = z.object({
+	...CreateListingSchema.shape,
+	id: z.string(),
+	status: ListingStatusSchema,
+	address: z.string().nullable().optional(),
+	distanceMeters: z.number().nullable().optional(),
+	images: z.array(ListingImageSchema),
+	user: PublicUserSchema,
+	createdAt: TimestampSchema,
+	userId: z.string(),
+	claimedByUserId: z.string().nullable().optional(),
+});
 
-export interface ListingClaimRequestDto {
-	id: string;
-	listingId: string;
-	userId: string;
-	createdAt: string | Date;
-	updatedAt: string | Date;
-	user: PublicUserDto;
-}
+export type ListingDto = z.infer<typeof ListingSchema>;
+
+export const ListingMinimalSchema = ListingSchema.omit({
+	user: true,
+	distanceMeters: true,
+});
+
+export type ListingMinimalDto = z.infer<typeof ListingMinimalSchema>;
+
+export const ListingClaimRequestSchema = z.object({
+	id: z.string(),
+	listingId: z.string(),
+	userId: z.string(),
+	createdAt: z.union([z.string(), z.date()]),
+	updatedAt: z.union([z.string(), z.date()]),
+	user: PublicUserSchema,
+});
 
 /**
  * Full listing shape used in detail view.
- * Returned by GET /listings/:id — extends ListingDto with comments.
  */
-export interface ListingDetailDto extends ListingDto {
-	comments: ListingCommentDto[];
-	pendingClaims: ListingClaimRequestDto[];
-}
+export const ListingDetailSchema = ListingSchema.extend({
+	comments: z.array(ListingCommentSchema),
+	pendingClaims: z.array(ListingClaimRequestSchema),
+});
+
+export type ListingDetailDto = z.infer<typeof ListingDetailSchema>;
+
+export type ListingClaimRequestDto = z.infer<typeof ListingClaimRequestSchema>;

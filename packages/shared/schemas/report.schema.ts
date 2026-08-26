@@ -1,16 +1,9 @@
 import { z } from "zod";
-
-export const ReportReason = z.enum([
-	"SPAM",
-	"INAPPROPRIATE",
-	"ALREADY_TAKEN",
-	"FAKE",
-	"OTHER",
-]);
+import { ReportReasonSchema } from "./enum.schema";
 
 export const CreateReportSchema = z
 	.object({
-		reason: ReportReason,
+		reason: ReportReasonSchema,
 		details: z.string().max(300).optional(),
 		listingId: z.string().optional(),
 		reportedUserId: z.string().optional(),

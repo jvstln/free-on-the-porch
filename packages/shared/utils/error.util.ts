@@ -1,5 +1,11 @@
-export function getErrorMessage(error: unknown): string | null {
-	if (!error) return null;
+import axios from "axios";
+
+export function getErrorMessage(error: unknown): string {
+	if (!error) return "";
+
+	if (axios.isAxiosError(error)) {
+		return error.response?.data?.message || error.message;
+	}
 
 	if (typeof error === "string") {
 		return error;
@@ -12,7 +18,7 @@ export function getErrorMessage(error: unknown): string | null {
 				return message;
 			}
 		}
-		return null;
+		return "";
 	}
 
 	if (typeof error === "object" && error !== null) {
@@ -22,5 +28,5 @@ export function getErrorMessage(error: unknown): string | null {
 		}
 	}
 
-	return null;
+	return "null";
 }
