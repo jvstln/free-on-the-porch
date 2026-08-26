@@ -12,6 +12,12 @@
 		"check-types": "turbo check-types",
 		"dev:native": "turbo -F native dev",
 		"dev:server": "turbo -F server dev",
+		"db:push": "pnpm --filter @free-on-the-porch/db db:push",
+		"db:studio": "pnpm --filter @free-on-the-porch/db db:studio",
+		"db:generate": "pnpm --filter @free-on-the-porch/db db:generate",
+		"db:migrate": "pnpm --filter @free-on-the-porch/db db:migrate",
+		"db:seed": "pnpm --filter @free-on-the-porch/db db:seed",
+		"db:init": "docker compose exec -T db psql -U postgres -d free-on-the-porch -c \"CREATE EXTENSION IF NOT EXISTS postgis;\"",
 		"check": "biome check --write .",
 		"format": "biome format --write ."
 	},

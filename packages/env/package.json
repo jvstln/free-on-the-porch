@@ -4,13 +4,16 @@
 	"private": true,
 	"type": "module",
 	"exports": {
-		"./server": "./src/server.ts",
-		"./native": "./src/native.ts"
+		"./public": "./src/public.ts",
+		"./private": "./src/private.ts"
 	},
 	"dependencies": {
 		"@t3-oss/env-core": "^0.13.1",
 		"dotenv": "catalog:",
 		"zod": "catalog:"
+	},
+	"scripts": {
+		"check-types": "tsc --noEmit"
 	},
 	"devDependencies": {
 		"@free-on-the-porch/config": "workspace:*",
