@@ -1,44 +1,27 @@
+import {
+	LISTING_CATEGORY,
+	LISTING_CONDITION,
+	LISTING_STATUS,
+	NOTIFICATION_TYPE,
+	REPORT_REASON,
+	THREAD_TYPE,
+} from "@free-on-the-porch/shared/schemas";
 import { pgEnum } from "drizzle-orm/pg-core";
 
-export const listingCategoryEnum = pgEnum("listing_category", [
-	"FURNITURE",
-	"ELECTRONICS",
-	"CLOTHING",
-	"BOOKS",
-	"TOYS",
-	"KITCHEN",
-	"SPORTS",
-	"TOOLS",
-	"GARDEN",
-	"OTHER",
-]);
+export const listingCategoryEnum = pgEnum("listing_category", LISTING_CATEGORY);
 
-export const listingConditionEnum = pgEnum("listing_condition", [
-	"NEW",
-	"LIKE_NEW",
-	"GOOD",
-	"FAIR",
-	"WORN",
-]);
+export const listingConditionEnum = pgEnum(
+	"listing_condition",
+	LISTING_CONDITION,
+);
 
-export const listingStatusEnum = pgEnum("listing_status", [
-	"AVAILABLE",
-	"PICKED_UP",
-	"EXPIRED",
-	"REMOVED",
-]);
+export const listingStatusEnum = pgEnum("listing_status", LISTING_STATUS);
 
-export const notificationTypeEnum = pgEnum("notification_type", [
-	"NEW_NEARBY_LISTING",
-	"MESSAGE_RECEIVED",
-	"COMMENT_ON_LISTING",
-	"LISTING_EXPIRED",
-]);
+export const notificationTypeEnum = pgEnum(
+	"notification_type",
+	NOTIFICATION_TYPE,
+);
 
-export const reportReasonEnum = pgEnum("report_reason", [
-	"SPAM",
-	"INAPPROPRIATE",
-	"ALREADY_TAKEN",
-	"FAKE",
-	"OTHER",
-]);
+export const reportReasonEnum = pgEnum("report_reason", REPORT_REASON);
+
+export const threadTypeEnum = pgEnum("thread_type", THREAD_TYPE);

@@ -1,3 +1,5 @@
+import { PublicUserSchema } from "@free-on-the-porch/shared/schemas";
+import { getColumns } from "drizzle-orm";
 import { boolean, index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { timestamps } from "./common";
 
@@ -60,10 +62,18 @@ export const verification = pgTable(
 	(table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
-export const publicUserColumns = {
-	id: true,
-	name: true,
-	image: true,
-	bio: true,
-	createdAt: true,
-} as const;
+const userColumns = getColumns(user);
+const publicUserColumnsEntries = PublicUserSchema.keyof().options.map(
+	(field) => [field, userColumns[field]],
+);
+
+export const publicUserSelectFields = Object.fromEntries(
+	publicUserColumnsEntries.map(([field]) => [field, true]),
+) as Record<keyof typeof PublicUserSchema.shape, true>;
+
+export const publicUserColumns = Object.fromEntries(
+	publicUserColumnsEntries,
+) as Pick<
+	ReturnType<typeof getColumns<typeof user>>,
+	keyof typeof PublicUserSchema.shape
+>;

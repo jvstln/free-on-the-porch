@@ -1,11 +1,11 @@
-import { env } from "@free-on-the-porch/env/server";
+import { env } from "@free-on-the-porch/env/private";
 import { drizzle } from "drizzle-orm/node-postgres";
-import * as schema from "./schema";
+import { relations } from "./schema/relations";
 
 export const db = drizzle({
 	connection: env.DATABASE_URL,
-	casing: "snake_case",
-	schema,
+	relations,
 });
 
 export * from "./schema";
+export * from "./schema/common";
