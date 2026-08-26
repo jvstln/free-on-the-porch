@@ -1,5 +1,7 @@
+import { getInitials } from "@free-on-the-porch/shared/utils";
 import { useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
+import { format } from "date-fns";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, ChevronRight, Send, Tag } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import { FlatList, Pressable, TextInput } from "react-native";
@@ -11,18 +13,15 @@ import { Icon } from "@/components/ui/icon";
 import { Image } from "@/components/ui/image";
 import { Text } from "@/components/ui/text";
 import { KeyboardAvoidingView, View } from "@/components/ui/view";
+import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
-import {
-	AUTO_REPLIES,
-	INITIAL_MESSAGES,
-	INITIAL_THREADS,
-	type Message,
-	THREADS_DETAILS,
-} from "../../mock/mock-data";
+import { useUserProfile } from "../../users/hooks/use-user";
 import {
 	messagingKeys,
+	useMarkRead,
 	useMessagingSocket,
 	useSendMessage,
+	useThreadDetails,
 	useThreadMessages,
 } from "../hooks/use-messaging";
 
@@ -30,35 +29,70 @@ import {
 
 export function MessageThreadPage({ threadId }: { threadId: string }) {
 	const router = useRouter();
+	const { backTo } = useLocalSearchParams<{ backTo?: string }>();
 	const insets = useSafeAreaInsets();
 	const flatListRef = useRef<FlatList>(null);
 	const queryClient = useQueryClient();
+	const { data: session } = authClient.useSession();
 
-	const thread = THREADS_DETAILS[threadId] || THREADS_DETAILS["thread-1"];
+	const isDm = threadId.startsWith("dm-");
+	const dmUserId = isDm ? threadId.substring(3) : "";
 
-	// Get messages via TanStack Query hook
-	const { data: messages = [] } = useThreadMessages(
-		thread.otherUser.name.toLowerCase().replace(" ", "-"), // map mock name to id format
-		thread.listing.id,
-	);
+	const threadDetailsQuery = useThreadDetails(threadId);
+	const dmMessagesQuery = useThreadMessages(dmUserId);
+	const userProfileQuery = useUserProfile(dmUserId);
 
-	// In the real app, thread.otherUser.id is used:
-	const otherUserId = thread.otherUser.name.toLowerCase().replace(" ", "-");
+	const conversationResponse = isDm
+		? dmMessagesQuery.data
+		: threadDetailsQuery.data;
+	const conversation = conversationResponse?.data;
+
+	const otherMember = conversation?.members?.[0];
+
+	// Normalize data structure
+	const otherUser = {
+		id: otherMember?.id || dmUserId || "",
+		name: otherMember?.name || userProfileQuery.data?.name || "Neighbor",
+		image: otherMember?.image || userProfileQuery.data?.image || null,
+		initials: getInitials(
+			otherMember?.name || userProfileQuery.data?.name || "Neighbor",
+		),
+	};
+
+	const listing = conversation?.listing || null;
+	const messages = conversation?.messages || [];
+	const listingImageUrl = listing?.images?.[0]?.url;
+
+	const otherUserId = otherUser.id;
 
 	// Enable Socket connection for real-time notifications
-	useMessagingSocket(otherUserId);
+	useMessagingSocket(otherUserId, threadId);
 
 	// Message sending mutation
-	const sendMessageMutation = useSendMessage(otherUserId, thread.listing.id);
+	const sendMessageMutation = useSendMessage(otherUserId, threadId);
+	const markReadMutation = useMarkRead();
 
 	const [input, setInput] = useState("");
 
 	useEffect(() => {
-		// Scroll to bottom on initial render
-		setTimeout(() => {
-			flatListRef.current?.scrollToEnd({ animated: false });
-		}, 100);
-	}, []);
+		// Mark thread as read on load/updates
+		if (otherUserId) {
+			markReadMutation.mutate({
+				senderId: otherUserId,
+				threadId:
+					threadId && !threadId.startsWith("dm-") ? threadId : undefined,
+			});
+		}
+	}, [otherUserId, threadId]);
+
+	useEffect(() => {
+		// Scroll to bottom on initial render/new messages
+		if (messages.length > 0) {
+			setTimeout(() => {
+				flatListRef.current?.scrollToEnd({ animated: true });
+			}, 100);
+		}
+	}, [messages.length]);
 
 	const handleSend = () => {
 		if (!input.trim()) return;
@@ -71,55 +105,13 @@ export function MessageThreadPage({ threadId }: { threadId: string }) {
 				setTimeout(() => {
 					flatListRef.current?.scrollToEnd({ animated: true });
 				}, 100);
-
-				// Offline Mock Chatbot Auto Reply after 1.5 seconds
-				setTimeout(() => {
-					const randomReply =
-						AUTO_REPLIES[Math.floor(Math.random() * AUTO_REPLIES.length)];
-					const replyMsg: Message = {
-						id: `m-reply-${Date.now()}`,
-						body: randomReply,
-						createdAt: new Date().toLocaleTimeString(undefined, {
-							hour: "2-digit",
-							minute: "2-digit",
-							hour12: true,
-						}),
-						isMe: false,
-						read: true,
-					};
-
-					// Update local mock data state for inbox listings
-					if (!INITIAL_MESSAGES[threadId]) {
-						INITIAL_MESSAGES[threadId] = [];
-					}
-					INITIAL_MESSAGES[threadId].push(replyMsg);
-
-					// Also update last message of the thread list item
-					const t = INITIAL_THREADS.find((item) => item.id === threadId);
-					if (t) {
-						t.lastMessage = {
-							body: randomReply,
-							createdAt: "Just now",
-							read: false,
-							isMe: false,
-						};
-						t.unreadCount += 1;
-					}
-
-					// Invalidate queries so TanStack Query triggers a re-render
-					queryClient.invalidateQueries({ queryKey: messagingKeys.inbox });
-					queryClient.invalidateQueries({
-						queryKey: messagingKeys.thread(otherUserId),
-					});
-
-					// Scroll to bottom after new message mounts
-					setTimeout(() => {
-						flatListRef.current?.scrollToEnd({ animated: true });
-					}, 100);
-				}, 1500);
 			},
 		});
 	};
+
+	const isLoading = isDm
+		? userProfileQuery.isLoading || dmMessagesQuery.isLoading
+		: threadDetailsQuery.isLoading;
 
 	return (
 		<KeyboardAvoidingView className="flex-1 bg-background">
@@ -129,27 +121,39 @@ export function MessageThreadPage({ threadId }: { threadId: string }) {
 				style={{ paddingTop: Math.max(insets.top, 12) }}
 			>
 				<Pressable
-					onPress={() => router.back()}
+					onPress={() => {
+						if (backTo) {
+							router.navigate(backTo as any);
+						} else if (router.canGoBack()) {
+							router.back();
+						} else {
+							router.replace("/dashboard/messages");
+						}
+					}}
 					className="mr-3 active:opacity-70"
 				>
 					<Icon as={ArrowLeft} className="size-6 text-foreground" />
 				</Pressable>
 
 				<Pressable
-					onPress={() => router.push(`/user/${otherUserId}` as any)}
+					onPress={() => {
+						if (otherUserId) {
+							router.push(`/dashboard/user/${otherUserId}` as any);
+						}
+					}}
 					className="flex-1 flex-row items-center active:opacity-75"
 				>
 					<Avatar className="size-10 rounded-full">
-						{thread.otherUser.image ? (
-							<Avatar.Image src={thread.otherUser.image} />
+						{otherUser.image ? (
+							<Avatar.Image src={otherUser.image} />
 						) : (
-							<Avatar.Fallback>{thread.otherUser.initials}</Avatar.Fallback>
+							<Avatar.Fallback>{otherUser.initials}</Avatar.Fallback>
 						)}
 					</Avatar>
 
 					<View className="ml-3 flex-1">
 						<Text type="body-sm" className="font-bold text-foreground">
-							{thread.otherUser.name}
+							{otherUser.name}
 						</Text>
 						<Text type="body-xs" className="text-muted-foreground">
 							Online now
@@ -159,53 +163,57 @@ export function MessageThreadPage({ threadId }: { threadId: string }) {
 			</View>
 
 			{/* Listing Context Banner */}
-			<Pressable
-				onPress={() => router.push(`/listings/${thread.listing.id}` as any)}
-				className="flex-row items-center justify-between border-border border-b bg-primary/5 px-4 py-2.5 active:bg-primary/10"
-			>
-				<View className="flex-1 flex-row items-center gap-2">
-					{thread.listing.imageUrl ? (
-						<Image
-							source={{ uri: thread.listing.imageUrl }}
-							className="size-10 rounded-md bg-muted"
-							contentFit="cover"
-						/>
-					) : (
-						<View className="size-10 items-center justify-center rounded-md bg-muted">
-							<Icon as={Tag} className="size-5 text-muted-foreground" />
+			{listing && (
+				<Pressable
+					onPress={() =>
+						router.push(
+							`/dashboard/listings/${listing.id}?backTo=/dashboard/messages/${threadId}` as any,
+						)
+					}
+					className="flex-row items-center justify-between border-border border-b bg-primary/5 px-4 py-2.5 active:bg-primary/10"
+				>
+					<View className="flex-1 flex-row items-center gap-2">
+						{listingImageUrl ? (
+							<Image
+								source={{ uri: listingImageUrl }}
+								className="size-10 rounded-md bg-muted"
+								contentFit="cover"
+							/>
+						) : (
+							<View className="size-10 items-center justify-center rounded-md bg-muted">
+								<Icon as={Tag} className="size-5 text-muted-foreground" />
+							</View>
+						)}
+						<View className="flex-1">
+							<Text
+								type="body-xs"
+								className="font-bold text-secondary uppercase tracking-wide"
+							>
+								Regarding:
+							</Text>
+							<Text
+								type="body-sm"
+								className="font-semibold text-foreground"
+								numberOfLines={1}
+							>
+								{listing.title}
+							</Text>
 						</View>
-					)}
-					<View className="flex-1">
-						<Text
-							type="body-xs"
-							className="font-bold text-secondary uppercase tracking-wide"
-						>
-							Regarding:
-						</Text>
-						<Text
-							type="body-sm"
-							className="font-semibold text-foreground"
-							numberOfLines={1}
-						>
-							{thread.listing.title}
-						</Text>
 					</View>
-				</View>
-				<View className="flex-row items-center gap-1">
-					<Badge
-						color={
-							thread.listing.status === "AVAILABLE" ? "primary" : "neutral"
-						}
-						appearance="soft"
-						size="sm"
-					>
-						<Text className="font-bold text-[10px] uppercase">
-							{thread.listing.status === "AVAILABLE" ? "Available" : "Claimed"}
-						</Text>
-					</Badge>
-					<Icon as={ChevronRight} className="size-4 text-muted-foreground" />
-				</View>
-			</Pressable>
+					<View className="flex-row items-center gap-1">
+						<Badge
+							color={listing.status === "AVAILABLE" ? "primary" : "neutral"}
+							appearance="soft"
+							size="sm"
+						>
+							<Text className="font-bold text-[10px] uppercase">
+								{listing.status === "AVAILABLE" ? "Available" : "Claimed"}
+							</Text>
+						</Badge>
+						<Icon as={ChevronRight} className="size-4 text-muted-foreground" />
+					</View>
+				</Pressable>
+			)}
 
 			{/* Chat Bubbles */}
 			<FlatList
@@ -215,7 +223,8 @@ export function MessageThreadPage({ threadId }: { threadId: string }) {
 				showsVerticalScrollIndicator={false}
 				contentContainerClassName="px-4 py-5 gap-3"
 				renderItem={({ item }) => {
-					const isMe = item.isMe;
+					const isMe = item.senderId === session?.user?.id;
+					const formattedTime = format(new Date(item.createdAt), "h:mm a");
 					return (
 						<View
 							className={cn(
@@ -241,7 +250,7 @@ export function MessageThreadPage({ threadId }: { threadId: string }) {
 											: "text-muted-foreground/75",
 									)}
 								>
-									{item.createdAt}
+									{formattedTime}
 								</Text>
 								{isMe && (
 									<Text className="font-medium text-[9px] text-primary-foreground/60">

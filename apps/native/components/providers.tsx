@@ -3,8 +3,10 @@ import { HeroUINativeProvider } from "heroui-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { AppThemeProvider } from "@/contexts/app-theme-context";
-import { AuthGuard } from "@/features/auth/components/auth-guard";
+import { AuthGuardProvider } from "@/features/auth/components/auth-guard";
+import { AuthSheetProvider } from "@/features/auth/components/auth-sheet-provider";
 import { queryClient } from "@/lib/query-client";
+import { ToastListener } from "./ui/toast";
 import { SafeAreaView } from "./ui/view";
 
 export const RootProviders = ({ children }: { children: React.ReactNode }) => {
@@ -13,9 +15,14 @@ export const RootProviders = ({ children }: { children: React.ReactNode }) => {
 			<KeyboardProvider>
 				<AppThemeProvider>
 					<HeroUINativeProvider>
+						<ToastListener />
 						<QueryClientProvider client={queryClient}>
-							<SafeAreaView className="flex-1">
-								<AuthGuard>{children}</AuthGuard>
+							<SafeAreaView
+								edges={["top", "left", "right"]}
+								className="flex-1 bg-background"
+							>
+								<AuthGuardProvider>{children}</AuthGuardProvider>
+								<AuthSheetProvider />
 							</SafeAreaView>
 						</QueryClientProvider>
 					</HeroUINativeProvider>

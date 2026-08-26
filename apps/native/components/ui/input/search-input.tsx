@@ -6,6 +6,7 @@ export function SearchInput({
 	onChange,
 	className,
 	placeholder,
+	autoFocus,
 	...props
 }: SearchInput.Props) {
 	return (
@@ -20,6 +21,7 @@ export function SearchInput({
 				<SearchField.Input
 					placeholder={placeholder}
 					className={cn(className)}
+					autoFocus={autoFocus}
 				/>
 				{/* <SearchField.ClearButton /> */}
 			</SearchField.Group>
@@ -28,7 +30,8 @@ export function SearchInput({
 }
 
 namespace SearchInput {
-	export type Props = React.ComponentProps<typeof SearchField> & {
-		placeholder?: string;
-	};
+	export type Props = React.ComponentProps<typeof SearchField> &
+		Pick<React.ComponentProps<typeof SearchField.Input>, "autoFocus"> & {
+			placeholder?: string;
+		};
 }

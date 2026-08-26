@@ -15,7 +15,15 @@
 			"expo-font",
 			"expo-router",
 			"expo-secure-store",
-			"expo-web-browser"
+			"expo-web-browser",
+			[
+				"expo-splash-screen",
+				{
+					"image": "./assets/logo-icon.png",
+					"resizeMode": "contain",
+					"backgroundColor": "red"
+				}
+			]
 		],
 		"experiments": {
 			"typedRoutes": true,

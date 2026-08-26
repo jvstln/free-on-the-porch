@@ -19,14 +19,17 @@ export const View = (props: React.ComponentProps<typeof ViewPrimitive>) => {
 	);
 };
 
+const ScrollViewWithUniwind = withUniwind(ScrollViewPrimitive);
 export const ScrollView = (
 	props: React.ComponentProps<typeof ScrollViewPrimitive>,
 ) => {
 	return (
-		<ScrollViewPrimitive
+		<ScrollViewWithUniwind
+			showsVerticalScrollIndicator={false}
+			showsHorizontalScrollIndicator={false}
 			{...props}
 			className={cn("size-full flex-1", props.className)}
-			contentContainerClassName={cn("grow", props.contentContainerClassName)}
+			contentContainerClassName={props.contentContainerClassName}
 		/>
 	);
 };

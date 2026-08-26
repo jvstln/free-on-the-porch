@@ -13,24 +13,26 @@ import {
 	useInheritableTextClassContext,
 } from "./text";
 
-type HeroUIButtonProps = React.ComponentProps<typeof HeroUIButton>;
-type HeroUILinkButtonProps = React.ComponentProps<typeof HeroUILinkButton>;
+namespace Button {
+	type HeroUIButtonProps = React.ComponentProps<typeof HeroUIButton>;
+	type HeroUILinkButtonProps = React.ComponentProps<typeof HeroUILinkButton>;
 
-type ButtonVariants = VariantProps<typeof buttonVariants>;
+	export type ButtonVariants = VariantProps<typeof buttonVariants>;
 
-type ButtonProps = HeroUIButtonProps &
-	ButtonVariants & {
-		disabled?: boolean | null;
-		isLoading?: boolean;
-		loadingText?: string;
-	};
+	export type Props = Omit<HeroUIButtonProps, "size"> &
+		ButtonVariants & {
+			disabled?: boolean | null;
+			isLoading?: boolean;
+			loadingText?: string;
+		};
 
-type LinkButtonProps = HeroUILinkButtonProps &
-	Omit<ButtonVariants, "appearance"> & {
-		disabled?: boolean | null;
-		isLoading?: boolean;
-		loadingText?: string;
-	};
+	export type LinkButtonProps = HeroUILinkButtonProps &
+		Omit<ButtonVariants, "appearance"> & {
+			disabled?: boolean | null;
+			isLoading?: boolean;
+			loadingText?: string;
+		};
+}
 
 const buttonVariants = cva(
 	cn(
@@ -59,26 +61,39 @@ const buttonVariants = cva(
 					"bg-transparent text-(--bg-v) active:bg-(--bg-v)/10",
 					Platform.select({ web: "hover:bg-(--bg-v)/10" }),
 				),
-				link: "bg-transparent text-(--bg-v) underline-offset-4 active:underline",
+				link: "bg-transparent text-(--bg-v) underline underline-offset-4",
 				soft: "border border-(--bg-v) bg-(--bg-v)/15 text-(--bg-v) active:bg-(--bg-v)/25",
 			},
-			// size: {
-			// 	default: "h-9 px-4 py-2",
-			// 	xs: "h-7 gap-1 px-2.5",
-			// 	sm: "h-8 gap-1.5 px-3",
-			// 	lg: "h-10 px-6",
-			// 	xl: "h-12 px-8 text-base",
-			// 	"2xl": "h-14 px-8 text-lg",
-			// 	icon: "size-9",
-			// 	"icon-sm": "size-8",
-			// 	"icon-lg": "size-10",
-			// },
+			size: {
+				default: "h-9 px-4 py-2",
+				xs: "h-7 gap-1 px-2.5 text-xs",
+				sm: "h-8 gap-1.5 px-3",
+				lg: "h-10 px-6",
+				xl: "h-12 px-8 text-base",
+				"2xl": "h-14 px-8 text-lg",
+				icon: "size-9",
+				"icon-sm": "size-8",
+				"icon-lg": "size-10",
+			},
 		},
 		defaultVariants: {
 			color: "primary",
 			inverted: false,
 			appearance: "solid",
 		},
+		compoundVariants: [
+			{
+				appearance: "outline",
+				color: "default",
+				className:
+					"border-border bg-card text-muted-foreground active:bg-muted/50",
+			},
+			{
+				appearance: "ghost",
+				color: "default",
+				className: "text-muted-foreground hover:bg-muted/50 active:bg-muted",
+			},
+		],
 	},
 );
 
@@ -88,10 +103,12 @@ function ButtonRoot({
 	variant,
 	color,
 	appearance,
+	inverted,
 	size,
 	children,
+	feedbackVariant,
 	...props
-}: ButtonProps) {
+}: Button.Props) {
 	const resolvedChildren = Array.isArray(children) ? (
 		children.map((child) => {
 			return typeof child !== "object" && child !== null ? (
@@ -109,12 +126,16 @@ function ButtonRoot({
 	const disabled = props.disabled || isLoading || false;
 
 	return (
-		<TextClassContextProvider value={buttonVariants({ color, appearance })}>
+		<TextClassContextProvider
+			value={buttonVariants({ color, appearance, size, inverted })}
+		>
 			<HeroUIButton
 				variant={variant}
-				size={size}
 				{...props}
-				className={cn(buttonVariants({ color, appearance }), props.className)}
+				className={cn(
+					buttonVariants({ color, appearance, size, inverted }),
+					props.className,
+				)}
 				isDisabled={disabled}
 			>
 				{isLoading ? (
@@ -148,19 +169,38 @@ function LinkButtonRoot({
 	size,
 	color,
 	className,
-	disabled,
+	isLoading,
+	children,
 	...props
-}: LinkButtonProps) {
+}: Button.LinkButtonProps) {
+	const resolvedChildren = Array.isArray(children) ? (
+		children.map((child) => {
+			return typeof child !== "object" && child !== null ? (
+				<ButtonLabel key={child}>{child}</ButtonLabel>
+			) : (
+				child
+			);
+		})
+	) : typeof children !== "object" ? (
+		<ButtonLabel>{children}</ButtonLabel>
+	) : (
+		children
+	);
+
+	const disabled = props.disabled || isLoading || false;
+
 	return (
 		<TextClassContextProvider
-			value={cn(buttonVariants({ appearance: "link" }))}
+			value={cn(buttonVariants({ color, appearance: "link" }), className)}
 		>
 			<HeroUILinkButton
 				size={size}
 				isDisabled={disabled === null ? false : disabled}
 				className={cn(buttonVariants({ color, appearance: "link" }), className)}
 				{...props}
-			/>
+			>
+				{resolvedChildren}
+			</HeroUILinkButton>
 		</TextClassContextProvider>
 	);
 }

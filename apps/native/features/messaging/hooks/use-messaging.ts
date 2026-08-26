@@ -1,3 +1,4 @@
+import type { ThreadsQueryDto } from "@free-on-the-porch/shared/schemas";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { messagingSocket } from "@/lib/socket-client";
@@ -5,44 +6,62 @@ import { messagingService } from "../messaging.api";
 
 // Query keys
 export const messagingKeys = {
-	inbox: ["messaging", "inbox"] as const,
-	thread: (otherUserId: string) =>
-		["messaging", "thread", otherUserId] as const,
+	inbox: (query?: ThreadsQueryDto) => ["messaging", "inbox", query] as const,
+	conversation: (type: "threads" | "listings" | "users", id: string) =>
+		["messaging", "conversation", type, id] as const,
 };
 
 // ─── Custom Hooks ─────────────────────────────────────────────────────────────
 
-export const useInboxThreads = () => {
+export const useInboxThreads = (query?: ThreadsQueryDto) => {
 	return useQuery({
-		queryKey: messagingKeys.inbox,
-		queryFn: () => messagingService.getInbox(),
+		queryKey: messagingKeys.inbox(query),
+		queryFn: () => messagingService.getInbox(query),
 	});
 };
 
-export const useThreadMessages = (otherUserId: string, listingId?: string) => {
+export const useThreadDetails = (threadId: string) => {
 	return useQuery({
-		queryKey: messagingKeys.thread(otherUserId),
-		queryFn: () => messagingService.getConversation(otherUserId, listingId),
+		queryKey: messagingKeys.conversation("threads", threadId),
+		queryFn: () =>
+			messagingService.getConversation({ type: "threads", id: threadId }),
+		enabled: !!threadId && !threadId.startsWith("dm-"),
+	});
+};
+
+export const useThreadMessages = (otherUserId: string) => {
+	return useQuery({
+		queryKey: messagingKeys.conversation("users", otherUserId),
+		queryFn: () =>
+			messagingService.getConversation({ type: "users", id: otherUserId }),
 		enabled: !!otherUserId,
 	});
 };
 
-export const useSendMessage = (otherUserId: string, listingId?: string) => {
+export const useSendMessage = (otherUserId?: string, threadId?: string) => {
 	const queryClient = useQueryClient();
 
 	return useMutation({
 		mutationFn: (body: string) =>
 			messagingService.sendMessage({
 				receiverId: otherUserId,
-				listingId,
+				threadId:
+					threadId && !threadId.startsWith("dm-") ? threadId : undefined,
 				body,
 			}),
 		onSuccess: (_newMessage) => {
 			// Invalidate inbox and current thread to refresh UI
-			queryClient.invalidateQueries({ queryKey: messagingKeys.inbox });
-			queryClient.invalidateQueries({
-				queryKey: messagingKeys.thread(otherUserId),
-			});
+			queryClient.invalidateQueries({ queryKey: ["messaging", "inbox"] });
+			if (threadId && !threadId.startsWith("dm-")) {
+				queryClient.invalidateQueries({
+					queryKey: messagingKeys.conversation("threads", threadId),
+				});
+			}
+			if (otherUserId) {
+				queryClient.invalidateQueries({
+					queryKey: messagingKeys.conversation("users", otherUserId),
+				});
+			}
 		},
 	});
 };
@@ -51,16 +70,25 @@ export const useMarkRead = () => {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: (senderId: string) => messagingService.markRead(senderId),
-		onSuccess: (_, _senderId) => {
-			queryClient.invalidateQueries({ queryKey: messagingKeys.inbox });
+		mutationFn: (vars: { senderId: string; threadId?: string }) =>
+			messagingService.markRead(vars.senderId, vars.threadId),
+		onSuccess: (_, vars) => {
+			queryClient.invalidateQueries({ queryKey: ["messaging", "inbox"] });
+			if (vars.threadId) {
+				queryClient.invalidateQueries({
+					queryKey: messagingKeys.conversation("threads", vars.threadId),
+				});
+			}
+			queryClient.invalidateQueries({
+				queryKey: messagingKeys.conversation("users", vars.senderId),
+			});
 		},
 	});
 };
 
 // ─── Websocket Updates integration ──────────────────────────────────────────
 
-export const useMessagingSocket = (otherUserId?: string) => {
+export const useMessagingSocket = (otherUserId?: string, threadId?: string) => {
 	const queryClient = useQueryClient();
 
 	useEffect(() => {
@@ -68,44 +96,30 @@ export const useMessagingSocket = (otherUserId?: string) => {
 			console.log("[socket] Received real-time message:", message);
 
 			// Invalidate inbox list to fetch latest preview and updates
-			queryClient.invalidateQueries({ queryKey: messagingKeys.inbox });
+			queryClient.invalidateQueries({ queryKey: ["messaging", "inbox"] });
 
-			// If we are currently chatting with the sender of this message, merge it into active conversation cache
+			// Invalidate specific thread if it matches
+			if (message.threadId && threadId === message.threadId) {
+				queryClient.invalidateQueries({
+					queryKey: messagingKeys.conversation("threads", message.threadId),
+				});
+			}
+
+			// If we are currently chatting with the sender of this message in DM
 			if (
 				otherUserId &&
-				(message.senderId === otherUserId || message.receiverId === otherUserId)
+				(message.senderId === otherUserId ||
+					message.receiverId === otherUserId) &&
+				(!message.threadId || threadId?.startsWith("dm-"))
 			) {
-				queryClient.setQueryData<any[]>(
-					messagingKeys.thread(otherUserId),
-					(old = []) => {
-						// Avoid duplicate additions
-						if (old.some((m) => m.id === message.id)) return old;
-
-						// Map database message format to client-side model if necessary
-						const clientMessage = {
-							id: message.id,
-							body: message.body,
-							createdAt: new Date(message.createdAt).toLocaleTimeString(
-								undefined,
-								{
-									hour: "2-digit",
-									minute: "2-digit",
-									hour12: true,
-								},
-							),
-							isMe: message.senderId !== otherUserId, // if sender matches otherUserId, isMe is false
-							read: message.read,
-						};
-
-						return [...old, clientMessage];
-					},
-				);
+				queryClient.invalidateQueries({
+					queryKey: messagingKeys.conversation("users", otherUserId),
+				});
 			}
 		};
 
 		messagingSocket.on("new_message", handleNewMessage);
 
-		// If connected, join our private rooms/namespaces if necessary
 		messagingSocket.on("connect", () => {
 			console.log("[socket] Connected to messaging namespace");
 		});
@@ -114,5 +128,5 @@ export const useMessagingSocket = (otherUserId?: string) => {
 			messagingSocket.off("new_message", handleNewMessage);
 			messagingSocket.off("connect");
 		};
-	}, [otherUserId, queryClient]);
+	}, [otherUserId, threadId, queryClient]);
 };

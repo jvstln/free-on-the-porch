@@ -12,18 +12,21 @@ function LogoImpl({
 	...props
 }: LogoProps) {
 	const styles = useResolveClassNames(cn(className));
-	let [primaryColor, secondaryColor] = useCSSVariable([
-		"--color-primary",
-		"--color-secondary",
-	]);
+	let [primaryColor] = useCSSVariable(["--color-primary"]);
 
 	const width =
 		_width ?? (typeof styles.width === "number" ? styles.width : 597.3429);
 	const height =
 		_height ?? (typeof styles.height === "number" ? styles.height : 559.12067);
 
-	primaryColor = String(styles.color) ?? String(primaryColor);
-	secondaryColor = String(secondaryColor);
+	primaryColor =
+		styles.color && styles.color !== "undefined"
+			? String(styles.color)
+			: primaryColor && primaryColor !== "undefined"
+				? String(primaryColor)
+				: undefined;
+
+	const secondaryColor = primaryColor;
 
 	return (
 		<Svg

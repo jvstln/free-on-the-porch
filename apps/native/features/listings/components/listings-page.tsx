@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Image } from "@/components/ui/image";
 import { SearchInput } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/page-header";
 import { QueryState } from "@/components/ui/query-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
@@ -214,10 +215,10 @@ export const ListingsPage = () => {
 	return (
 		<View className="flex-1 bg-background">
 			{/* Listings header */}
-			<View className="flex-row items-center gap-2 border-border border-b px-3 py-2">
+			<PageHeader>
 				<SearchInput className="grow" />
 				<UserMenu />
-			</View>
+			</PageHeader>
 
 			<View className="flex-1">
 				{activeTab === "Feed" ? (

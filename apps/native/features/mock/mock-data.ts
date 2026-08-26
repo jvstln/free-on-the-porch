@@ -1,4 +1,4 @@
-import type { ListingCardItem } from "../listings/components/listing-card";
+import type { ListingDto } from "@free-on-the-porch/shared/schemas";
 
 export const MOCK_USER = {
 	id: "user-current",
@@ -62,21 +62,24 @@ export interface Message {
 
 // ─── Explore Listings Mock Data ───────────────────────────────────────────────
 
-export const MOCK_LISTINGS: ListingCardItem[] = [
+export const MOCK_LISTINGS: ListingDto[] = [
 	{
 		id: "listing-table",
+		userId: "user-sarah",
 		title: "Vintage Oak Coffee Table",
 		category: "FURNITURE",
 		condition: "GOOD",
 		status: "AVAILABLE",
 		address: "Maplewood Terrace",
 		distanceMeters: 450,
+		location: { lat: 37.7749, lng: -122.4194 },
 		images: [
 			{
 				url: "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?w=400",
 			},
 		],
 		user: {
+			id: "user-sarah",
 			name: "Sarah Jenkins",
 			image:
 				"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
@@ -85,18 +88,21 @@ export const MOCK_LISTINGS: ListingCardItem[] = [
 	},
 	{
 		id: "listing-drill",
+		userId: "user-dave",
 		title: "Bosch Power Drill",
 		category: "TOOLS",
 		condition: "LIKE_NEW",
 		status: "AVAILABLE",
 		address: "Valley Street",
 		distanceMeters: 1200,
+		location: { lat: 37.7749, lng: -122.4194 },
 		images: [
 			{
 				url: "https://images.unsplash.com/photo-1504148455328-c376907d081c?w=400",
 			},
 		],
 		user: {
+			id: "user-dave",
 			name: "Dave Miller",
 			image:
 				"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150",
@@ -105,18 +111,21 @@ export const MOCK_LISTINGS: ListingCardItem[] = [
 	},
 	{
 		id: "listing-crib",
+		userId: "user-emma",
 		title: "Baby Crib & Mattress",
 		category: "TOYS",
 		condition: "GOOD",
 		status: "PICKED_UP",
 		address: "Elm Road",
 		distanceMeters: 2300,
+		location: { lat: 37.7749, lng: -122.4194 },
 		images: [
 			{
 				url: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=400",
 			},
 		],
 		user: {
+			id: "user-emma",
 			name: "Emma Watson",
 			image:
 				"https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150",
@@ -125,18 +134,21 @@ export const MOCK_LISTINGS: ListingCardItem[] = [
 	},
 	{
 		id: "listing-tomato",
+		userId: "user-marcus",
 		title: "Organic Tomato Starters",
 		category: "GARDEN",
 		condition: "NEW",
 		status: "AVAILABLE",
 		address: "Baker Street",
 		distanceMeters: 800,
+		location: { lat: 37.7749, lng: -122.4194 },
 		images: [
 			{
 				url: "https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?w=400",
 			},
 		],
 		user: {
+			id: "user-marcus",
 			name: "Marcus Chen",
 			image:
 				"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
@@ -145,66 +157,75 @@ export const MOCK_LISTINGS: ListingCardItem[] = [
 	},
 	{
 		id: "listing-books",
+		userId: "user-alice",
 		title: "Stephen King Hardcover Set",
 		category: "BOOKS",
 		condition: "GOOD",
 		status: "AVAILABLE",
 		address: "Jefferson Ave",
 		distanceMeters: 3100,
+		location: { lat: 37.7749, lng: -122.4194 },
 		images: [
 			{
 				url: "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400",
 			},
 		],
-		user: { name: "Alice Brown", image: null },
+		user: { id: "user-alice", name: "Alice Brown", image: null },
 		createdAt: new Date(Date.now() - 120000).toISOString(),
 	},
 	{
 		id: "listing-blender",
+		userId: "user-john",
 		title: "Ninja High-Speed Blender",
 		category: "KITCHEN",
 		condition: "FAIR",
 		status: "AVAILABLE",
 		address: "Crestwood Ave",
 		distanceMeters: 1900,
+		location: { lat: 37.7749, lng: -122.4194 },
 		images: [
 			{
 				url: "https://images.unsplash.com/photo-1578643463396-0997cb5328c1?w=400",
 			},
 		],
-		user: { name: "John Doe", image: null },
+		user: { id: "user-john", name: "John Doe", image: null },
 		createdAt: new Date(Date.now() - 3600000).toISOString(),
 	},
 	{
 		id: "listing-headphones",
+		userId: "user-chris",
 		title: "Sony Noise Cancelling Headphones",
 		category: "ELECTRONICS",
 		condition: "WORN",
 		status: "AVAILABLE",
 		address: "Prospect Street",
 		distanceMeters: 4500,
+		location: { lat: 37.7749, lng: -122.4194 },
 		images: [
 			{
 				url: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400",
 			},
 		],
-		user: { name: "Chris Evans", image: null },
+		user: { id: "user-chris", name: "Chris Evans", image: null },
 		createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
 	},
 	{
 		id: "listing-jacket",
+		userId: "user-sarah",
 		title: "Levi's Denim Jacket (Medium)",
 		category: "CLOTHING",
 		condition: "LIKE_NEW",
 		status: "AVAILABLE",
 		address: "Oakwood Drive",
 		distanceMeters: 1500,
+		location: { lat: 37.7749, lng: -122.4194 },
 		images: [
 			{
 				url: "https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=400",
 			},
 		],
 		user: {
+			id: "user-sarah",
 			name: "Sarah Jenkins",
 			image:
 				"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",

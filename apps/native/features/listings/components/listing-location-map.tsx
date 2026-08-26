@@ -56,7 +56,7 @@ export function ListingLocationMap({ location, address }: Props) {
 						fillColor="rgba(49, 99, 66, 0.15)"
 					/>
 					<Marker coordinate={{ latitude: lat, longitude: lng }}>
-						<View className="items-center justify-center size-8 rounded-full bg-primary/20 border border-primary">
+						<View className="size-8 items-center justify-center rounded-full border border-primary bg-primary/20">
 							<View className="size-3 rounded-full bg-primary" />
 						</View>
 					</Marker>
@@ -78,21 +78,54 @@ export function ListingLocationMap({ location, address }: Props) {
 		<Card className="relative h-48 w-full overflow-hidden rounded-2xl border border-border bg-[#e5e9f0] p-0 shadow-sm">
 			{/* Grid Map SVG background */}
 			<View className="absolute inset-0 select-none opacity-90">
-				<svg width="100%" height="100%" viewBox="0 0 400 200" style={{ backgroundColor: "#e5e9f0" }}>
+				<svg
+					width="100%"
+					height="100%"
+					viewBox="0 0 400 200"
+					style={{ backgroundColor: "#e5e9f0" }}
+				>
 					<title>Estimated Area Map</title>
 					<rect x="0" y="0" width="400" height="200" fill="#e5e9f0" />
 					<circle cx="200" cy="100" r="60" fill="#bcd4e6" opacity="0.6" />
 					<circle cx="200" cy="100" r="40" fill="#c2e3bf" opacity="0.8" />
-					<line x1="0" y1="100" x2="400" y2="100" stroke="#ffffff" strokeWidth="6" />
-					<line x1="0" y1="100" x2="400" y2="100" stroke="#d0d6e2" strokeWidth="4" />
-					<line x1="200" y1="0" x2="200" y2="200" stroke="#ffffff" strokeWidth="6" />
-					<line x1="200" y1="0" x2="200" y2="200" stroke="#d0d6e2" strokeWidth="4" />
+					<line
+						x1="0"
+						y1="100"
+						x2="400"
+						y2="100"
+						stroke="#ffffff"
+						strokeWidth="6"
+					/>
+					<line
+						x1="0"
+						y1="100"
+						x2="400"
+						y2="100"
+						stroke="#d0d6e2"
+						strokeWidth="4"
+					/>
+					<line
+						x1="200"
+						y1="0"
+						x2="200"
+						y2="200"
+						stroke="#ffffff"
+						strokeWidth="6"
+					/>
+					<line
+						x1="200"
+						y1="0"
+						x2="200"
+						y2="200"
+						stroke="#d0d6e2"
+						strokeWidth="4"
+					/>
 				</svg>
 			</View>
 
 			{/* Center Map PIN Marker */}
 			<View className="absolute top-[40%] left-[47%] items-center justify-center">
-				<View className="size-10 items-center justify-center rounded-full bg-primary/20 border border-primary">
+				<View className="size-10 items-center justify-center rounded-full border border-primary bg-primary/20">
 					<Icon as={MapPin} className="size-5 text-primary" />
 				</View>
 			</View>

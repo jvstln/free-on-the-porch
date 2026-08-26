@@ -1,18 +1,12 @@
 import { cn } from "./utils";
 
 export const uiColors = {
+	default: cn("[--bg:var(--color-background)] [--fg:var(--color-foreground)]"),
 	primary: cn(
 		"[--bg:var(--color-primary)] [--fg:var(--color-primary-foreground)]",
 	),
-	secondary: cn(
-		"[--bg:var(--color-secondary)] [--fg:var(--color-secondary-foreground)]",
-	),
 	destructive: cn(
 		"[--bg:var(--color-destructive)] [--fg:var(--color-destructive-foreground)]",
-	),
-	neutral: cn("[--bg:var(--color-foreground)] [--fg:var(--color-background)]"),
-	accent: cn(
-		"[--bg:var(--color-accent)] [--fg:var(--color-accent-foreground)]",
 	),
 	success: cn(
 		"[--bg:var(--color-success)] [--fg:var(--color-success-foreground)]",
@@ -20,23 +14,21 @@ export const uiColors = {
 	warning: cn(
 		"[--bg:var(--color-warning)] [--fg:var(--color-warning-foreground)]",
 	),
-	default: cn(
-		"[--bg:var(--color-default)] [--fg:var(--color-default-foreground)]",
-	),
+	muted: cn("[--bg:var(--color-muted)] [--fg:var(--color-muted-foreground)]"),
+	neutral: cn("[--bg:var(--color-neutral-800)] [--fg:var(--color-white)]"),
 } as const;
 
 export const colorAliases: Record<
 	keyof typeof uiColors,
 	Array<string | RegExp>
 > = {
-	primary: ["good", "like_new", ""],
-	warning: ["fair"],
-	accent: [],
 	default: [],
+	primary: ["good", "like_new", ""],
 	destructive: [],
-	neutral: [],
-	secondary: [],
 	success: [],
+	warning: ["fair"],
+	muted: [],
+	neutral: [],
 } as const;
 
 const colorAliasesEntries = Object.entries(colorAliases) as readonly [

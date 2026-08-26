@@ -1,6 +1,6 @@
 import { getInitials } from "@free-on-the-porch/shared/utils";
 import { format } from "date-fns";
-import { useRouter } from "expo-router";
+import { router, useNavigation } from "expo-router";
 import {
 	Calendar,
 	CheckCircle,
@@ -45,7 +45,6 @@ type Props = {
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export function ListingDetailPage({ id }: Props) {
-	const router = useRouter();
 	const insets = useSafeAreaInsets();
 	const { data: session } = authClient.useSession();
 
@@ -105,17 +104,16 @@ export function ListingDetailPage({ id }: Props) {
 	const isClaimedByMe = listing.claimedByUserId === session?.user?.id;
 
 	// Handlers
-	const navigateToThread = async () => {
-		// router.push("/dashboard/messages");
-		router.push(
+	const navigateToDmThread = async () => {
+		router.navigate(
 			`/dashboard/messages/dm-${listing.userId}?listingId=${listing.id}`,
 		);
 	};
 
 	const handleClaim = async () => {
 		try {
-			const res = await claimMutation.mutateAsync();
-			router.push(`/dashboard/messages/${res.id}`);
+			const claimThread = await claimMutation.mutateAsync();
+			router.push(`/dashboard/messages/${claimThread.id}`);
 		} catch {}
 	};
 
@@ -134,7 +132,7 @@ export function ListingDetailPage({ id }: Props) {
 			buttonText = "Reserved for You";
 			buttonColor = "warning";
 			isButtonDisabled = false;
-			handleButtonPress = navigateToThread;
+			handleButtonPress = navigateToDmThread;
 		} else if (listing.status === "PICKED_UP") {
 			buttonText = "Claimed by You";
 			buttonColor = "neutral";
@@ -145,9 +143,10 @@ export function ListingDetailPage({ id }: Props) {
 			buttonText = "Requested";
 			buttonColor = "neutral";
 			isButtonDisabled = false;
-			handleButtonPress = navigateToThread;
+			handleButtonPress = navigateToDmThread;
 		} else {
-			buttonText = listing.status === "RESERVED" ? "Reserved" : "Already Picked Up";
+			buttonText =
+				listing.status === "RESERVED" ? "Reserved" : "Already Picked Up";
 			buttonColor = "neutral";
 			isButtonDisabled = true;
 		}
@@ -158,12 +157,12 @@ export function ListingDetailPage({ id }: Props) {
 			isButtonDisabled = false;
 			handleButtonPress = handleClaim;
 		} else {
-			buttonText = listing.status === "RESERVED" ? "Reserved" : "Already Picked Up";
+			buttonText =
+				listing.status === "RESERVED" ? "Reserved" : "Already Picked Up";
 			buttonColor = "neutral";
 			isButtonDisabled = true;
 		}
 	}
-
 
 	const handleMarkPickedUp = async () => {
 		try {
@@ -267,11 +266,7 @@ export function ListingDetailPage({ id }: Props) {
 						{/* Back Button */}
 						<Button
 							onPress={() => {
-								if (router.canGoBack()) {
-									router.back();
-								} else {
-									router.replace("/dashboard/listings");
-								}
+								router.navigate("/dashboard/listings");
 							}}
 							size="icon-lg"
 							color="default"
@@ -294,8 +289,10 @@ export function ListingDetailPage({ id }: Props) {
 									className="rounded-full"
 								>
 									<Text className="font-bold text-sm uppercase tracking-wide">
-										{listing.status === "PICKED_UP" && (isClaimedByMe ? "Claimed by You" : "Picked Up")}
-										{listing.status === "RESERVED" && (isClaimedByMe ? "Reserved for You" : "Reserved")}
+										{listing.status === "PICKED_UP" &&
+											(isClaimedByMe ? "Claimed by You" : "Picked Up")}
+										{listing.status === "RESERVED" &&
+											(isClaimedByMe ? "Reserved for You" : "Reserved")}
 										{listing.status === "EXPIRED" && "Expired"}
 										{listing.status === "REMOVED" && "Removed"}
 										{!["PICKED_UP", "RESERVED", "EXPIRED", "REMOVED"].includes(
@@ -472,7 +469,7 @@ export function ListingDetailPage({ id }: Props) {
 							<Button
 								appearance="outline"
 								onPress={() => {
-									navigateToThread();
+									navigateToDmThread();
 								}}
 							>
 								<Icon as={MessageSquare} className="size-5" />
