@@ -113,12 +113,12 @@ async function main() {
 	let data = await fetchApi("/v1/components");
 
 	// Check if API returned valid data with components
-	if (!data || !data.components || data.components.length === 0) {
+	if (!data?.components || data.components.length === 0) {
 		console.error("# API returned no components, trying fallback...");
 		data = await fetchFallback();
 	}
 
-	if (!data || !data.components || data.components.length === 0) {
+	if (!data?.components || data.components.length === 0) {
 		console.error(
 			"Error: Failed to fetch component list from API and fallback",
 		);

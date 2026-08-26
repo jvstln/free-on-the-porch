@@ -142,7 +142,7 @@ async function main() {
 	// Try API first
 	const data = await fetchApi(path);
 
-	if (data && data.content) {
+	if (data?.content) {
 		data.source = "api";
 		console.log(data.content);
 

@@ -8,6 +8,10 @@
 //
 // Add new addons with: pnpm dlx create-better-t-stack add
 // This file is safe to delete
+//
+// NOTE: the fields below record the ORIGINAL scaffold only. The stack has since
+// diverged: backend is NestJS (not Express), ORM is Drizzle + PostGIS (not Prisma).
+// See README.md and AGENTS.md for the actual stack.
 
 {
   "$schema": "https://r2.better-t-stack.dev/schema.json",
