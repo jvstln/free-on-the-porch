@@ -4,6 +4,7 @@ RUN corepack enable pnpm
 
 FROM base AS build
 WORKDIR /app
+ENV CI=true
 # Copy root configurations and package manifests to install dependencies
 COPY package.json pnpm-*.yaml ./
 COPY --parents **/package.json .
@@ -20,5 +21,5 @@ RUN cp -r apps/server/dist server-pruned/dist
 FROM base AS deploy
 WORKDIR /app
 COPY --from=build /app/server-pruned .
-ENTRYPOINT ["pnpm", "run", "start"]
+CMD ["node", "dist/main"]
 EXPOSE ${PORT:-3000}

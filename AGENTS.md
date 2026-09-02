@@ -34,8 +34,8 @@ pnpm dev                     # all apps; or dev:native / dev:server
 
 ## Env gotchas
 
-- Env is loaded via dotenv **inside `packages/env` when imported**, reading root `.env` then `.env.public`. Turbo does not load it; scripts like `db:*` rely on this import side effect.
-- Public/client vars use the `PUBLIC_` prefix (t3-env), **not** `EXPO_PUBLIC_`. `.env.public` holds `PUBLIC_SERVER_URL` for pointing a physical device/emulator at the API.
+- Env is loaded via dotenv **inside `packages/env` when imported**, reading root `.env`. Turbo does not load it; scripts like `db:*` rely on this import side effect.
+- Public/client vars use the `PUBLIC_` prefix (t3-env), **not** `EXPO_PUBLIC_`. All env vars live in a single `.env` file; public vars are distinguished by their `PUBLIC_` prefix.
 - Missing/invalid server env fails fast via zod at import time.
 
 ## Auth

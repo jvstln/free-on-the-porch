@@ -1,8 +1,8 @@
 const dotenv = require("dotenv");
 const path = require("node:path");
 
-// Load environment variables from .env.public at build-time in Metro/Babel
-dotenv.config({ path: path.resolve(__dirname, "../../.env.public") });
+// Load environment variables from .env at build-time in Metro/Babel
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 module.exports = (api) => {
 	api.cache(true);

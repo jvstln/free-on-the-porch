@@ -7,7 +7,6 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, "../../../");
 
 dotenv.config({ path: path.join(rootDir, ".env") });
-dotenv.config({ path: path.join(rootDir, ".env.public") });
 
 import { createEnv } from "@t3-oss/env-core";
 import { z } from "zod";
