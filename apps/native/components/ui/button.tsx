@@ -131,6 +131,7 @@ function ButtonRoot({
 		>
 			<HeroUIButton
 				variant={variant}
+				feedbackVariant="scale"
 				{...props}
 				className={cn(
 					buttonVariants({ color, appearance, size, inverted }),
