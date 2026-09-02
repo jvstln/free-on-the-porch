@@ -9,6 +9,9 @@
 		"android": {
 			"package": "com.free_on_the_porch.app"
 		},
+		"ios": {
+			"bundleIdentifier": "com.free-on-the-porch.app"
+		},
 		"name": "free-on-the-pouch",
 		"slug": "free-on-the-pouch",
 		"plugins": [
