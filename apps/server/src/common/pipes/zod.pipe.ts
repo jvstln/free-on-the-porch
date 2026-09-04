@@ -6,6 +6,10 @@ import {
 } from "@nestjs/common";
 import { ZodType } from "zod";
 
+// Validates a parameter value against a Zod schema. Applied INLINE per
+// parameter (never globally): `@Body(new ZodValidationPipe(Schema)) body`.
+// On failure throws a BadRequestException with human-readable details from
+// fromZodError (the shared zod-validation-error wrapper).
 @Injectable()
 export class ZodValidationPipe implements PipeTransform {
 	constructor(private readonly schema: ZodType) {}

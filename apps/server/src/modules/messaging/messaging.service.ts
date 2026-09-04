@@ -1,5 +1,4 @@
 import {
-	db,
 	listing,
 	message,
 	publicUserSelectFields,
@@ -21,7 +20,7 @@ import {
 	Injectable,
 	NotFoundException,
 } from "@nestjs/common";
-import { and, asc, desc, eq, exists, isNull, max, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, exists, max, sql } from "drizzle-orm";
 import {
 	buildResponse,
 	decodeCursor,
@@ -29,9 +28,20 @@ import {
 import { DrizzleService } from "../../infrastructures/database/database.service";
 
 @Injectable()
+// Messaging domain service: thread creation/resolution, message sending,
+// conversation fetching, and read receipts.
+//
+// Thread model: a thread is either a LISTING thread (tied to a listing, e.g.
+// created when someone claims) or a DM thread (ad-hoc between two users).
+// Membership is tracked via the thread_member join table.
 export class MessagingService {
 	constructor(private readonly drizzle: DrizzleService) {}
 
+	// Sends a message. The thread is either provided explicitly (threadId) or
+	// resolved/created from a listingId or receiverId.
+	//
+	// Returns { message, memberIds } so the controller can broadcast the new
+	// message to the other participants over WebSockets.
 	async sendMessage(senderId: string, dto: SendMessageDto) {
 		let threadId = dto.threadId;
 
@@ -54,50 +64,26 @@ export class MessagingService {
 				);
 			}
 
-			let receiverId = dto.receiverId;
-
+			// Resolve/create a LISTING thread.
 			if (dto.listingId) {
 				const foundListing = await this.drizzle.db.query.listing.findFirst({
-					where: {
-						id: dto.listingId,
-					},
+					columns: { userId: true },
+					where: { id: dto.listingId },
 				});
 				if (!foundListing) throw new NotFoundException("Listing not found");
+				if (foundListing.userId === senderId)
+					throw new BadRequestException("You cannot message yourself");
 
-				if (!receiverId) {
-					receiverId = foundListing.userId;
-				}
-
-				// Find existing LISTING thread with both members
+				// Reuse an existing LISTING thread only if BOTH the sender and
+				// receiver are already members (avoids duplicate conversations).
 				const existingThread = await this.drizzle.db.query.thread.findFirst({
 					where: {
 						type: "LISTING",
 						listingId: dto.listingId,
-						RAW: (t: any) =>
-							and(
-								exists(
-									this.drizzle.db
-										.select()
-										.from(threadMember)
-										.where(
-											and(
-												eq(threadMember.threadId, t.id),
-												eq(threadMember.userId, senderId),
-											),
-										),
-								),
-								exists(
-									this.drizzle.db
-										.select()
-										.from(threadMember)
-										.where(
-											and(
-												eq(threadMember.threadId, t.id),
-												eq(threadMember.userId, receiverId!),
-											),
-										),
-								),
-							) as any,
+						AND: [
+							{ threadMembers: { userId: senderId } },
+							{ threadMembers: { userId: foundListing.userId } },
+						],
 					},
 				});
 
@@ -105,66 +91,54 @@ export class MessagingService {
 					threadId = existingThread.id;
 				} else {
 					// Create new listing thread
-					const [newThread] = await this.drizzle.db
-						.insert(thread)
-						.values({
-							type: "LISTING",
-							listingId: dto.listingId,
-						})
-						.returning();
-					if (!newThread) throw new Error("Failed to create listing thread");
+					const newThread = await this.drizzle.db.transaction(async (tx) => {
+						const [t] = await tx
+							.insert(thread)
+							.values({
+								type: "LISTING",
+								listingId: dto.listingId,
+							})
+							.returning();
 
-					await this.drizzle.db.insert(threadMember).values([
-						{ threadId: newThread.id, userId: senderId },
-						{ threadId: newThread.id, userId: receiverId },
-					]);
+						if (!t) throw new Error("Failed to create listing thread");
 
+						await tx.insert(threadMember).values([
+							{ threadId: t.id, userId: senderId },
+							{ threadId: t.id, userId: foundListing.userId },
+						]);
+
+						return t;
+					});
 					threadId = newThread.id;
 				}
 			} else {
-				// DM thread
+				// Resolve/create a DM thread.
+				const receiverId = dto.receiverId;
 				if (!receiverId) {
 					throw new BadRequestException(
 						"Receiver ID is required for direct messages",
 					);
 				}
 
+				if (receiverId === senderId)
+					throw new BadRequestException("You cannot message yourself");
+
 				const receiverExists = await this.drizzle.db.query.user.findFirst({
+					columns: { id: true },
 					where: {
 						id: receiverId,
 					},
 				});
 				if (!receiverExists) throw new NotFoundException("Receiver not found");
 
-				// Find existing DM thread with both members
+				// Reuse an existing DM thread only if both members are present.
 				const existingThread = await this.drizzle.db.query.thread.findFirst({
 					where: {
 						type: "DM",
-						RAW: (t: any) =>
-							and(
-								exists(
-									this.drizzle.db
-										.select()
-										.from(threadMember)
-										.where(
-											and(
-												eq(threadMember.threadId, t.id),
-												eq(threadMember.userId, senderId),
-											),
-										),
-								),
-								exists(
-									this.drizzle.db
-										.select()
-										.from(threadMember)
-										.where(
-											and(
-												eq(threadMember.threadId, t.id),
-												eq(threadMember.userId, receiverId!),
-											),
-										),
-								),
-							) as any,
+						AND: [
+							{ threadMembers: { userId: senderId } },
+							{ threadMembers: { userId: receiverId } },
+						],
 					},
 				});
 
@@ -172,18 +146,22 @@ export class MessagingService {
 					threadId = existingThread.id;
 				} else {
 					// Create new DM thread
-					const [newThread] = await this.drizzle.db
-						.insert(thread)
-						.values({
-							type: "DM",
-						})
-						.returning();
-					if (!newThread) throw new Error("Failed to create DM thread");
+					const newThread = await this.drizzle.db.transaction(async (tx) => {
+						const [t] = await tx
+							.insert(thread)
+							.values({
+								type: "DM",
+							})
+							.returning();
+						if (!t) throw new Error("Failed to create DM thread");
 
-					await this.drizzle.db.insert(threadMember).values([
-						{ threadId: newThread.id, userId: senderId },
-						{ threadId: newThread.id, userId: receiverId },
-					]);
+						await tx.insert(threadMember).values([
+							{ threadId: t.id, userId: senderId },
+							{ threadId: t.id, userId: receiverId },
+						]);
+
+						return t;
+					});
 
 					threadId = newThread.id;
 				}
@@ -210,7 +188,8 @@ export class MessagingService {
 			throw new Error("Failed to send message");
 		}
 
-		// Update thread updatedAt
+		// Bump the thread's updatedAt so it surfaces to the top of the inbox
+		// (threads are ordered by max message updatedAt).
 		await this.drizzle.db
 			.update(thread)
 			.set({ updatedAt: new Date() })
@@ -228,6 +207,11 @@ export class MessagingService {
 		};
 	}
 
+	// Fetches a single conversation by type/id where type is one of:
+	// "threads" (by thread id), "listings" (by listing id), or "users" (a DM by
+	// the other user's id). Always enforces that the requesting user is a member.
+	// Messages are fetched newest-first via cursor pagination; for a DM with no
+	// existing thread yet, an empty "shell" conversation is synthesized.
 	async getConversation(
 		userId: string,
 		query: ConversationQueryOutputDto,
@@ -242,12 +226,19 @@ export class MessagingService {
 
 		const conversation = await this.drizzle.db.query.thread.findFirst({
 			where: {
-				threadMembers: {
-					OR: [
-						{ userId },
-						...(query.type === "users" ? [{ userId: query.id }] : []),
-					],
-				},
+				// Current user must always be a member
+				RAW: (t) =>
+					exists(
+						this.drizzle.db
+							.select({ id: threadMember.id })
+							.from(threadMember)
+							.where(
+								and(
+									eq(threadMember.threadId, t.id),
+									eq(threadMember.userId, userId),
+								),
+							),
+					),
 				...(query.type === "threads"
 					? { id: query.id }
 					: query.type === "listings"
@@ -281,6 +272,23 @@ export class MessagingService {
 				listing: { with: { images: true } },
 			},
 		});
+
+		// For DM lookups, verify the target user is also a member
+		if (conversation && query.type === "users") {
+			const targetIsMember = await this.drizzle.db.query.threadMember.findFirst(
+				{
+					where: {
+						threadId: conversation.id,
+						userId: query.id,
+					},
+				},
+			);
+			if (!targetIsMember) {
+				throw new NotFoundException(
+					`Conversation ${query.type}:${query.id} not found`,
+				);
+			}
+		}
 
 		if (!conversation) {
 			if (query.type === "users") {
@@ -333,6 +341,10 @@ export class MessagingService {
 		};
 	}
 
+	// Lists the user's conversations (inbox), cursor-paginated and ordered by
+	// the most-recent message's updatedAt (newest first, threads with no
+	// messages last). Each thread includes its members, optional listing, and
+	// the last 5 messages.
 	async getThreads(
 		userId: string,
 		query: ThreadsQueryOutputDto,
@@ -404,22 +416,28 @@ export class MessagingService {
 		});
 	}
 
-	async markRead(userId: string, senderId: string, threadId?: string) {
-		const conditions = [
-			eq(message.senderId, senderId),
-			// eq(message.receiverId, userId),
-			eq(message.read, false),
-		];
-		if (threadId) {
-			conditions.push(eq(message.threadId, threadId));
-		} else {
-			conditions.push(isNull(message.threadId));
+	async markRead(userId: string, senderId: string, threadId: string) {
+		// Verify the current user is a member of this thread
+		const isMember = await this.drizzle.db.query.threadMember.findFirst({
+			where: {
+				threadId,
+				userId,
+			},
+		});
+		if (!isMember) {
+			throw new BadRequestException("User is not a member of this thread");
 		}
 
 		await this.drizzle.db
 			.update(message)
 			.set({ read: true })
-			.where(and(...conditions));
+			.where(
+				and(
+					eq(message.threadId, threadId),
+					eq(message.senderId, senderId),
+					eq(message.read, false),
+				),
+			);
 		return { success: true };
 	}
 }

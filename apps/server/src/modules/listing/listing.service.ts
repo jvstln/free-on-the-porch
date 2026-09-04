@@ -44,6 +44,10 @@ import {
 import { DrizzleService } from "../../infrastructures/database/database.service";
 
 // ─── Geo Cursor (listing-specific keyset for PostGIS distance ordering) ───────
+// The nearby feed orders listings by distance from the user. Since distance is
+// not a stored column, we can't use a simple id/createdAt cursor — instead the
+// cursor carries the distance of the last item plus its id as a tie-breaker so
+// keyset pagination stays stable and correct.
 
 interface GeoCursor {
 	/** distanceMeters of the last item */
@@ -52,6 +56,8 @@ interface GeoCursor {
 	id: string;
 }
 
+// Runtime type guard used by decodeCursor to validate the decoded cursor JSON
+// actually matches a GeoCursor before it's trusted.
 function isGeoCursor(val: unknown): val is GeoCursor {
 	return (
 		typeof val === "object" &&
@@ -73,6 +79,9 @@ export class ListingService {
 		const expiresAt = new Date();
 		expiresAt.setDate(expiresAt.getDate() + 7); // listings expire in 7 days
 
+		// Insert the listing, then its images (if any) with an order index.
+		// Note: the listing + image insert is not wrapped in a transaction —
+		// if image insertion fails the listing is left valid on its own.
 		const [newListing] = await this.drizzle.db
 			.insert(listing)
 			.values({
@@ -88,6 +97,7 @@ export class ListingService {
 			.returning();
 
 		if (!newListing) {
+			// # purely for TS narrowing — the insert would have thrown
 			throw new Error("Failed to create listing");
 		}
 
@@ -104,9 +114,12 @@ export class ListingService {
 		return this.findOne({ id: newListing.id });
 	}
 
+	// PostGIS geospatial feed. Returns listings near a lat/lng point, ordered
+	// by distance ascending, using cursor-based keyset pagination.
 	async findNearby(
 		query: NearbyListingsQueryOutputDto,
 	): Promise<PaginatedResponse<ListingDto[]>> {
+		// Reusable search point built once from the query coords.
 		const pointSql = sql`ST_SetSRID(ST_MakePoint(${query.lng}, ${query.lat}), 4326)::geography`;
 
 		// Cursor-based keyset condition: skip items already seen
@@ -117,6 +130,8 @@ export class ListingService {
 		// Fetch limit + 1 to detect if a next page exists
 		const nearbyListings = await this.drizzle.db.query.listing.findMany({
 			extras: {
+				// Compute distance for each row so it can be used both in ordering
+				// and as the cursor payload (distanceMeters of the last item).
 				distanceMeters: (t) =>
 					sql<number>`ST_Distance(${t.location}, ${pointSql})`,
 			},
@@ -128,8 +143,10 @@ export class ListingService {
 				pendingClaims: true,
 			},
 			where: {
+				// RAW escape hatch: mix typed conditions with raw PostGIS SQL.
 				RAW: (t) => {
 					const whereConditions: (SQL | undefined)[] = [
+						// Only available, not-yet-expired listings.
 						eq(t.status, "AVAILABLE"),
 						or(gt(t.expiresAt, new Date()), isNull(t.expiresAt)),
 					];
@@ -138,6 +155,7 @@ export class ListingService {
 						whereConditions.push(eq(t.category, query.category));
 					}
 
+					// Optional radius filter via PostGIS ST_DWithin.
 					if (typeof query.radiusMeters === "number") {
 						whereConditions.push(
 							sql`ST_DWithin(${t.location}, ${pointSql}, ${query.radiusMeters})`,
@@ -145,7 +163,9 @@ export class ListingService {
 					}
 
 					if (decodedCursor) {
-						// Condition to filter everything that comes after cursor when ordering.. in PostGIS, <-> operator returns distance between two points
+						// Keyset condition continuing past the last seen item:
+						// strictly greater distance, OR equal distance with a
+						// greater id (tie-break) to match the ordering below.
 						whereConditions.push(
 							sql`(${t.location} <-> ${pointSql} > ${decodedCursor.d}) OR (${t.location} <-> ${pointSql} = ${decodedCursor.d} AND ${t.id} > ${decodedCursor.id})`,
 						);
@@ -153,6 +173,8 @@ export class ListingService {
 					return and(...whereConditions) ?? sql`true`;
 				},
 			},
+			// <-> is the PostGIS KNN "rough distance" operator used to order
+			// rows by proximity. id is the deterministic tie-breaker.
 			orderBy: (t) => sql`${t.location} <-> ${pointSql}, ${t.id}`,
 			limit: query.limit + 1,
 		});
@@ -198,6 +220,10 @@ export class ListingService {
 		return buildResponse(createdListing);
 	}
 
+	// Claim flow: a user expresses interest in a listing. Validates the listing
+	// is claimable, then atomically (in a transaction) wires up a LISTING
+	// thread between the claimant and owner, inserts a claim request, and
+	// auto-sends a first message. Returns the resulting thread.
 	async claim(
 		listingId: string,
 		userId: string,
@@ -234,7 +260,14 @@ export class ListingService {
 
 		// Find existing thread or create new one
 		// Insert claim request and auto-message owner in a transaction
+		//
+		// Note: reads the existing thread via `this.drizzle.db` (not `tx`), then
+		// writes via `tx`. The read is a best-effort check; the write path is
+		// what's guaranteed atomic.
 		const foundThread = await this.drizzle.db.transaction(async (tx) => {
+			// Reuse an existing LISTING thread for this listing IF the current
+			// user is already a member of it (so repeat claims don't spawn
+			// duplicate conversation threads).
 			let foundThread = await this.drizzle.db.query.thread.findFirst({
 				where: {
 					listingId,
@@ -253,6 +286,8 @@ export class ListingService {
 				},
 			});
 			if (!foundThread) {
+				// No usable thread yet — create a LISTING thread, add both the
+				// claimant and the listing owner as members.
 				const [newThread] = await tx
 					.insert(thread)
 					.values({
@@ -278,6 +313,8 @@ export class ListingService {
 				userId,
 			});
 
+			// Auto-send the first message so the owner gets a notification/thread
+			// ping as soon as someone claims.
 			await tx.insert(message).values({
 				body: `Hi! I would like to claim your listing: ${foundListing.title}`,
 				senderId: userId,
@@ -290,6 +327,8 @@ export class ListingService {
 		return buildResponse(foundThread);
 	}
 
+	// Owner-only update: verifies the requesting user owns the listing, then
+	// applies only the fields present in the (partial) update DTO.
 	async update(id: string, userId: string, data: UpdateListingDto) {
 		const [foundListing] = await this.drizzle.db
 			.select()
@@ -297,6 +336,7 @@ export class ListingService {
 			.where(eq(listing.id, id));
 
 		if (!foundListing) throw new NotFoundException("Listing not found");
+		// Authorization: only the listing owner may edit it.
 		if (foundListing.userId !== userId) throw new ForbiddenException();
 
 		const updateData: Partial<typeof listing.$inferInsert> = {};
@@ -327,6 +367,8 @@ export class ListingService {
 		return { ...updatedListing, images };
 	}
 
+	// Owner-only removal: verifies ownership then deletes the listing (related
+	// rows cascade per the FK onDelete rules).
 	async remove(id: string, userId: string) {
 		const [foundListing] = await this.drizzle.db
 			.select()
@@ -340,6 +382,8 @@ export class ListingService {
 		return { success: true };
 	}
 
+	// Returns a user's listings with their first image and the owner. Used by
+	// the "my listings" screen.
 	async findByUser(userId: string) {
 		const listings = await this.drizzle.db
 			.select()

@@ -12,6 +12,16 @@ import {
 	getResetPasswordTemplate,
 } from "../../infrastructures/mail/templates";
 
+// Factory building the better-auth instance. It's kept as a plain function
+// (instead of inline in the constructor) to keep the DI/types simple.
+//
+// Key config:
+// - drizzleAdapter: persists better-auth tables (user/session/account/
+//   verification) into the shared Drizzle schema.
+// - expo(): better-auth plugin tuned for Expo/mobile clients (secure store
+//   cookies, deep-link redirect handling).
+// - emailAndPassword + emailVerification: email/password auth with required
+//   verification and custom email templates sent via MailService.
 const createBetterAuth = <
 	TDatabase extends Parameters<typeof drizzleAdapter>[0],
 	TMail extends MailService,
@@ -64,8 +74,8 @@ const createBetterAuth = <
 		basePath: "/api/v1/auth",
 		advanced: {
 			defaultCookieAttributes: {
-				sameSite: "none",
-				secure: true,
+				sameSite: env.NODE_ENV === "development" ? "lax" : "none",
+				secure: env.NODE_ENV !== "development",
 				httpOnly: true,
 			},
 			disableCSRFCheck: env.NODE_ENV === "development",

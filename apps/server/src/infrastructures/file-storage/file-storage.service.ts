@@ -8,6 +8,9 @@ import type {
 } from "./file-storage.type";
 
 @Injectable()
+// File-storage adapter on top of Cloudinary. Feature code depends on this
+// abstraction (IFileStorageService) rather than hitting the Cloudinary SDK
+// directly, so the underlying provider can be swapped.
 export class FileStorageService implements IFileStorageService {
 	constructor(
 		@Inject(cloudinaryProvider.provide)

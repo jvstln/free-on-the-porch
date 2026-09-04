@@ -3,7 +3,10 @@ import type { Request, Response } from "express";
 import { Public } from "./auth.decorator";
 import { AuthService } from "./auth.service";
 
-// This controller is meant to be controlled by better-auth
+// Catch-all controller: better-auth fully owns every route under
+// `/api/v1/auth/*` (sign-in, registration, verification, password reset, etc.).
+// We simply delegate the raw request/response to better-auth's node handler.
+// Must be @Public() or the global AuthGuard would reject its own endpoints.
 @Public()
 @Controller("auth")
 export class AuthController {

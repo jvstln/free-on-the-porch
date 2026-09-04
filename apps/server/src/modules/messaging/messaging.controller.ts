@@ -29,6 +29,10 @@ export class MessagingController {
 		private readonly messagingGateway: MessagingGateway,
 	) {}
 
+	// Send a message. After the service writes to the DB, we broadcast the new
+	// message to the other thread members over the WebSocket gateway (dual
+	// REST + WS delivery). The sender already gets the message from the REST
+	// response, so the broadcast skips them.
 	@Post()
 	async send(
 		@Session() session: UserSession,
@@ -53,6 +57,9 @@ export class MessagingController {
 		return this.messagingService.getThreads(session.user.id, query);
 	}
 
+	// Conversation lookup. The schema is split: path params (type, id) validate
+	// via `.pick()`, query params (pagination) via `.omit()`. See messaging
+	// service getConversation for the type semantics.
 	@Get("conversations/:type/:id")
 	getConversations(
 		@Session() session: UserSession,
@@ -79,7 +86,7 @@ export class MessagingController {
 	markRead(
 		@Session() session: UserSession,
 		@Param("userId") senderId: string,
-		@Query("threadId") threadId?: string,
+		@Query("threadId") threadId: string,
 	) {
 		return this.messagingService.markRead(session.user.id, senderId, threadId);
 	}

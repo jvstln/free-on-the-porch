@@ -11,6 +11,11 @@ import type { Socket } from "socket.io";
 import { Public } from "./auth.decorator";
 import { AuthService } from "./auth.service";
 
+// Global guard handling BOTH HTTP and WebSocket contexts.
+// - HTTP: validates the session from request headers, sets `request.session`.
+// - WS:   validates from the handshake headers, stores session in `client.data`
+//         and joins the client to the `userId:<id>` room for targeted broadcasts.
+// Routes/classes marked @Public() (Reflector override) bypass auth entirely.
 @Injectable()
 export class AuthGuard implements CanActivate {
 	constructor(
@@ -21,6 +26,7 @@ export class AuthGuard implements CanActivate {
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const type = context.getType<"http" | "ws">();
 
+		// Honor @Public(): skip validation for explicitly public endpoints.
 		const isPublic = this.reflector.getAllAndOverride(Public, [
 			context.getHandler(),
 			context.getClass(),
@@ -53,6 +59,8 @@ export class AuthGuard implements CanActivate {
 			}
 
 			client.data = authSession;
+			// Scopes the socket into a private room so gateways can target
+			// individual users via `server.to('userId:<id>')`.
 			client.join(`userId:${authSession.user.id}`);
 		}
 
