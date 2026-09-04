@@ -22,6 +22,11 @@ import { seedModeration } from "./moderation.seed";
 import { seedNotifications } from "./notifications.seed";
 import { seedUsers } from "./users.seed";
 
+// Seed orchestrator. Run via `pnpm db:seed` (tsx --env-file=../../.env).
+//
+// Flow: wipe the database (in FK dependency order — leaves before parents),
+// then seed each domain in dependency order. Each seedX function accepts the
+// entities produced by the previous stage so it can reference them by FK.
 export async function main() {
 	console.log("🌱 Seeding database...\n");
 

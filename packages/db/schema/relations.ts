@@ -1,3 +1,10 @@
+// Drizzle relational query definitions. These power the relational query API:
+// `db.query.<table>.findFirst/findMany({ with: { ... } })` lets you fetch a
+// table together with its related rows/columns in a single call, avoiding
+// manual joins. Relations are grouped by domain below (auth, listing, thread).
+//
+// Note: `report` and `block` (moderation) are intentionally NOT defined here —
+// they're written/queried directly, not relationally.
 import { defineRelations } from "drizzle-orm";
 import { account, session, user } from "./auth";
 import { comment, listing, listingClaimRequest, listingImage } from "./listing";
@@ -17,7 +24,7 @@ export const relations = defineRelations(
 		threadMember,
 	},
 	(r) => ({
-		// Better auth relations
+		// ---- Auth / better-auth ----
 		user: {
 			sessions: r.many.session(),
 			accounts: r.many.account(),
@@ -30,13 +37,15 @@ export const relations = defineRelations(
 		account: {
 			user: r.one.user({ from: r.account.userId, to: r.user.id }),
 		},
-		// ---------------------
+		// ---------------------------
 
+		// ---- Listing domain ----
 		listing: {
 			images: r.many.listingImage({
 				from: r.listing.id,
 				to: r.listingImage.listingId,
 			}),
+			// `optional: false` => the owner user is always present.
 			user: r.one.user({
 				from: r.listing.userId,
 				to: r.user.id,
@@ -44,6 +53,7 @@ export const relations = defineRelations(
 			}),
 			comments: r.many.comment(),
 			pendingClaims: r.many.listingClaimRequest(),
+			// A listing has at most one conversation thread (for claims/DMs).
 			thread: r.one.thread(),
 		},
 
@@ -68,14 +78,20 @@ export const relations = defineRelations(
 			}),
 		},
 
+		// ---- Messaging domain ----
 		thread: {
 			messages: r.many.message(),
 			threadMembers: r.many.threadMember(),
+			// Many-to-many from thread -> user through the thread_member join table.
 			members: r.many.user({
 				from: r.thread.id.through(r.threadMember.threadId),
 				to: r.user.id.through(r.threadMember.userId),
 			}),
-			listing: r.one.listing({ from: r.thread.listingId, to: r.listing.id }),
+			listing: r.one.listing({
+				from: r.thread.listingId,
+				to: r.listing.id,
+				optional: true,
+			}),
 		},
 
 		threadMember: {

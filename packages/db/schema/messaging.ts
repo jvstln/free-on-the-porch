@@ -1,3 +1,7 @@
+// Messaging domain: conversation threads, their members, individual messages,
+// and push-style notifications. A thread is either a DM (no listing) or a
+// LISTING conversation (tied to a specific listing), enforced by the CHECK
+// constraint below. `notification` is a per-user inbox for system events.
 import { ThreadTypeSchema } from "@free-on-the-porch/shared/schemas";
 import { and, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
 import {
@@ -26,7 +30,8 @@ export const thread = pgTable(
 	},
 	(table) => [
 		index("thread_listingId_idx").on(table.listingId),
-		// A thread can only have listingId and must have listingId if type is LISTING
+		// CHECK invariant: a LISTING thread must reference a listing; a DM
+		// thread must NOT. Prevents orphaned/ambiguous conversations.
 		check(
 			"thread_type_check",
 			or(

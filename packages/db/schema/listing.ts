@@ -31,6 +31,15 @@ export interface Point {
 	lng: number;
 }
 
+// Custom Drizzle type bridging JS { lat, lng } objects and PostGIS
+// geography(Point, 4326) columns. This is what enables geospatial queries
+// (ST_DWithin, <->, ST_Distance) in the listing service's findNearby().
+//
+// - toDriver: serializes to WKT text, e.g. "SRID=4326;POINT(-0.36 51.47)".
+// - fromDriver: Postgres may return EWKB (hex binary) OR WKT text depending
+//   on the driver/query. We try EWKB hex parsing first (buf starts "01"),
+//   then fall back to a WKT POINT(...) regex. On any failure we degrade to
+//   a neutral { lat: 0, lng: 0 } rather than throwing.
 export const geographyPoint = customType<{
 	data: Point;
 	driverData: string;
@@ -43,6 +52,7 @@ export const geographyPoint = customType<{
 	},
 	fromDriver(value: string) {
 		if (!value) return { lat: 0, lng: 0 };
+		// EWKB binary format: first bytes start with "01" when hex-encoded.
 		if (value.startsWith("01")) {
 			try {
 				const buffer = Buffer.from(value, "hex");
@@ -50,6 +60,7 @@ export const geographyPoint = customType<{
 				const type = isLittleEndian
 					? buffer.readUInt32LE(1)
 					: buffer.readUInt32BE(1);
+				// 0x20000000 flag indicates an SRID is embedded in the WKB.
 				const hasSRID = (type & 0x20000000) !== 0;
 				const coordsOffset = hasSRID ? 9 : 5;
 				if (buffer.length >= coordsOffset + 16) {
@@ -76,6 +87,10 @@ export const geographyPoint = customType<{
 	},
 });
 
+// Central listing entity. A user posts a free item; other users browse
+// nearby items and claim them (see listingClaimRequest + listing.claim in
+// the listing service). The status/claim invariants are enforced by the
+// CHECK constraint below.
 export const listing = pgTable(
 	"listing",
 	{
@@ -87,6 +102,7 @@ export const listing = pgTable(
 		category: listingCategoryEnum().notNull(),
 		condition: listingConditionEnum().notNull(),
 		status: listingStatusEnum().default("AVAILABLE").notNull(),
+		// PostGIS geography point; maps { lat, lng } via the geographyPoint type.
 		location: geographyPoint().notNull(),
 		address: varchar({ length: 200 }),
 		expiresAt: timestamp().notNull(),
@@ -97,8 +113,10 @@ export const listing = pgTable(
 		...timestamps,
 	},
 	(table) => [
-		// If claimed by a user, status must be PICKED_UP or RESERVED.
-		// If not claimed, status cannot be PICKED_UP or RESERVED.
+		// CHECK invariant: claimedByUserId must be set if and only if status is
+		// PICKED_UP or RESERVED. This prevents inconsistent states (e.g. a
+		// listing marked RESERVED without a claimant, or claimed but still
+		// AVAILABLE).
 		check(
 			"status_claimed_by_user_id_check",
 			or(
@@ -118,6 +136,8 @@ export const listing = pgTable(
 				),
 			) ?? sql`false`,
 		),
+		// (status, expiresAt) supports the "find active listable listings"
+		// query; user/category indexes back up ownership and filter lookups.
 		index("listing_status_expiresAt_idx").on(table.status, table.expiresAt),
 		index("listing_user_idx").on(table.userId),
 		index("listing_category_idx").on(table.category),

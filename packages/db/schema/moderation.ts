@@ -1,3 +1,6 @@
+// Moderation domain: user/listing reports and mutual blocks.
+// `report` can target a user, a listing, or both (the optional FKs use
+// `onDelete: "set null"` so reports survive the deletion of their target).
 import {
 	boolean,
 	pgTable,
@@ -25,6 +28,8 @@ export const report = pgTable("report", {
 	...timestamps,
 });
 
+// Unique (blockerId, blockedId) prevents duplicate/reverse blocks and keeps
+// the block relation unambiguous.
 export const block = pgTable(
 	"block",
 	{

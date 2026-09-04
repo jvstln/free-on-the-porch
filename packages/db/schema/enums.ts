@@ -1,3 +1,10 @@
+// PostgreSQL enum definitions.
+//
+// IMPORTANT — single source of truth: the enum VALUE LISTS come from
+// `@free-on-the-porch/shared/schemas` (as `as const` arrays), NOT from here.
+// This keeps the DB enum values in lockstep with the Zod schemas and the API
+// contract. When adding/changing an enum value, edit the corresponding array
+// in `packages/shared/schemas/enum.schema.ts`, then generate a migration.
 import {
 	LISTING_CATEGORY,
 	LISTING_CONDITION,
