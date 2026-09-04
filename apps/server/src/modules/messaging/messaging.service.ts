@@ -1,10 +1,8 @@
 import {
-	listing,
 	message,
 	publicUserSelectFields,
 	thread,
 	threadMember,
-	user,
 } from "@free-on-the-porch/db";
 import {
 	type ConversationDto,
@@ -20,7 +18,7 @@ import {
 	Injectable,
 	NotFoundException,
 } from "@nestjs/common";
-import { and, asc, desc, eq, exists, max, sql } from "drizzle-orm";
+import { and, desc, eq, max, sql } from "drizzle-orm";
 import {
 	buildResponse,
 	decodeCursor,
@@ -227,18 +225,9 @@ export class MessagingService {
 		const conversation = await this.drizzle.db.query.thread.findFirst({
 			where: {
 				// Current user must always be a member
-				RAW: (t) =>
-					exists(
-						this.drizzle.db
-							.select({ id: threadMember.id })
-							.from(threadMember)
-							.where(
-								and(
-									eq(threadMember.threadId, t.id),
-									eq(threadMember.userId, userId),
-								),
-							),
-					),
+				threadMembers: {
+					userId,
+				},
 				...(query.type === "threads"
 					? { id: query.id }
 					: query.type === "listings"
@@ -307,6 +296,7 @@ export class MessagingService {
 					},
 					columns: publicUserSelectFields,
 				});
+				if (!currentUserObj) throw new NotFoundException("User not found");
 
 				return {
 					data: ConversationSchema.parse({
@@ -315,7 +305,7 @@ export class MessagingService {
 						listingId: null,
 						createdAt: new Date(),
 						updatedAt: new Date(),
-						members: [otherUserObj, currentUserObj!],
+						members: [otherUserObj, currentUserObj],
 						messages: [],
 						listing: null,
 					}),

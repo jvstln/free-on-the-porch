@@ -27,12 +27,15 @@
 
 ## P1 — Security + Auth
 
-- [ ] **#6** `UserService.getUser` is a debug stub returning `to_tsvector('testing')` cast as `any`
+- [x] **#6** `UserService.getUser` is a debug stub returning `to_tsvector('testing')` cast as `any`
   - File: `apps/server/src/modules/user/user.service.ts:15-32`
-- [ ] **#7** `PATCH /users/me` returns hardcoded "under maintainance" message; `updateProfile` not implemented
+  - **Status:** Reimplemented — relational query with `publicUserSelectFields`, throws `NotFoundException`, wraps in `buildResponse`.
+- [x] **#7** `PATCH /users/me` returns hardcoded "under maintainance" message; `updateProfile` not implemented
   - File: `apps/server/src/modules/user/user.controller.ts:23-30`
-- [ ] **#8** `getConversation` type `"listings"` leaks full thread to non-members
+  - **Status:** Implemented `UserService.updateProfile` (partial update of `name`/`image`/`bio`) and wired the controller to it.
+- [x] **#8** `getConversation` type `"listings"` leaks full thread to non-members
   - File: `apps/server/src/modules/messaging/messaging.service.ts:251-257`
+  - **Status:** Resolved by the P0 #2 membership fix — the `exists`/nested `threadMembers: { userId }` filter applies to all types including `"listings"`, so non-members get `null` → `NotFoundException`.
 
 ---
 

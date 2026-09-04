@@ -1,4 +1,7 @@
-import type { CurrentUserDto } from "@free-on-the-porch/shared/schemas";
+import type {
+	CurrentUserDto,
+	UpdateProfileDto,
+} from "@free-on-the-porch/shared/schemas";
 import { UpdateProfileSchema } from "@free-on-the-porch/shared/schemas";
 import { Body, Controller, Get, Param, Patch } from "@nestjs/common";
 import { ZodValidationPipe } from "../../common/pipes/zod.pipe";
@@ -23,9 +26,8 @@ export class UserController {
 	@Patch("me")
 	async updateMe(
 		@Session() session: UserSession,
-		@Body(new ZodValidationPipe(UpdateProfileSchema)) body: unknown,
-	) {
-		return { message: "This endpoint is currently under maintainance" };
-		// return this.userService.updateProfile(session.user.id, body);
+		@Body(new ZodValidationPipe(UpdateProfileSchema)) body: UpdateProfileDto,
+	): Promise<CurrentUserDto> {
+		return this.userService.updateProfile(session.user.id, body);
 	}
 }

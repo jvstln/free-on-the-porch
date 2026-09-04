@@ -29,7 +29,6 @@ import {
 	asc,
 	desc,
 	eq,
-	exists,
 	gt,
 	inArray,
 	isNull,
@@ -271,18 +270,9 @@ export class ListingService {
 			let foundThread = await this.drizzle.db.query.thread.findFirst({
 				where: {
 					listingId,
-					RAW: (thread) =>
-						exists(
-							this.drizzle.db
-								.select()
-								.from(threadMember)
-								.where(
-									and(
-										eq(threadMember.userId, userId),
-										eq(threadMember.threadId, thread.id),
-									),
-								),
-						),
+					threadMembers: {
+						userId,
+					},
 				},
 			});
 			if (!foundThread) {
