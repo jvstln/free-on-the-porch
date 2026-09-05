@@ -42,13 +42,20 @@ export const useSendMessage = (otherUserId?: string, threadId?: string) => {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: (body: string) =>
-			messagingService.sendMessage({
-				receiverId: otherUserId,
-				threadId:
-					threadId && !threadId.startsWith("dm-") ? threadId : undefined,
+		mutationFn: (body: string) => {
+			const isListingThread = !!threadId && !threadId.startsWith("dm-");
+			return messagingService.sendMessage({
+				// threadId/listingId/receiverId are mutually exclusive: use the
+				// existing thread when we have one, otherwise fall back to the
+				// DM receiver.
+				...(isListingThread
+					? { threadId }
+					: otherUserId
+						? { receiverId: otherUserId }
+						: {}),
 				body,
-			}),
+			});
+		},
 		onSuccess: (_newMessage) => {
 			// Invalidate inbox and current thread to refresh UI
 			queryClient.invalidateQueries({ queryKey: ["messaging", "inbox"] });

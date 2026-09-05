@@ -11,6 +11,7 @@ import {
 	jsonb,
 	pgTable,
 	text,
+	uniqueIndex,
 	varchar,
 } from "drizzle-orm/pg-core";
 import { user } from "./auth";
@@ -45,18 +46,31 @@ export const thread = pgTable(
 	],
 );
 
-export const threadMember = pgTable("thread_member", {
-	id: text()
-		.primaryKey()
-		.$defaultFn(() => crypto.randomUUID()),
-	threadId: text()
-		.notNull()
-		.references(() => thread.id, { onDelete: "cascade" }),
-	userId: text()
-		.notNull()
-		.references(() => user.id, { onDelete: "cascade" }),
-	...timestamps,
-});
+export const threadMember = pgTable(
+	"thread_member",
+	{
+		id: text()
+			.primaryKey()
+			.$defaultFn(() => crypto.randomUUID()),
+		threadId: text()
+			.notNull()
+			.references(() => thread.id, { onDelete: "cascade" }),
+		userId: text()
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		...timestamps,
+	},
+	(table) => [
+		// A user appears at most once per thread; unique guard prevents
+		// duplicate member rows from any double-insert.
+		uniqueIndex("thread_member_thread_user_key").on(
+			table.threadId,
+			table.userId,
+		),
+		// Backs "find all threads a user belongs to" (DM/listings inbox).
+		index("thread_member_userId_idx").on(table.userId),
+	],
+);
 
 export const message = pgTable(
 	"message",

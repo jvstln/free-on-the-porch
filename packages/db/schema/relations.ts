@@ -3,12 +3,13 @@
 // table together with its related rows/columns in a single call, avoiding
 // manual joins. Relations are grouped by domain below (auth, listing, thread).
 //
-// Note: `report` and `block` (moderation) are intentionally NOT defined here —
-// they're written/queried directly, not relationally.
+// Note: `verification` (better-auth) has no FK to `user` (it's keyed by an
+// identifier string, not user.id) so it has no relational edge here.
 import { defineRelations } from "drizzle-orm";
 import { account, session, user } from "./auth";
 import { comment, listing, listingClaimRequest, listingImage } from "./listing";
-import { message, thread, threadMember } from "./messaging";
+import { message, notification, thread, threadMember } from "./messaging";
+import { block, report } from "./moderation";
 
 export const relations = defineRelations(
 	{
@@ -22,6 +23,9 @@ export const relations = defineRelations(
 		thread,
 		message,
 		threadMember,
+		notification,
+		report,
+		block,
 	},
 	(r) => ({
 		// ---- Auth / better-auth ----
@@ -29,6 +33,23 @@ export const relations = defineRelations(
 			sessions: r.many.session(),
 			accounts: r.many.account(),
 			threadMembers: r.many.threadMember(),
+			notifications: r.many.notification(),
+			reportsMade: r.many.report({
+				from: r.user.id,
+				to: r.report.reportedById,
+			}),
+			reportsAgainst: r.many.report({
+				from: r.user.id,
+				to: r.report.reportedUserId,
+			}),
+			blocksInitiated: r.many.block({
+				from: r.user.id,
+				to: r.block.blockerId,
+			}),
+			blocksReceived: r.many.block({
+				from: r.user.id,
+				to: r.block.blockedId,
+			}),
 		},
 
 		session: {
@@ -53,8 +74,16 @@ export const relations = defineRelations(
 			}),
 			comments: r.many.comment(),
 			pendingClaims: r.many.listingClaimRequest(),
-			// A listing has at most one conversation thread (for claims/DMs).
-			thread: r.one.thread(),
+			reports: r.many.report({
+				from: r.listing.id,
+				to: r.report.listingId,
+			}),
+			// A listing can have many conversation threads: every claimant gets
+			// their own LISTING thread with the owner (see listing claim flow).
+			threads: r.many.thread({
+				from: r.listing.id,
+				to: r.thread.listingId,
+			}),
 		},
 
 		comment: {
@@ -76,6 +105,43 @@ export const relations = defineRelations(
 				to: r.user.id,
 				optional: false,
 			}),
+		},
+
+		// ---- Moderation domain ----
+		report: {
+			reportedBy: r.one.user({
+				from: r.report.reportedById,
+				to: r.user.id,
+				optional: false,
+			}),
+			reportedUser: r.one.user({
+				from: r.report.reportedUserId,
+				to: r.user.id,
+				optional: true,
+			}),
+			listing: r.one.listing({
+				from: r.report.listingId,
+				to: r.listing.id,
+				optional: true,
+			}),
+		},
+
+		block: {
+			blocker: r.one.user({
+				from: r.block.blockerId,
+				to: r.user.id,
+				optional: false,
+			}),
+			blocked: r.one.user({
+				from: r.block.blockedId,
+				to: r.user.id,
+				optional: false,
+			}),
+		},
+
+		// ---- Notifications ----
+		notification: {
+			user: r.one.user({ from: r.notification.userId, to: r.user.id }),
 		},
 
 		// ---- Messaging domain ----

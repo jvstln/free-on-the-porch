@@ -71,33 +71,44 @@
 
 ## P4 — Missing DB Indexes
 
-- [ ] **#19** `listing.location` — missing GiST spatial index (full table scan on every nearby query)
-  - File: `packages/db/schema/listing.ts:99-124`
-- [ ] **#20** `listing_claim_request` — missing unique `(listingId, userId)` constraint
-  - File: `packages/db/schema/listing.ts:127`
-- [ ] **#21** `thread_member` — missing unique `(threadId, userId)` + index on `userId`
-  - File: `packages/db/schema/messaging.ts:43`
-- [ ] **#22** `comment` — missing index on `listingId`
-  - File: `packages/db/schema/listing.ts:152`
-- [ ] **#23** `report` / `block` — missing lookup indexes
+- [x] **#19** `listing.location` — missing GiST spatial index (full table scan on every nearby query)
+  - File: `packages/db/schema/listing.ts`
+  - **Status:** Added `listing_location_gist_idx` via `index().using("gist", table.location)` — verified `CREATE INDEX ... USING gist (location)` in Postgres.
+- [x] **#20** `listing_claim_request` — missing unique `(listingId, userId)` constraint
+  - File: `packages/db/schema/listing.ts`
+  - **Status:** Added `uniqueIndex("listing_claim_request_listing_user_key")` — one claim request per (listing, user).
+- [x] **#21** `thread_member` — missing unique `(threadId, userId)` + index on `userId`
+  - File: `packages/db/schema/messaging.ts`
+  - **Status:** Added unique `(threadId, userId)` constraint + `thread_member_userId_idx`.
+- [x] **#22** `comment` — missing index on `listingId`
+  - File: `packages/db/schema/listing.ts`
+  - **Status:** Added `comment_listingId_idx`.
+- [x] **#23** `report` / `block` — missing lookup indexes
   - File: `packages/db/schema/moderation.ts`
+  - **Status:** Added `report_reportedById_idx`, `report_reportedUserId_idx`, `report_listingId_idx`, and `block_blockedId_idx`.
 
 ---
 
 ## P5 — Schema Inconsistencies
 
-- [ ] **#24** `MessageSchema.threadId` is `.nullable()` but DB column is `NOT NULL`
-  - Files: `packages/shared/schemas/message.schema.ts:19` vs `packages/db/schema/messaging.ts:68`
-- [ ] **#25** `SendMessageSchema` has no mutual-exclusivity refinement for `threadId`/`listingId`/`receiverId`
-  - File: `packages/shared/schemas/message.schema.ts:7-12`
-- [ ] **#26** `MessageMinimalSchema` is `.omit({})` — identical to `MessageSchema` (no-op)
-  - File: `packages/shared/schemas/message.schema.ts:26`
-- [ ] **#27** `listing.thread` relation is `r.one` but DB allows many threads per listing
-  - File: `packages/db/schema/relations.ts:47`
-- [ ] **#28** `notification`, `report`, `block`, `verification` tables have zero relations defined
+- [x] **#24** `MessageSchema.threadId` is `.nullable()` but DB column is `NOT NULL`
+  - Files: `packages/shared/schemas/message.schema.ts`
+  - **Status:** Made `threadId` `z.string()` (non-nullable) to match the DB.
+- [x] **#25** `SendMessageSchema` has no mutual-exclusivity refinement for `threadId`/`listingId`/`receiverId`
+  - File: `packages/shared/schemas/message.schema.ts`
+  - **Status:** Added `.superRefine` — exactly one of `threadId`/`listingId`/`receiverId` required. Native `useSendMessage` updated to send only one target (previously sent both `receiverId` + `threadId` together).
+- [x] **#26** `MessageMinimalSchema` is `.omit({})` — identical to `MessageSchema` (no-op)
+  - File: `packages/shared/schemas/message.schema.ts`
+  - **Status:** Removed `MessageMinimalSchema`/`MessageMinimalDto`; `MessageSchema` used directly.
+- [x] **#27** `listing.thread` relation is `r.one` but DB allows many threads per listing
   - File: `packages/db/schema/relations.ts`
-- [ ] **#29** `CreateReportSchema` doesn't prevent self-reports
-  - File: `packages/shared/schemas/report.schema.ts:4-13`
+  - **Status:** Changed to `r.many.thread()` (each claimant gets their own LISTING thread).
+- [x] **#28** `notification`, `report`, `block`, `verification` tables have zero relations defined
+  - File: `packages/db/schema/relations.ts`
+  - **Status:** Added relations for `notification`, `report`, `block` (+ inverse relations on `user`/`listing`). `verification` has no FK to `user` (identifier-keyed better-auth table), so no relational edge is possible — noted in a comment.
+- [x] **#29** `CreateReportSchema` doesn't prevent self-reports
+  - File: `packages/shared/schemas/report.schema.ts`
+  - **Status:** Added `createReportSchema(reporterId)` factory — passes `session.user.id` server-side to reject `reportedUserId === reporterId`. Plus a DB CHECK constraint (`report_reportedById_ne_reportedUserId`) as defense-in-depth, verified against Postgres (self-report insert rejected, legit insert passes).
 
 ---
 

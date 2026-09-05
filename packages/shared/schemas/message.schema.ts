@@ -4,28 +4,50 @@ import { CursorPaginationSchema, TimestampSchema } from "./generic.schema";
 import { ListingMinimalSchema } from "./listing.schema";
 import { PublicUserSchema } from "./user.schema";
 
-export const SendMessageSchema = z.object({
-	threadId: z.string().optional(),
-	listingId: z.string().optional(),
-	receiverId: z.string().optional(),
-	body: z.string().min(1).max(1000),
-});
+export const SendMessageSchema = z
+	.object({
+		threadId: z.string().optional(),
+		listingId: z.string().optional(),
+		receiverId: z.string().optional(),
+		body: z.string().min(1).max(1000),
+	})
+	.check((ctx) => {
+		const input = ctx.value;
+		const targetCount = [
+			input.threadId,
+			input.listingId,
+			input.receiverId,
+		].filter(Boolean).length;
+		if (targetCount === 0) {
+			ctx.issues.push({
+				input,
+				code: "custom",
+				path: ["threadId"],
+				message: "One of threadId, listingId, or receiverId is required",
+			});
+		} else if (targetCount > 1) {
+			ctx.issues.push({
+				input,
+				code: "custom",
+				path: ["threadId"],
+				message: "threadId, listingId, and receiverId are mutually exclusive",
+			});
+		}
+	});
 
 export type SendMessageDto = z.infer<typeof SendMessageSchema>;
 
 export const MessageSchema = z.object({
 	id: z.string(),
 	body: z.string(),
-	threadId: z.string().nullable(),
+	threadId: z.string(),
 	senderId: z.string(),
 	read: z.boolean(),
 	createdAt: TimestampSchema,
 	updatedAt: TimestampSchema,
 });
 
-export const MessageMinimalSchema = MessageSchema.omit({});
 export type MessageDto = z.infer<typeof MessageSchema>;
-export type MessageMinimalDto = z.infer<typeof MessageMinimalSchema>;
 
 export const ThreadsQuerySchema = z.object({
 	type: z.enum(THREAD_TYPE).default("DM"),
@@ -48,7 +70,7 @@ export type ThreadMinimalDto = z.infer<typeof ThreadMinimalSchema>;
 export const ThreadSchema = z.object({
 	...ThreadMinimalSchema.shape,
 	members: z.array(PublicUserSchema),
-	messages: z.array(MessageMinimalSchema), // The last few messages in the thread
+	messages: z.array(MessageSchema), // The last few messages in the thread
 	listing: ListingMinimalSchema.nullable(),
 });
 
@@ -67,7 +89,7 @@ export type ConversationQueryOutputDto = z.infer<
 
 export const ConversationSchema = z.object({
 	...ThreadSchema.omit({}).shape,
-	messages: z.array(MessageMinimalSchema),
+	messages: z.array(MessageSchema),
 });
 
 export type ConversationDto = z.infer<typeof ConversationSchema>;

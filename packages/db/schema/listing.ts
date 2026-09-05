@@ -16,6 +16,7 @@ import {
 	pgTable,
 	text,
 	timestamp,
+	uniqueIndex,
 	varchar,
 } from "drizzle-orm/pg-core";
 import { user } from "./auth";
@@ -141,21 +142,35 @@ export const listing = pgTable(
 		index("listing_status_expiresAt_idx").on(table.status, table.expiresAt),
 		index("listing_user_idx").on(table.userId),
 		index("listing_category_idx").on(table.category),
+		// GiST spatial index backing ST_DWithin/<-> near-me queries on the
+		// PostGIS geography column (otherwise every nearby query is a full scan).
+		index("listing_location_gist_idx").using("gist", table.location),
 	],
 );
 
-export const listingClaimRequest = pgTable("listing_claim_request", {
-	id: text()
-		.primaryKey()
-		.$defaultFn(() => crypto.randomUUID()),
-	listingId: text()
-		.notNull()
-		.references(() => listing.id, { onDelete: "cascade" }),
-	userId: text()
-		.notNull()
-		.references(() => user.id, { onDelete: "cascade" }),
-	...timestamps,
-});
+export const listingClaimRequest = pgTable(
+	"listing_claim_request",
+	{
+		id: text()
+			.primaryKey()
+			.$defaultFn(() => crypto.randomUUID()),
+		listingId: text()
+			.notNull()
+			.references(() => listing.id, { onDelete: "cascade" }),
+		userId: text()
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		...timestamps,
+	},
+	(table) => [
+		// One claim request per (listing, user) — prevents duplicate claim
+		// requests and races between concurrent claim attempts.
+		uniqueIndex("listing_claim_request_listing_user_key").on(
+			table.listingId,
+			table.userId,
+		),
+	],
+);
 
 export const listingImage = pgTable("listing_image", {
 	id: text()
@@ -169,16 +184,23 @@ export const listingImage = pgTable("listing_image", {
 	...timestamps,
 });
 
-export const comment = pgTable("comment", {
-	id: text()
-		.primaryKey()
-		.$defaultFn(() => crypto.randomUUID()),
-	body: varchar({ length: 500 }).notNull(),
-	userId: text()
-		.notNull()
-		.references(() => user.id, { onDelete: "cascade" }),
-	listingId: text()
-		.notNull()
-		.references(() => listing.id, { onDelete: "cascade" }),
-	...timestamps,
-});
+export const comment = pgTable(
+	"comment",
+	{
+		id: text()
+			.primaryKey()
+			.$defaultFn(() => crypto.randomUUID()),
+		body: varchar({ length: 500 }).notNull(),
+		userId: text()
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		listingId: text()
+			.notNull()
+			.references(() => listing.id, { onDelete: "cascade" }),
+		...timestamps,
+	},
+	(table) => [
+		// Comments are fetched per listing; index backs the listingId filter.
+		index("comment_listingId_idx").on(table.listingId),
+	],
+);
