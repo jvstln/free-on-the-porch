@@ -61,7 +61,7 @@ export const SEED_USERS = [
 
 export type SeededUser = typeof user.$inferSelect;
 
-export async function seedUsers(db: NodePgDatabase<any>) {
+export async function seedUsers(db: NodePgDatabase) {
 	console.log("👤 Creating users...");
 
 	const defaultPassword = "Pass@123";

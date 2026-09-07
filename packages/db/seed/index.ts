@@ -60,9 +60,6 @@ export async function main() {
 	await seedMessaging(db, users, listings);
 
 	// Seed Notifications
-	await db.transaction(async (tx) => {
-		// Just run notifications within transaction or directly
-	});
 	await seedNotifications(db, users, listings);
 
 	// Seed Moderation (reports, blocks)

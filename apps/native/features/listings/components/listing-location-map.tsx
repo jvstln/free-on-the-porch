@@ -1,4 +1,5 @@
 import { MapPin } from "lucide-react-native";
+import type React from "react";
 import { Platform } from "react-native";
 import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
@@ -6,9 +7,12 @@ import { Text } from "@/components/ui/text";
 import { View } from "@/components/ui/view";
 
 // Dynamically require react-native-maps on native platforms to prevent web crash
-let MapView: any = null;
-let Marker: any = null;
-let Circle: any = null;
+// biome-ignore lint/suspicious/noExplicitAny: react-native-maps dynamic require
+let MapView: React.ComponentType<any>;
+// biome-ignore lint/suspicious/noExplicitAny: react-native-maps dynamic require
+let Marker: React.ComponentType<any>;
+// biome-ignore lint/suspicious/noExplicitAny: react-native-maps dynamic require
+let Circle: React.ComponentType<any>;
 
 try {
 	if (Platform.OS !== "web") {

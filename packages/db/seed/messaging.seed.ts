@@ -5,7 +5,7 @@ import type { SeededUser } from "./users.seed";
 import { createId, past } from "./utils.seed";
 
 export async function seedMessaging(
-	db: NodePgDatabase<any>,
+	db: NodePgDatabase,
 	users: Record<string, SeededUser>,
 	listings: Record<string, SeededListing>,
 ) {
@@ -79,8 +79,6 @@ export async function seedMessaging(
 
 		for (const msg of params.messages) {
 			const sender = users[msg.senderEmail];
-			const msgReceiver =
-				msg.senderEmail === params.creatorEmail ? receiver : creator;
 
 			if (sender) {
 				messageRecords.push({

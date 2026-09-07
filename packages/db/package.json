@@ -7,6 +7,7 @@
 		"./schema": "./schema/index.ts"
 	},
 	"scripts": {
+		"check-types": "tsc --noEmit",
 		"db:push": "drizzle-kit push",
 		"db:studio": "drizzle-kit studio",
 		"db:generate": "drizzle-kit generate",
@@ -15,7 +16,8 @@
 	},
 	"devDependencies": {
 		"@types/pg": "^8.20.0",
-		"drizzle-kit": "catalog:"
+		"drizzle-kit": "catalog:",
+		"tsx": "catalog:"
 	},
 	"dependencies": {
 		"@free-on-the-porch/env": "workspace:*",

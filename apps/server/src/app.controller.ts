@@ -7,6 +7,6 @@ export class AppController {
 
 	@Get()
 	getHello(): string {
-		return "Say hello to free on the pouch!";
+		return "Free on the porch API";
 	}
 }

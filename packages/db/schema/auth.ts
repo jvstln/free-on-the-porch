@@ -3,7 +3,6 @@
 // can read/write them directly. `user` also carries domain fields (bio) used
 // by the rest of the app.
 import { PublicUserSchema } from "@free-on-the-porch/shared/schemas";
-import { getColumns } from "drizzle-orm";
 import { boolean, index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { timestamps } from "./common";
 
@@ -69,23 +68,10 @@ export const verification = pgTable(
 // --- Public user field whitelist -------------------------------------------
 // Derived programmatically from the shared PublicUserSchema at import time.
 // publicUserSelectFields is a Drizzle column-selection object ({ field: true })
-// passed to relational queries to restrict to only public-safe fields, and
-// publicUserColumns holds the actual column references. Feature code MUST use
-// these (never `.columns: { ... }` the whole user table) so internal fields
-// (emailVerified, etc.) never leak. Keeping both derived from PublicUserSchema
-// guarantees they stay in sync with the API contract.
-const userColumns = getColumns(user);
-const publicUserColumnsEntries = PublicUserSchema.keyof().options.map(
-	(field) => [field, userColumns[field]],
-);
-
+// passed to relational queries to restrict to only public-safe fields. Feature
+// code MUST use it (never `.columns: { ... }` the whole user table) so internal
+// fields (emailVerified, etc.) never leak. Keeping it derived from
+// PublicUserSchema guarantees it stays in sync with the API contract.
 export const publicUserSelectFields = Object.fromEntries(
-	publicUserColumnsEntries.map(([field]) => [field, true]),
+	PublicUserSchema.keyof().options.map((field) => [field, true]),
 ) as Record<keyof typeof PublicUserSchema.shape, true>;
-
-export const publicUserColumns = Object.fromEntries(
-	publicUserColumnsEntries,
-) as Pick<
-	ReturnType<typeof getColumns<typeof user>>,
-	keyof typeof PublicUserSchema.shape
->;

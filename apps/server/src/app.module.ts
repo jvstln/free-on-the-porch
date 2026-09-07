@@ -1,5 +1,4 @@
 import { Module } from "@nestjs/common";
-import { ConfigModule } from "@nestjs/config";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { DatabaseModule } from "./infrastructures/database/database.module";
@@ -16,7 +15,6 @@ import { UserModule } from "./modules/user/user.module";
 		LoggerModule,
 		AuthModule,
 		DatabaseModule,
-		ConfigModule.forRoot(),
 		UserModule,
 		ListingModule,
 		FileStorageModule,

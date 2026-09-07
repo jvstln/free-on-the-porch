@@ -12,7 +12,7 @@ import { AuthService } from "./auth.service";
 export class AuthController {
 	constructor(private readonly authService: AuthService) {}
 
-	@All("*any")
+	@All("*")
 	async handleAuth(@Req() req: Request, @Res() res: Response) {
 		return this.authService.getHandler()(req, res);
 	}

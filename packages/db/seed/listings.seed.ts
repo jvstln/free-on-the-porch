@@ -252,7 +252,7 @@ export const SEED_LISTINGS = [
 export type SeededListing = typeof listing.$inferSelect;
 
 export async function seedListings(
-	db: NodePgDatabase<any>,
+	db: NodePgDatabase,
 	users: Record<string, SeededUser>,
 ) {
 	console.log("📦 Creating listings...");
@@ -292,10 +292,10 @@ export async function seedListings(
 		listingRecords.push(record);
 
 		// Prepare images
-		for (let order = 0; order < sl.images.length; order++) {
+		for (const [order, url] of sl.images.entries()) {
 			imagesToInsert.push({
 				id: createId(),
-				url: sl.images[order]!,
+				url,
 				order,
 				listingId: id,
 			});

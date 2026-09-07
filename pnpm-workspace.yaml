@@ -12,6 +12,7 @@ catalog:
   # drizzle-kit: ^0.31.10
   drizzle-orm: rc
   drizzle-kit: rc
+  tsx: ^4.23.13
   typescript: ^6
   zod: ^4.1.13
   zod-validation-error: ^5.0.0

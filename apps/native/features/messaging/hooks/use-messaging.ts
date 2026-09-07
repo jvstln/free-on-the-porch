@@ -1,4 +1,7 @@
-import type { ThreadsQueryDto } from "@free-on-the-porch/shared/schemas";
+import type {
+	MessageDto,
+	ThreadsQueryDto,
+} from "@free-on-the-porch/shared/schemas";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { messagingSocket } from "@/lib/socket-client";
@@ -99,7 +102,7 @@ export const useMessagingSocket = (otherUserId?: string, threadId?: string) => {
 	const queryClient = useQueryClient();
 
 	useEffect(() => {
-		const handleNewMessage = (message: any) => {
+		const handleNewMessage = (message: MessageDto) => {
 			console.log("[socket] Received real-time message:", message);
 
 			// Invalidate inbox list to fetch latest preview and updates
@@ -115,9 +118,8 @@ export const useMessagingSocket = (otherUserId?: string, threadId?: string) => {
 			// If we are currently chatting with the sender of this message in DM
 			if (
 				otherUserId &&
-				(message.senderId === otherUserId ||
-					message.receiverId === otherUserId) &&
-				(!message.threadId || threadId?.startsWith("dm-"))
+				message.senderId === otherUserId &&
+				threadId?.startsWith("dm-")
 			) {
 				queryClient.invalidateQueries({
 					queryKey: messagingKeys.conversation("users", otherUserId),

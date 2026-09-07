@@ -62,14 +62,14 @@ export class RequestLoggingInterceptor implements NestInterceptor {
 		);
 	}
 
-	private sanitize(obj: any): any {
+	private sanitize(obj: unknown): unknown {
 		if (!obj || typeof obj !== "object") return obj;
 
 		if (Array.isArray(obj)) {
 			return obj.map((item) => this.sanitize(item));
 		}
 
-		const sanitized = { ...obj };
+		const sanitized: Record<string, unknown> = { ...(obj as object) };
 		const sensitiveKeys = [
 			"password",
 			"token",
@@ -91,7 +91,7 @@ export class RequestLoggingInterceptor implements NestInterceptor {
 		return sanitized;
 	}
 
-	private formatBody(body: any): string {
+	private formatBody(body: unknown): string {
 		if (body === undefined || body === null) return "";
 
 		let str = "";
@@ -108,7 +108,7 @@ export class RequestLoggingInterceptor implements NestInterceptor {
 			} else {
 				str = String(body);
 			}
-		} catch (err) {
+		} catch {
 			str = "[Unparsable body]";
 		}
 

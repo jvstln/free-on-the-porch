@@ -1,19 +1,7 @@
-import {
-	applyDecorators,
-	createParamDecorator,
-	UseGuards,
-} from "@nestjs/common";
+import { applyDecorators, UseGuards } from "@nestjs/common";
 import { WebSocketGateway } from "@nestjs/websockets";
-import type { Socket } from "socket.io";
 import { corsConfig } from "../../common/constants";
 import { AuthGuard } from "../../modules/auth/auth.guard";
-
-// Param decorator exposing the authenticated session on a WebSocket handler.
-// AuthGuard stores the session in `client.data` when the socket connects.
-export const WsSession = createParamDecorator((_data, context) => {
-	const client = context.switchToWs().getClient<Socket>();
-	return client.data;
-});
 
 type AppWebSocketGatewayOptions = { namespace: string };
 

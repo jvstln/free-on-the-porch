@@ -1,10 +1,8 @@
 import {
-	type ConversationQueryDto,
 	type ConversationQueryOutputDto,
 	ConversationQuerySchema,
 	type SendMessageDto,
 	SendMessageSchema,
-	type ThreadsQueryDto,
 	type ThreadsQueryOutputDto,
 	ThreadsQuerySchema,
 } from "@free-on-the-porch/shared/schemas";

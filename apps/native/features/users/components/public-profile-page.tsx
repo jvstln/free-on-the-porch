@@ -86,7 +86,10 @@ export function PublicProfilePage({ id }: Props) {
 	);
 
 	const handleListingPress = (listingId: string) => {
-		router.push(`/dashboard/listings/${listingId}` as any);
+		router.push({
+			pathname: "/dashboard/listings/[id]",
+			params: { id: listingId },
+		});
 	};
 
 	// Start or continue messaging flow
@@ -99,7 +102,10 @@ export function PublicProfilePage({ id }: Props) {
 		);
 
 		if (existingThread) {
-			router.push(`/dashboard/messages/${existingThread.id}` as any);
+			router.push({
+				pathname: "/dashboard/messages/[threadId]",
+				params: { threadId: existingThread.id },
+			});
 		} else {
 			// Generate new thread dynamically
 			const newThreadId = `thread-${Date.now()}`;
@@ -153,7 +159,10 @@ export function PublicProfilePage({ id }: Props) {
 			};
 			INITIAL_MESSAGES[newThreadId] = [];
 
-			router.push(`/dashboard/messages/${newThreadId}` as any);
+			router.push({
+				pathname: "/dashboard/messages/[threadId]",
+				params: { threadId: newThreadId },
+			});
 		}
 	};
 

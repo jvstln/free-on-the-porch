@@ -1,3 +1,8 @@
+import type {
+	ListingCategoryDto,
+	ListingConditionDto,
+	ListingStatusDto,
+} from "@free-on-the-porch/shared/schemas";
 import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import { Pressable } from "react-native";
@@ -69,7 +74,13 @@ export function EditListingPage({ id }: Props) {
 		);
 	}
 
-	const handleSubmit = async (values: any) => {
+	const handleSubmit = async (values: {
+		title: string;
+		description: string;
+		category: ListingCategoryDto;
+		condition: ListingConditionDto;
+		status?: ListingStatusDto;
+	}) => {
 		try {
 			await updateMutation.mutateAsync({
 				title: values.title,

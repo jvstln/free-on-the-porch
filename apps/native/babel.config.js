@@ -32,7 +32,7 @@ module.exports = (api) => {
 									}
 								}
 
-								if (key && key.startsWith("PUBLIC_")) {
+								if (key?.startsWith("PUBLIC_")) {
 									const value = process.env[key];
 									nodePath.replaceWith(t.valueToNode(value));
 								}

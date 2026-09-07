@@ -17,10 +17,6 @@ export const UrlSchema = z.url("Enter a valid URL");
 
 export const TimestampSchema = z.union([z.string(), z.date()]);
 
-export const PaginationQuerySchema = z.object({
-	limit: z.coerce.number().min(1).max(50).default(20),
-});
-
 export const CursorPaginationSchema = z.object({
 	limit: z.coerce.number().min(1).max(50).default(20),
 	cursor: z.string().optional(),
@@ -35,5 +31,3 @@ export type PaginatedResponse<T> = T extends unknown[]
 			data: T;
 			pagination?: { nextCursor: string | null };
 		};
-
-export type Satisfies<T, K extends T> = T;

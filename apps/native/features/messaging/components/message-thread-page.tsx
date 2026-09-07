@@ -1,7 +1,6 @@
 import { getInitials } from "@free-on-the-porch/shared/utils";
-import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { type Href, useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, ChevronRight, Send, Tag } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import { FlatList, Pressable, TextInput } from "react-native";
@@ -17,7 +16,6 @@ import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { useUserProfile } from "../../users/hooks/use-user";
 import {
-	messagingKeys,
 	useMarkRead,
 	useMessagingSocket,
 	useSendMessage,
@@ -32,7 +30,6 @@ export function MessageThreadPage({ threadId }: { threadId: string }) {
 	const { backTo } = useLocalSearchParams<{ backTo?: string }>();
 	const insets = useSafeAreaInsets();
 	const flatListRef = useRef<FlatList>(null);
-	const queryClient = useQueryClient();
 	const { data: session } = authClient.useSession();
 
 	const isDm = threadId.startsWith("dm-");
@@ -109,10 +106,6 @@ export function MessageThreadPage({ threadId }: { threadId: string }) {
 		});
 	};
 
-	const isLoading = isDm
-		? userProfileQuery.isLoading || dmMessagesQuery.isLoading
-		: threadDetailsQuery.isLoading;
-
 	return (
 		<KeyboardAvoidingView className="flex-1 bg-background">
 			{/* Thread Header */}
@@ -123,7 +116,7 @@ export function MessageThreadPage({ threadId }: { threadId: string }) {
 				<Pressable
 					onPress={() => {
 						if (backTo) {
-							router.navigate(backTo as any);
+							router.navigate(backTo as Href);
 						} else if (router.canGoBack()) {
 							router.back();
 						} else {
@@ -138,7 +131,10 @@ export function MessageThreadPage({ threadId }: { threadId: string }) {
 				<Pressable
 					onPress={() => {
 						if (otherUserId) {
-							router.push(`/dashboard/user/${otherUserId}` as any);
+							router.push({
+								pathname: "/dashboard/user/[id]",
+								params: { id: otherUserId },
+							});
 						}
 					}}
 					className="flex-1 flex-row items-center active:opacity-75"
@@ -166,9 +162,13 @@ export function MessageThreadPage({ threadId }: { threadId: string }) {
 			{listing && (
 				<Pressable
 					onPress={() =>
-						router.push(
-							`/dashboard/listings/${listing.id}?backTo=/dashboard/messages/${threadId}` as any,
-						)
+						router.push({
+							pathname: "/dashboard/listings/[id]",
+							params: {
+								id: listing.id,
+								backTo: `/dashboard/messages/${threadId}`,
+							},
+						})
 					}
 					className="flex-row items-center justify-between border-border border-b bg-primary/5 px-4 py-2.5 active:bg-primary/10"
 				>

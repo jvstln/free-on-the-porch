@@ -1,6 +1,6 @@
 import { getInitials } from "@free-on-the-porch/shared/utils";
 import { format } from "date-fns";
-import { router, useNavigation } from "expo-router";
+import { router } from "expo-router";
 import {
 	Calendar,
 	CheckCircle,
@@ -11,7 +11,13 @@ import {
 	Trash2,
 } from "lucide-react-native";
 import { useRef, useState } from "react";
-import { Alert, Dimensions, FlatList, Pressable } from "react-native";
+import {
+	Alert,
+	Dimensions,
+	FlatList,
+	Pressable,
+	type ViewToken,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -57,7 +63,7 @@ export function ListingDetailPage({ id }: Props) {
 	const [activeImageIndex, setActiveImageIndex] = useState(0);
 
 	const onViewableItemsChanged = useRef(
-		({ viewableItems }: { viewableItems: any[] }) => {
+		({ viewableItems }: { viewableItems: ViewToken[] }) => {
 			if (viewableItems.length > 0 && viewableItems[0]?.index !== null) {
 				setActiveImageIndex(viewableItems[0].index ?? 0);
 			}

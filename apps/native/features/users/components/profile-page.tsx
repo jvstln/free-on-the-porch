@@ -21,12 +21,7 @@ export function ProfilePage() {
 	const { data: session } = authClient.useSession();
 
 	// Load own listings
-	const {
-		data: listings = [],
-		isLoading,
-		refetch,
-		isRefetching,
-	} = useMyListings();
+	const { data: listings = [], refetch, isRefetching } = useMyListings();
 
 	const user = (session?.user || MOCK_USER) as unknown as CurrentUserDto;
 	const joinedDate = user.createdAt
@@ -52,7 +47,7 @@ export function ProfilePage() {
 	};
 
 	const handleListingPress = (id: string) => {
-		router.push(`/dashboard/listings/${id}` as any);
+		router.push({ pathname: "/dashboard/listings/[id]", params: { id } });
 	};
 
 	return (
@@ -85,7 +80,7 @@ export function ProfilePage() {
 								appearance="soft"
 								color="neutral"
 								className="size-10 items-center justify-center rounded-full p-0"
-								onPress={() => router.push("/settings" as any)}
+								onPress={() => router.push("/settings")}
 							>
 								<Icon as={Settings} className="size-5 text-muted-foreground" />
 							</Button>
@@ -134,7 +129,7 @@ export function ProfilePage() {
 									color="primary"
 									size="sm"
 									className="flex-1 flex-row items-center gap-1.5 rounded-xl py-2.5"
-									onPress={() => router.push("/dashboard/profile/edit" as any)}
+									onPress={() => router.push("/dashboard/profile/edit")}
 								>
 									<Icon as={Edit} className="size-4" />
 									<Button.Label className="font-bold text-xs">

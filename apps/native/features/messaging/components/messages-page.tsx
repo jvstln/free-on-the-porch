@@ -15,7 +15,6 @@ import { FlatList } from "@/components/ui/flat-list";
 import { Icon } from "@/components/ui/icon";
 import { SearchInput } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
-import { Text } from "@/components/ui/text";
 import { ToggleGroup } from "@/components/ui/toggle-group";
 import { View } from "@/components/ui/view";
 import {
@@ -56,7 +55,10 @@ export function MessagesPage() {
 		}
 
 		// Navigate to detailed chat route
-		router.push(`/dashboard/messages/${thread.id}` as any);
+		router.push({
+			pathname: "/dashboard/messages/[threadId]",
+			params: { threadId: thread.id },
+		});
 	};
 
 	const filteredThreads = threads.filter((t) => {
@@ -74,9 +76,9 @@ export function MessagesPage() {
 		// Filter by search query
 		const query = searchQuery.toLowerCase();
 		return (
-			(contactUser && contactUser.name.toLowerCase().includes(query)) ||
-			(t.listing?.title && t.listing.title.toLowerCase().includes(query)) ||
-			(lastMessage?.body && lastMessage.body.toLowerCase().includes(query))
+			contactUser?.name.toLowerCase().includes(query) ||
+			t.listing?.title?.toLowerCase().includes(query) ||
+			lastMessage?.body?.toLowerCase().includes(query)
 		);
 	});
 

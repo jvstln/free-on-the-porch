@@ -1,9 +1,14 @@
-import { useToast as useHeroToast } from "heroui-native";
+import { type ToastShowConfig, useToast as useHeroToast } from "heroui-native";
 import React from "react";
 import { Spinner } from "@/components/ui/spinner";
 
 // Capture native toast manager reference at runtime
 let toastRef: ReturnType<typeof useHeroToast>["toast"] | null = null;
+
+type ToastHelpers = {
+	show: (options: string | ToastShowConfig) => string;
+	hide: (ids?: string | string[] | "all") => void;
+};
 
 export const ToastListener = () => {
 	const { toast } = useHeroToast();
@@ -22,13 +27,10 @@ export interface ToastOptions {
 	icon?: React.ReactNode;
 	action?: {
 		label: string;
-		onClick: (helpers: {
-			show: typeof toast;
-			hide: (ids?: string | string[] | "all") => void;
-		}) => void;
+		onClick: (helpers: ToastHelpers) => void;
 	};
 	actionLabel?: string;
-	onActionPress?: (helpers: { show: any; hide: (ids?: any) => void }) => void;
+	onActionPress?: (helpers: ToastHelpers) => void;
 	id?: string;
 	onShow?: () => void;
 	onHide?: () => void;
@@ -46,7 +48,27 @@ function showToast(
 		return undefined;
 	}
 
-	let finalOptions: any = {};
+	interface FinalToastOptions {
+		title?: string;
+		label?: string;
+		description?: string;
+		variant?: "default" | "accent" | "success" | "warning" | "danger" | "error";
+		duration?: number | "persistent";
+		icon?: React.ReactNode;
+		action?: {
+			label: string;
+			onClick: (helpers: ToastHelpers) => void;
+		};
+		actionLabel?: string;
+		onActionPress?: (helpers: ToastHelpers) => void;
+		id?: string;
+		onShow?: () => void;
+		onHide?: () => void;
+		isSwipeable?: boolean;
+		[key: string]: unknown;
+	}
+
+	let finalOptions: FinalToastOptions = {};
 
 	if (typeof messageOrOptions === "string") {
 		finalOptions = {
@@ -74,9 +96,10 @@ function showToast(
 		!finalOptions.actionLabel &&
 		!finalOptions.onActionPress
 	) {
-		finalOptions.actionLabel = finalOptions.action.label;
-		finalOptions.onActionPress = (helpers: any) => {
-			finalOptions.action.onClick(helpers);
+		const { action } = finalOptions;
+		finalOptions.actionLabel = action.label;
+		finalOptions.onActionPress = (helpers: ToastHelpers) => {
+			action.onClick(helpers);
 		};
 	}
 	delete finalOptions.action;
@@ -88,7 +111,7 @@ function showToast(
 		delete finalOptions.id;
 	}
 
-	return toastRef.show(finalOptions);
+	return toastRef.show(finalOptions as ToastShowConfig);
 }
 
 export const toast = (

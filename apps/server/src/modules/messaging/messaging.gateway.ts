@@ -1,9 +1,5 @@
-import type { SendMessageDto } from "@free-on-the-porch/shared/schemas";
-import {
-	MessageBody,
-	SubscribeMessage,
-	WebSocketServer,
-} from "@nestjs/websockets";
+import type { MessageDto } from "@free-on-the-porch/shared/schemas";
+import { WebSocketServer } from "@nestjs/websockets";
 import { Server } from "socket.io";
 import { AppWebSocketGateway } from "../../infrastructures/websocket/ws.decorator";
 
@@ -26,7 +22,7 @@ export class MessagingGateway {
 	 * Emits "new_message" to each member's userId:<id> room, skipping the
 	 * sender (they already have it from the REST response).
 	 */
-	broadcastMessage(memberIds: string[], message: any) {
+	broadcastMessage(memberIds: string[], message: MessageDto) {
 		for (const userId of memberIds) {
 			if (userId !== message.senderId) {
 				console.log(`[socket] Emitting new_message to user: ${userId}`);

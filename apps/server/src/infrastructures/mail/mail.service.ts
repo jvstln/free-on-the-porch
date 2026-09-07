@@ -96,18 +96,21 @@ class MailjetMailService implements IMailService {
 				};
 			}
 
-			const result = (await response.json()) as any;
+			const result = (await response.json()) as {
+				Messages?: Array<{ To?: Array<{ MessageID?: number | string }> }>;
+			};
 			const messageId =
 				result.Messages?.[0]?.To?.[0]?.MessageID || `mailjet-${Date.now()}`;
 			return {
 				success: true,
 				messageId: String(messageId),
 			};
-		} catch (error: any) {
-			this.logger.error("Failed to send email via Mailjet", error.stack);
+		} catch (error) {
+			const err = error instanceof Error ? error : new Error(String(error));
+			this.logger.error("Failed to send email via Mailjet", err.stack);
 			return {
 				success: false,
-				error: error.message || "Unknown error",
+				error: err.message || "Unknown error",
 			};
 		}
 	}

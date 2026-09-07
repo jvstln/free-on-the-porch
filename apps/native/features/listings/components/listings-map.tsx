@@ -1,7 +1,8 @@
 import type { ListingDto } from "@free-on-the-porch/shared/schemas";
 import { Tag } from "lucide-react-native";
+import type React from "react";
 import { useRef, useState } from "react";
-import { Platform, Pressable } from "react-native";
+import { Platform, Pressable, type ViewProps } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import { Image } from "@/components/ui/image";
 import { Text } from "@/components/ui/text";
@@ -9,8 +10,10 @@ import { View } from "@/components/ui/view";
 
 // ─── Native Map Conditionally Loaded ──────────────────────────────────────────
 
-let MapView: any;
-let Marker: any;
+// biome-ignore lint/suspicious/noExplicitAny: react-native-maps ref handling requires any
+let MapView: React.ComponentType<any>;
+// biome-ignore lint/suspicious/noExplicitAny: react-native-maps ref handling requires any
+let Marker: React.ComponentType<any>;
 try {
 	if (Platform.OS !== "web") {
 		const maps = require("react-native-maps");
@@ -26,7 +29,6 @@ try {
 export function WebMapFallback({
 	listings,
 	onSelectPin,
-	centerCoords,
 }: {
 	listings: ListingDto[];
 	onSelectPin: (item: ListingDto) => void;
@@ -62,7 +64,7 @@ export function WebMapFallback({
 				onMouseMove: handleMouseMove,
 				onMouseUp: handleMouseUp,
 				onMouseLeave: handleMouseUp,
-			} as any)}
+			} as ViewProps)}
 		>
 			{/* Grid Map Vector */}
 			<View
@@ -262,7 +264,14 @@ export function NativeMap({
 	onSelectPin: (item: ListingDto) => void;
 	centerCoords: { lat: number; lng: number };
 }) {
-	const mapRef = useRef<any>(null);
+	const mapRef = useRef<{
+		animateToRegion: (region: {
+			latitude: number;
+			longitude: number;
+			latitudeDelta: number;
+			longitudeDelta: number;
+		}) => void;
+	} | null>(null);
 
 	const handleCenter = () => {
 		mapRef.current?.animateToRegion({

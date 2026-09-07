@@ -20,7 +20,7 @@ export function MyListingsPage() {
 	} = useMyListings();
 
 	const handleListingPress = (id: string) => {
-		router.push(`/dashboard/listings/${id}` as any);
+		router.push({ pathname: "/dashboard/listings/[id]", params: { id } });
 	};
 
 	return (

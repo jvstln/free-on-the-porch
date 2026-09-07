@@ -5,7 +5,7 @@ import type { SeededUser } from "./users.seed";
 import { createId, past } from "./utils.seed";
 
 export async function seedComments(
-	db: NodePgDatabase<any>,
+	db: NodePgDatabase,
 	users: Record<string, SeededUser>,
 	listings: Record<string, SeededListing>,
 ) {

@@ -5,7 +5,7 @@ import type { SeededUser } from "./users.seed";
 import { createId, past } from "./utils.seed";
 
 export async function seedNotifications(
-	db: NodePgDatabase<any>,
+	db: NodePgDatabase,
 	users: Record<string, SeededUser>,
 	listings: Record<string, SeededListing>,
 ) {
@@ -24,7 +24,7 @@ export async function seedNotifications(
 		title: string;
 		body: string;
 		read: boolean;
-		data?: any;
+		data?: Record<string, string | undefined>;
 		daysAgo: number;
 	}) => {
 		const targetUser = users[params.userEmail];

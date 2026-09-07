@@ -134,31 +134,31 @@
 
 ## P7 — Dead Code / Unused Imports
 
-- [ ] **#38** `messaging.service.ts` — `db`, `ne` imports unused; `as any` casts and `(t: any)` type params
-- [ ] **#39** `user.service.ts` — `db`, `eq`, `publicUserSelectFields`, `buildResponse`, `NotFoundException` all unused
-- [ ] **#40** `messaging.gateway.ts` — `SendMessageDto`, `MessageBody`, `SubscribeMessage` imported but never used
-- [ ] **#41** `http-exception.filter.ts` — entire file commented out
-- [ ] **#42** `auth.type.ts` — socket.io module augmentation commented out
-- [ ] **#43** `ws.decorator.ts` / `ws.type.ts` — `WsSession`, `AuthenticatedSocket` defined but never used
-- [ ] **#44** `generic.schema.ts` — `Satisfies<T,K>` unused; `PaginationQuerySchema` unused
-- [ ] **#45** `db/schema/auth.ts` — `publicUserColumns` unused
-- [ ] **#46** `db/schema/common.ts` — `toJsonbObject` unused
-- [ ] **#47** `shared/types/index.ts` — `ZodMeta` unreachable (not in package exports)
-- [ ] **#48** Native: `@react-navigation/drawer`, `@react-navigation/elements`, `drizzle-orm` in `package.json` but unused
+- [x] **#38** `messaging.service.ts` — `db`, `ne` imports unused; `as any` casts and `(t: any)` type params (fixed in P1 commit)
+- [x] **#39** `user.service.ts` — `db`, `eq`, `publicUserSelectFields`, `buildResponse`, `NotFoundException` all unused (fixed in P1 commit)
+- [x] **#40** `messaging.gateway.ts` — `SendMessageDto`, `MessageBody`, `SubscribeMessage` imported but never used (removed; typed `message` as `MessageDto`)
+- [x] **#41** `http-exception.filter.ts` — entire file commented out (deleted file + `filters/` dir)
+- [x] **#42** `auth.type.ts` — socket.io module augmentation commented out (removed commented block)
+- [x] **#43** `ws.decorator.ts` / `ws.type.ts` — `WsSession`, `AuthenticatedSocket` defined but never used (removed `WsSession` + unused imports; deleted `ws.type.ts`)
+- [x] **#44** `generic.schema.ts` — `Satisfies<T,K>` unused; `PaginationQuerySchema` unused (removed both)
+- [x] **#45** `db/schema/auth.ts` — `publicUserColumns` unused (removed export + `getColumns` import)
+- [x] **#46** `db/schema/common.ts` — `toJsonbObject` unused (removed function + unused `sql`, `PgColumn` imports)
+- [x] **#47** `shared/types/index.ts` — `ZodMeta` unreachable (not in package exports) (deleted file + dir)
+- [x] **#48** Native: `@react-navigation/drawer`, `@react-navigation/elements`, `drizzle-orm` in `package.json` but unused (removed all three)
 
 ---
 
 ## P8 — Config / Tooling
 
-- [ ] **#49** `packages/db` has no `check-types` script — not covered by `pnpm check-types`
-- [ ] **#50** `@free-on-the-porch/config` is in server `dependencies` but should be `devDependencies`
-- [ ] **#51** `tsx` used by seed script but not declared as a dependency in `packages/db`
-- [ ] **#52** `@nestjs/mapped-types: "*"` — wildcard, should be pinned to `^11`
-- [ ] **#53** Duplicate `eas.json` at root and `apps/native/` with conflicting CLI versions
-- [ ] **#54** No `.github/workflows/` — zero CI/CD
-- [ ] **#55** `ConfigModule.forRoot()` redundant — env already loaded by `@free-on-the-porch/env/private`
-- [ ] **#56** `auth.controller.ts` uses `@All("*any")` — non-standard NestJS wildcard
-- [ ] **#57** 79 Biome warnings: 43x `noExplicitAny`, 13x `noUnusedImports`, 9x unused params, 6x unused vars
-- [ ] **#58** `app.controller.spec.ts` test asserts wrong return value — will fail
-- [ ] **#59** `app.controller.ts` says "free on the pouch" (repo name, not app name)
+- [x] **#49** `packages/db` has no `check-types` script — not covered by `pnpm check-types` (added script)
+- [x] **#50** `@free-on-the-porch/config` is in server `dependencies` but should be `devDependencies` (moved)
+- [x] **#51** `tsx` used by seed script but not declared as a dependency in `packages/db` (added to devDeps + catalog)
+- [x] **#52** `@nestjs/mapped-types: "*"` — wildcard, should be pinned to `^11` (pinned to `^11.0.0`)
+- [x] **#53** Duplicate `eas.json` at root and `apps/native/` with conflicting CLI versions (consolidated to root; deleted native copy)
+- [x] **#54** No `.github/workflows/` — zero CI/CD (added `.github/workflows/ci.yml`: typecheck + lint)
+- [x] **#55** `ConfigModule.forRoot()` redundant — env already loaded by `@free-on-the-porch/env/private` (removed import + line)
+- [x] **#56** `auth.controller.ts` uses `@All("*any")` — non-standard NestJS wildcard (changed to `@All("*")`)
+- [x] **#57** 79 Biome warnings: 43x `noExplicitAny`, 13x `noUnusedImports`, 9x unused params, 6x unused vars (reduced to 0 source warnings; 3 map-related `any` suppressed with biome-ignore for react-native-maps dynamic require/ref)
+- [x] **#58** `app.controller.spec.ts` test asserts wrong return value — will fail (fixed assertion to match "Free on the porch API")
+- [x] **#59** `app.controller.ts` says "free on the pouch" (repo name, not app name) (changed to "Free on the porch API")
 - [ ] **#60** Inconsistent response envelopes — many endpoints don't use `buildResponse()`

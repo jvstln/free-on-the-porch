@@ -10,7 +10,6 @@ export interface EmailVerificationOptions {
 }
 
 export const getEmailVerificationTemplate = ({
-	email,
 	url,
 }: EmailVerificationOptions): EmailTemplateResult => {
 	const title = `Verify your email - ${env.PUBLIC_APP_NAME}`;

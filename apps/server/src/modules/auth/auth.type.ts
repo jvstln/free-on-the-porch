@@ -16,9 +16,3 @@ declare module "express" {
 		session: UserSession | null;
 	}
 }
-
-// declare module "socket.io" {
-// 	interface Socket {
-// 		data: UserSession
-// 	}
-// }

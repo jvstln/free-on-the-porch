@@ -10,7 +10,6 @@ export interface ResetPasswordOptions {
 }
 
 export const getResetPasswordTemplate = ({
-	email,
 	url,
 }: ResetPasswordOptions): EmailTemplateResult => {
 	const title = `Reset your password - ${env.PUBLIC_APP_NAME}`;
