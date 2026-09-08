@@ -6,8 +6,11 @@ import { FileStorageModule } from "./infrastructures/file-storage/file-storage.m
 import { LoggerModule } from "./infrastructures/logger/logger.module";
 import { MailModule } from "./infrastructures/mail/mail.module";
 import { AuthModule } from "./modules/auth/auth.module";
+import { CommentModule } from "./modules/comment/comment.module";
 import { ListingModule } from "./modules/listing/listing.module";
 import { MessagingModule } from "./modules/messaging/messaging.module";
+import { ModerationModule } from "./modules/moderation/moderation.module";
+import { NotificationModule } from "./modules/notification/notification.module";
 import { UserModule } from "./modules/user/user.module";
 
 @Module({
@@ -20,6 +23,9 @@ import { UserModule } from "./modules/user/user.module";
 		FileStorageModule,
 		MailModule,
 		MessagingModule,
+		ModerationModule,
+		CommentModule,
+		NotificationModule,
 	],
 	controllers: [AppController],
 	providers: [AppService],
