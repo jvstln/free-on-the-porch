@@ -226,23 +226,52 @@ export class ListingService {
 		listingId: string,
 		userId: string,
 	): Promise<PaginatedResponse<ThreadMinimalDto>> {
-		// All reads and writes happen inside the transaction to prevent race
-		// conditions (two concurrent claims on the same listing both passing
-		// the availability check).
+		// Pre-flight checks outside the transaction. These catch obvious errors
+		// fast without holding a lock. The listing row is re-read inside the
+		// transaction with FOR UPDATE to guarantee the state hasn't changed.
+		const preflight = await this.drizzle.db.query.listing.findFirst({
+			where: { id: listingId },
+			columns: { id: true, userId: true },
+		});
+
+		if (!preflight) {
+			throw new NotFoundException("Listing not found");
+		}
+
+		if (preflight.userId === userId) {
+			throw new BadRequestException("You cannot claim your own listing");
+		}
+
+		// Check for existing claim outside tx — the unique constraint on
+		// (listingId, userId) would catch this at write time anyway, but
+		// checking early gives a better error message.
+		const existingClaim =
+			await this.drizzle.db.query.listingClaimRequest.findFirst({
+				where: { listingId: listingId, userId: userId },
+				columns: { id: true },
+			});
+
+		if (existingClaim) {
+			throw new ConflictException(
+				"You have already requested to claim this listing",
+			);
+		}
+
+		// Critical section: lock the listing row with FOR UPDATE, verify it's
+		// still AVAILABLE, then perform all writes atomically. The lock ensures
+		// concurrent claim attempts serialize — the second one will block until
+		// the first commits, then re-read and fail the status check.
 		const foundThread = await this.drizzle.db.transaction(async (tx) => {
-			// Lock the listing row and verify it's claimable. Using tx ensures
-			// concurrent claim attempts serialize on this row.
+			// Lock the listing row. `of: listing` scopes the lock to just this
+			// table, avoiding unnecessary locks on referenced tables.
 			const [foundListing] = await tx
 				.select()
 				.from(listing)
-				.where(eq(listing.id, listingId));
+				.where(eq(listing.id, listingId))
+				.for("update", { of: listing });
 
 			if (!foundListing) {
 				throw new NotFoundException("Listing not found");
-			}
-
-			if (foundListing.userId === userId) {
-				throw new BadRequestException("You cannot claim your own listing");
 			}
 
 			if (foundListing.status !== "AVAILABLE") {
@@ -251,21 +280,8 @@ export class ListingService {
 				);
 			}
 
-			// Check if claim request already exists (inside tx — accurate read)
-			const existingClaim =
-				await tx.query.listingClaimRequest.findFirst({
-					where: { listingId: listingId, userId: userId },
-				});
-
-			if (existingClaim) {
-				throw new ConflictException(
-					"You have already requested to claim this listing",
-				);
-			}
-
-			// Reuse an existing LISTING thread for this listing IF the current
-			// user is already a member of it (so repeat claims don't spawn
-			// duplicate conversation threads).
+			// Reuse an existing LISTING thread if the current user is already
+			// a member (prevents duplicate threads on repeat claims).
 			let foundThread = await tx.query.thread.findFirst({
 				where: {
 					listingId,
@@ -274,9 +290,8 @@ export class ListingService {
 					},
 				},
 			});
+
 			if (!foundThread) {
-				// No usable thread yet — create a LISTING thread, add both the
-				// claimant and the listing owner as members.
 				const [newThread] = await tx
 					.insert(thread)
 					.values({
