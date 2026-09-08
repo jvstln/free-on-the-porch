@@ -13,6 +13,7 @@ import { View } from "@/components/ui/view";
 import { ListingCard } from "@/features/listings/components/listing-card";
 import { useMyListings } from "@/features/listings/hooks/use-listings";
 import { authClient } from "@/lib/auth-client";
+import { queryClient } from "@/lib/query-client";
 
 export function ProfilePage() {
 	const router = useRouter();
@@ -22,7 +23,7 @@ export function ProfilePage() {
 	// Load own listings
 	const { data: listings = [], refetch, isRefetching } = useMyListings();
 
-	const user = session?.user as unknown as CurrentUserDto;
+	const user = session?.user as CurrentUserDto;
 	const joinedDate = user.createdAt ? new Date(user.createdAt) : new Date();
 	const formattedDate = joinedDate.toLocaleDateString(undefined, {
 		month: "long",
@@ -34,11 +35,11 @@ export function ProfilePage() {
 
 	const handleSignOut = async () => {
 		try {
+			queryClient.clear();
 			await authClient.signOut();
 			router.replace("/login");
 		} catch (err) {
 			console.error("[ProfilePage] Failed to sign out:", err);
-			// Fallback redirect
 			router.replace("/login");
 		}
 	};

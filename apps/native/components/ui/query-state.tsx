@@ -80,7 +80,6 @@ const ErrorState = ({ query, errorMessage, classNames }: ErrorStateProps) => {
 			{refetch && (
 				<Button
 					onPress={() => {
-						console.log("refetching", query);
 						refetch();
 					}}
 					className={cn(classNames?.button)}

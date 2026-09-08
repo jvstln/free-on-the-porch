@@ -34,7 +34,7 @@ export function EditProfilePage() {
 	const updateMutation = useUpdateProfile();
 	const { data: session } = authClient.useSession();
 
-	const user = session?.user as unknown as CurrentUserDto;
+	const user = session?.user as CurrentUserDto;
 
 	const [image, setImage] = useState<string>(user.image || "");
 

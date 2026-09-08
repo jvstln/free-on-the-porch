@@ -22,7 +22,7 @@ try {
 		Circle = maps.Circle;
 	}
 } catch (_e) {
-	console.log("react-native-maps not loaded in ListingLocationMap");
+	// react-native-maps not available
 }
 
 type Props = {

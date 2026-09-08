@@ -21,7 +21,7 @@ try {
 		Marker = maps.Marker;
 	}
 } catch (_e) {
-	console.log("react-native-maps not loaded");
+	// react-native-maps not available
 }
 
 // ─── Web Map Fallback ─────────────────────────────────────────────────────────

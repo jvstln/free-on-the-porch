@@ -4,13 +4,15 @@ import type {
 	ListingDto,
 	NearbyListingsQueryDto,
 	PaginatedResponse,
-	ThreadDto,
+	ThreadMinimalDto,
 	UpdateListingDto,
 } from "@free-on-the-porch/shared/schemas";
 import { api } from "@/lib/api";
 
 export const listingsService = {
-	async getNearby(query: NearbyListingsQueryDto) {
+	async getNearby(
+		query: NearbyListingsQueryDto,
+	): Promise<PaginatedResponse<ListingDto[]>> {
 		const { data } = await api.get<PaginatedResponse<ListingDto[]>>(
 			"/listings/nearby",
 			{ params: query },
@@ -77,8 +79,8 @@ export const listingsService = {
 		return data.data;
 	},
 
-	async claim(id: string): Promise<ThreadDto> {
-		const { data } = await api.post<PaginatedResponse<ThreadDto>>(
+	async claim(id: string): Promise<ThreadMinimalDto> {
+		const { data } = await api.post<PaginatedResponse<ThreadMinimalDto>>(
 			`/listings/${id}/claim`,
 		);
 		return data.data;

@@ -43,12 +43,10 @@ export function RegisterForm({ onRegister, onError }: RegisterFormProps) {
 				},
 				{
 					onError(error) {
-						console.log("registration error", error.error);
 						toast.error(error.error?.message || "Failed to sign up");
 						onError?.(error);
 					},
-					onSuccess(ctx) {
-						console.log("registration success", ctx.data);
+					onSuccess() {
 						toast.success("Account created! Please verify your email.");
 						onRegister(value.email);
 						formApi.reset();
