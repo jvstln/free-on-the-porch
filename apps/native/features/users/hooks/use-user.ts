@@ -11,7 +11,7 @@ export const useUpdateProfile = () => {
 	return useMutation({
 		mutationFn: (data: UpdateProfileDto) => usersService.updateMe(data),
 		onSuccess: () => {
-			// Invalidate own listings in case owner info needs a refresh
+			queryClient.invalidateQueries({ queryKey: ["users"] });
 			queryClient.invalidateQueries({ queryKey: ["myListings"] });
 		},
 	});

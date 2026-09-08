@@ -61,6 +61,7 @@ export const useCreateListing = () => {
 		}) => listingsService.create(data, photos),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["myListings"] });
+			queryClient.invalidateQueries({ queryKey: ["listings", "nearby"] });
 		},
 	});
 };
@@ -72,6 +73,8 @@ export const useUpdateListing = (id: string) => {
 		mutationFn: (data: UpdateListingDto) => listingsService.update(id, data),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["myListings"] });
+			queryClient.invalidateQueries({ queryKey: ["listings", id] });
+			queryClient.invalidateQueries({ queryKey: ["listings", "nearby"] });
 		},
 	});
 };
@@ -81,8 +84,10 @@ export const useDeleteListing = () => {
 
 	return useMutation({
 		mutationFn: (id: string) => listingsService.remove(id),
-		onSuccess: () => {
+		onSuccess: (_data, id) => {
 			queryClient.invalidateQueries({ queryKey: ["myListings"] });
+			queryClient.invalidateQueries({ queryKey: ["listings", id] });
+			queryClient.invalidateQueries({ queryKey: ["listings", "nearby"] });
 		},
 	});
 };
@@ -95,6 +100,7 @@ export const useClaimListing = (id: string) => {
 		onSuccess: () => {
 			toast.success("Claim request sent!");
 			queryClient.invalidateQueries({ queryKey: ["listings", id] });
+			queryClient.invalidateQueries({ queryKey: ["messaging", "inbox"] });
 		},
 		onError: (error) => {
 			toast.error(error.message || "Failed to send claim request.");

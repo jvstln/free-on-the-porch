@@ -18,6 +18,7 @@ export const useCreateComment = (listingId: string) => {
 			commentsService.create(listingId, data),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["comments", listingId] });
+			queryClient.invalidateQueries({ queryKey: ["listings", listingId] });
 		},
 	});
 };
@@ -30,6 +31,7 @@ export const useDeleteComment = (listingId: string) => {
 			commentsService.remove(listingId, commentId),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["comments", listingId] });
+			queryClient.invalidateQueries({ queryKey: ["listings", listingId] });
 		},
 	});
 };

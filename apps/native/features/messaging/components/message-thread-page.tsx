@@ -80,7 +80,7 @@ export function MessageThreadPage({ threadId }: { threadId: string }) {
 					threadId && !threadId.startsWith("dm-") ? threadId : undefined,
 			});
 		}
-	}, [otherUserId, threadId]);
+	}, [otherUserId, threadId, markReadMutation]);
 
 	useEffect(() => {
 		// Scroll to bottom on initial render/new messages
