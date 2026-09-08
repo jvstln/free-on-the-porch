@@ -23,7 +23,6 @@ export function SearchInput({
 					className={cn(className)}
 					autoFocus={autoFocus}
 				/>
-				{/* <SearchField.ClearButton /> */}
 			</SearchField.Group>
 		</SearchField>
 	);

@@ -147,7 +147,6 @@ function ButtonRoot({
 				) : (
 					resolvedChildren
 				)}
-				{/* {resolvedChildren} */}
 			</HeroUIButton>
 		</TextClassContextProvider>
 	);
