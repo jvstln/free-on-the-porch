@@ -4,7 +4,7 @@ import type {
 } from "@free-on-the-porch/shared/schemas";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { messagingSocket } from "@/lib/socket-client";
+import { connectMessagingSocket } from "@/lib/socket-client";
 import { messagingService } from "../messaging.api";
 
 // Query keys
@@ -102,20 +102,17 @@ export const useMessagingSocket = (otherUserId?: string, threadId?: string) => {
 	const queryClient = useQueryClient();
 
 	useEffect(() => {
-		const handleNewMessage = (message: MessageDto) => {
-			console.log("[socket] Received real-time message:", message);
+		const socket = connectMessagingSocket();
 
-			// Invalidate inbox list to fetch latest preview and updates
+		const handleNewMessage = (message: MessageDto) => {
 			queryClient.invalidateQueries({ queryKey: ["messaging", "inbox"] });
 
-			// Invalidate specific thread if it matches
 			if (message.threadId && threadId === message.threadId) {
 				queryClient.invalidateQueries({
 					queryKey: messagingKeys.conversation("threads", message.threadId),
 				});
 			}
 
-			// If we are currently chatting with the sender of this message in DM
 			if (
 				otherUserId &&
 				message.senderId === otherUserId &&
@@ -127,15 +124,10 @@ export const useMessagingSocket = (otherUserId?: string, threadId?: string) => {
 			}
 		};
 
-		messagingSocket.on("new_message", handleNewMessage);
-
-		messagingSocket.on("connect", () => {
-			console.log("[socket] Connected to messaging namespace");
-		});
+		socket.on("new_message", handleNewMessage);
 
 		return () => {
-			messagingSocket.off("new_message", handleNewMessage);
-			messagingSocket.off("connect");
+			socket.off("new_message", handleNewMessage);
 		};
 	}, [otherUserId, threadId, queryClient]);
 };

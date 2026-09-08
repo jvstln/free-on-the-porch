@@ -107,4 +107,20 @@ export class UserService {
 
 		return buildResponse(settings as UserSettingsDto);
 	}
+
+	async deleteAccount(userId: string) {
+		const existing = await this.drizzle.db.query.user.findFirst({
+			where: { id: userId },
+			columns: { id: true },
+		});
+
+		if (!existing) {
+			throw new NotFoundException("User not found");
+		}
+
+		// Cascade deletes all related data (sessions, accounts, listings, etc.)
+		await this.drizzle.db.delete(user).where(eq(user.id, userId));
+
+		return buildResponse({ ok: true });
+	}
 }

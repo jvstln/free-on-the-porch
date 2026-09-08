@@ -5,6 +5,7 @@ import { ArrowLeft, ChevronRight, Send, Tag } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import { FlatList, Pressable, TextInput } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useResolveClassNames } from "uniwind";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,11 @@ export function MessageThreadPage({ threadId }: { threadId: string }) {
 	const insets = useSafeAreaInsets();
 	const flatListRef = useRef<FlatList>(null);
 	const { data: session } = authClient.useSession();
+	const placeholderStyles = useResolveClassNames("text-muted-foreground");
+	const placeholderColor =
+		typeof placeholderStyles.color === "string"
+			? placeholderStyles.color
+			: "#414942";
 
 	const isDm = threadId.startsWith("dm-");
 	const dmUserId = isDm ? threadId.substring(3) : "";
@@ -82,28 +88,12 @@ export function MessageThreadPage({ threadId }: { threadId: string }) {
 		}
 	}, [otherUserId, threadId, markReadMutation]);
 
-	useEffect(() => {
-		// Scroll to bottom on initial render/new messages
-		if (messages.length > 0) {
-			setTimeout(() => {
-				flatListRef.current?.scrollToEnd({ animated: true });
-			}, 100);
-		}
-	}, [messages.length]);
-
 	const handleSend = () => {
 		if (!input.trim()) return;
 		const body = input.trim();
 		setInput("");
 
-		sendMessageMutation.mutate(body, {
-			onSuccess: () => {
-				// Scroll to bottom
-				setTimeout(() => {
-					flatListRef.current?.scrollToEnd({ animated: true });
-				}, 100);
-			},
-		});
+		sendMessageMutation.mutate(body);
 	};
 
 	return (
@@ -222,6 +212,9 @@ export function MessageThreadPage({ threadId }: { threadId: string }) {
 				keyExtractor={(item) => item.id}
 				showsVerticalScrollIndicator={false}
 				contentContainerClassName="px-4 py-5 gap-3"
+				onContentSizeChange={() => {
+					flatListRef.current?.scrollToEnd({ animated: false });
+				}}
 				renderItem={({ item }) => {
 					const isMe = item.senderId === session?.user?.id;
 					const formattedTime = format(new Date(item.createdAt), "h:mm a");
@@ -271,7 +264,7 @@ export function MessageThreadPage({ threadId }: { threadId: string }) {
 				<TextInput
 					className="flex-1 rounded-full border border-border bg-background px-4 py-2.5 font-medium text-foreground text-sm"
 					placeholder="Type a neighborly message..."
-					placeholderTextColor="#A89880"
+					placeholderTextColor={placeholderColor}
 					value={input}
 					onChangeText={setInput}
 					onSubmitEditing={handleSend}

@@ -1,7 +1,7 @@
 import { Slot } from "@rn-primitives/slot";
 import { usePathname, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { forwardRef, useCallback, useEffect } from "react";
+import { forwardRef, useEffect } from "react";
 import { type GestureResponderEvent, Pressable } from "react-native";
 import { authClient } from "@/lib/auth-client";
 import { useGlobalStore } from "@/store/global.store";
@@ -85,8 +85,12 @@ export function AuthGuardProvider({ children }: { children: React.ReactNode }) {
 
 	// First-launch → /welcome; returning user at "/" → /dashboard/listings
 	useEffect(() => {
-		if (!hasHydrated || !isAtRoot || !isFirstLaunch) return;
-		router.replace("/dashboard/listings");
+		if (!hasHydrated || !isAtRoot) return;
+		if (isFirstLaunch) {
+			router.replace("/");
+		} else {
+			router.replace("/dashboard/listings");
+		}
 	}, [hasHydrated, isAtRoot, isFirstLaunch, router]);
 
 	// Reveal the app once all routing decisions have settled
@@ -150,16 +154,13 @@ export const AuthGuardPressable = forwardRef<
 	const session = authClient.useSession();
 	const setAuthSheetView = useGlobalStore((state) => state.setAuthSheetView);
 
-	const handlePress = useCallback(
-		(event: GestureResponderEvent) => {
-			if (!session.data) {
-				setAuthSheetView("login");
-				return;
-			}
-			onPress?.(event);
-		},
-		[session.data, setAuthSheetView, onPress],
-	);
+	const handlePress = (event: GestureResponderEvent) => {
+		if (!session.data) {
+			setAuthSheetView("login");
+			return;
+		}
+		onPress?.(event);
+	};
 
 	if (asChild) {
 		// @radix-ui/react-slot merges all props (including the guarded onPress)

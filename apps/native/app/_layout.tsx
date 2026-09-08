@@ -3,7 +3,7 @@ import { Stack } from "expo-router";
 import { RootProviders } from "@/components/providers";
 
 export const unstable_settings = {
-	initialRouteName: "(drawer)",
+	initialRouteName: "(auth)",
 };
 
 function StackLayout() {

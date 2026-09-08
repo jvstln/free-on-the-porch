@@ -87,7 +87,7 @@ export class ListingService {
 				description: data.description ?? null,
 				category: data.category,
 				condition: data.condition,
-				location: data.location,
+				location: data.location ?? { lat: 40.7312, lng: -74.2738 },
 				address: data.address ?? null,
 				userId,
 				expiresAt,

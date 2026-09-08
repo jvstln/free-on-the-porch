@@ -5,24 +5,21 @@ import {
 	MoreVertical,
 	Tag,
 } from "lucide-react-native";
-import { Alert, FlatList, Pressable, RefreshControl } from "react-native";
+import { Alert, FlatList, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { RefreshControl } from "@/components/ui/flat-list";
 import { Icon } from "@/components/ui/icon";
 import { Spinner } from "@/components/ui/spinner";
 import { Text } from "@/components/ui/text";
 import { toast } from "@/components/ui/toast";
 import { View } from "@/components/ui/view";
 import { ListingCard } from "@/features/listings/components/listing-card";
-import { useNearbyListings } from "@/features/listings/hooks/use-listings";
-import {
-	INITIAL_MESSAGES,
-	INITIAL_THREADS,
-	THREADS_DETAILS,
-} from "@/features/mock/mock-data";
+import { useUserListings } from "@/features/listings/hooks/use-listings";
+import { useSendMessage } from "@/features/messaging/hooks/use-messaging";
 import {
 	useCreateBlock,
 	useCreateReport,
@@ -40,23 +37,17 @@ export function PublicProfilePage({ id }: Props) {
 	// Fetch user details
 	const { data: user, isLoading: isUserLoading, error } = useUserProfile(id);
 
-	// Fetch all nearby listings to filter this user's listings
+	// Fetch this user's listings directly
 	const {
-		data,
+		data: allListings = [],
 		isLoading: isListingsLoading,
 		refetch,
 		isRefetching,
-	} = useNearbyListings({
-		lat: 40.7312,
-		lng: -74.2738, // default map coordinates
-		radiusMeters: 50,
-		limit: 100,
-	});
-
-	const allListings = data?.listings ?? [];
+	} = useUserListings(id);
 
 	const reportMutation = useCreateReport();
 	const blockMutation = useCreateBlock();
+	const sendMessage = useSendMessage(id);
 
 	if (isUserLoading) {
 		return (
@@ -85,12 +76,8 @@ export function PublicProfilePage({ id }: Props) {
 		);
 	}
 
-	// Filter neighbor listings to show only AVAILABLE status ones
-	const neighborListings = allListings.filter(
-		(l) =>
-			(l.userId === id || l.user?.name === user.name) &&
-			l.status === "AVAILABLE",
-	);
+	// Filter to show only AVAILABLE status listings
+	const neighborListings = allListings.filter((l) => l.status === "AVAILABLE");
 
 	const handleListingPress = (listingId: string) => {
 		router.push({
@@ -100,76 +87,19 @@ export function PublicProfilePage({ id }: Props) {
 	};
 
 	// Start or continue messaging flow
-	const handleMessageUser = () => {
-		// Look for an existing thread with this neighbor
-		const existingThread = INITIAL_THREADS.find(
-			(t) =>
-				t.otherUser.id === id ||
-				t.otherUser.name.toLowerCase() === user.name.toLowerCase(),
-		);
-
-		if (existingThread) {
-			router.push({
-				pathname: "/dashboard/messages/[threadId]",
-				params: { threadId: existingThread.id },
-			});
-		} else {
-			// Generate new thread dynamically
-			const newThreadId = `thread-${Date.now()}`;
-			const firstListing = neighborListings[0];
-			const initials =
-				user.name
-					?.split(" ")
-					.map((w: string) => w[0])
-					.join("")
-					.toUpperCase() || "NB";
-
-			const newThread = {
-				id: newThreadId,
-				otherUser: {
-					id: id,
-					name: user.name,
-					image: user.image,
-					initials,
-				},
-				listing: {
-					id: firstListing?.id || "listing-table",
-					title: firstListing?.title || "Free item",
-					imageUrl: firstListing?.images?.[0]?.url || null,
-					status: "AVAILABLE" as const,
-				},
-				lastMessage: {
-					body: "Hi! I'm interested in connecting.",
-					createdAt: "Just now",
-					read: true,
-					isMe: true,
-				},
-				unreadCount: 0,
-			};
-
-			// Add to in-memory mock lists
-			INITIAL_THREADS.unshift(newThread);
-			THREADS_DETAILS[newThreadId] = {
-				id: newThreadId,
-				otherUser: {
-					name: user.name,
-					image: user.image,
-					initials,
-				},
-				listing: {
-					id: newThread.listing.id,
-					title: newThread.listing.title,
-					imageUrl: newThread.listing.imageUrl,
-					status: "AVAILABLE",
-					condition: firstListing?.condition || "GOOD",
-				},
-			};
-			INITIAL_MESSAGES[newThreadId] = [];
-
-			router.push({
-				pathname: "/dashboard/messages/[threadId]",
-				params: { threadId: newThreadId },
-			});
+	const handleMessageUser = async () => {
+		try {
+			const message = await sendMessage.mutateAsync(
+				`Hi! I'm interested in connecting.`,
+			);
+			if (message?.threadId) {
+				router.push({
+					pathname: "/dashboard/messages/[threadId]",
+					params: { threadId: message.threadId },
+				});
+			}
+		} catch {
+			toast.error("Failed to start conversation. Please try again.");
 		}
 	};
 
@@ -270,7 +200,7 @@ export function PublicProfilePage({ id }: Props) {
 					<RefreshControl
 						refreshing={isRefetching}
 						onRefresh={refetch}
-						tintColor="#316342"
+						className="text-primary"
 					/>
 				}
 				ListHeaderComponent={

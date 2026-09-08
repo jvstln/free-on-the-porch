@@ -1,9 +1,9 @@
 import { createFormHook, createFormHookContexts } from "@tanstack/react-form";
 import { ControlField } from "heroui-native";
 import * as React from "react";
-import { Switch } from "react-native";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { Field, FieldDescription, FieldError, FieldLabel } from "./field";
@@ -178,12 +178,7 @@ export function SwitchField({
 					{label && <FieldLabel>{label}</FieldLabel>}
 					{description && <FieldDescription>{description}</FieldDescription>}
 				</View>
-				<Switch
-					value={field.state.value}
-					onValueChange={field.handleChange}
-					trackColor={{ false: "#c1c9bf", true: "#316342" }}
-					thumbColor="#ffffff"
-				/>
+				<Switch value={field.state.value} onValueChange={field.handleChange} />
 			</View>
 			<FieldError errors={field.state.meta.errors} />
 		</Field>

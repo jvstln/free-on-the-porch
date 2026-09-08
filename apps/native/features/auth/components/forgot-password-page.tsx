@@ -20,7 +20,7 @@ type Step = "EMAIL" | "SUCCESS";
 export function ForgotPasswordPage() {
 	const router = useRouter();
 
-	const [step, setStep] = useState<Step>("SUCCESS");
+	const [step, setStep] = useState<Step>("EMAIL");
 	const [email, setEmail] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 

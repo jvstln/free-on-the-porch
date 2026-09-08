@@ -9,7 +9,7 @@ import {
 	UpdateProfileSchema,
 	UpdateUserSettingsSchema,
 } from "@free-on-the-porch/shared/schemas";
-import { Body, Controller, Get, Param, Patch } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch } from "@nestjs/common";
 import { ZodValidationPipe } from "../../common/pipes/zod.pipe";
 import { Session } from "../auth/auth.decorator";
 import type { UserSession } from "../auth/auth.type";
@@ -44,6 +44,11 @@ export class UserController {
 		@Body(new ZodValidationPipe(UpdateProfileSchema)) body: UpdateProfileDto,
 	): Promise<PaginatedResponse<CurrentUserDto>> {
 		return this.userService.updateProfile(session.user.id, body);
+	}
+
+	@Delete("me")
+	async deleteAccount(@Session() session: UserSession) {
+		return this.userService.deleteAccount(session.user.id);
 	}
 
 	@Patch("me/settings")

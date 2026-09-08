@@ -48,6 +48,14 @@ export const useMyListings = () => {
 	});
 };
 
+export const useUserListings = (userId: string) => {
+	return useQuery({
+		queryKey: ["listings", "user", userId],
+		queryFn: () => listingsService.getByUser(userId),
+		enabled: !!userId,
+	});
+};
+
 export const useCreateListing = () => {
 	const queryClient = useQueryClient();
 

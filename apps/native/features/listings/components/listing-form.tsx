@@ -26,44 +26,27 @@ import { toast } from "@/components/ui/toast";
 import { KeyboardAvoidingView, View } from "@/components/ui/view";
 import { resolveColorAlias } from "@/lib/colors.util";
 import { cn } from "@/lib/utils";
+import {
+	CATEGORY_LABEL,
+	CONDITION_LABEL,
+} from "../constants/listings.constants";
 
-const FORM_CATEGORIES = [
-	"Furniture",
-	"Kitchen",
-	"Toys",
-	"Garden",
-	"Books",
-	"Electronics",
-	"Clothing",
-	"Tools",
-	"Other",
-];
+// Form categories (exclude SPORTS which isn't in the create form)
+const FORM_CATEGORIES = Object.entries(CATEGORY_LABEL)
+	.filter(([key]) => key !== "SPORTS")
+	.map(([, label]) => label);
 
-const CATEGORY_MAP: Record<string, ListingCategoryDto> = {
-	Furniture: "FURNITURE",
-	Kitchen: "KITCHEN",
-	Toys: "TOYS",
-	Garden: "GARDEN",
-	Books: "BOOKS",
-	Electronics: "ELECTRONICS",
-	Clothing: "CLOTHING",
-	Tools: "TOOLS",
-	Other: "OTHER",
-};
+// Map display label to DTO value
+const CATEGORY_MAP: Record<string, ListingCategoryDto> = Object.fromEntries(
+	Object.entries(CATEGORY_LABEL)
+		.filter(([key]) => key !== "SPORTS")
+		.map(([value, label]) => [label, value as ListingCategoryDto]),
+);
 
-// Reverse map to find category label by value
-const REVERSE_CATEGORY_MAP: Record<ListingCategoryDto, string> = {
-	FURNITURE: "Furniture",
-	KITCHEN: "Kitchen",
-	TOYS: "Toys",
-	GARDEN: "Garden",
-	BOOKS: "Books",
-	ELECTRONICS: "Electronics",
-	CLOTHING: "Clothing",
-	TOOLS: "Tools",
-	OTHER: "Other",
-	SPORTS: "Other",
-};
+// Reverse map: DTO value → display label
+const REVERSE_CATEGORY_MAP: Record<string, string> = Object.fromEntries(
+	Object.entries(CATEGORY_LABEL).map(([value, label]) => [value, label]),
+);
 
 const CONDITIONS: ListingConditionDto[] = [
 	"NEW",
@@ -72,14 +55,6 @@ const CONDITIONS: ListingConditionDto[] = [
 	"FAIR",
 	"WORN",
 ];
-
-const CONDITION_LABELS: Record<ListingConditionDto, string> = {
-	NEW: "New",
-	LIKE_NEW: "Like New",
-	GOOD: "Good",
-	FAIR: "Fair",
-	WORN: "Worn",
-};
 
 const STATUS_OPTIONS: ListingStatusDto[] = [
 	"AVAILABLE",
@@ -391,7 +366,7 @@ export function ListingForm({
 												: "text-muted-foreground",
 										)}
 									>
-										{CONDITION_LABELS[cond]}
+										{CONDITION_LABEL[cond]}
 									</Text>
 								</Pressable>
 							);

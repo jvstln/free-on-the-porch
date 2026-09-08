@@ -40,13 +40,7 @@ api.interceptors.response.use(
 api.interceptors.response.use(
 	(response) => response,
 	(error) => {
-		if (
-			error.response?.status === 401 &&
-			getErrorMessage(error)
-				.toLowerCase()
-				.replace(/\s+/, " ")
-				.includes("user not logged in")
-		) {
+		if (error.response?.status === 401) {
 			useGlobalStore.getState().setAuthSheetView("login");
 			throw new Error("You need to login first");
 		}

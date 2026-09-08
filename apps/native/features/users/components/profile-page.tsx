@@ -1,12 +1,13 @@
 import type { CurrentUserDto } from "@free-on-the-porch/shared/schemas";
 import { useRouter } from "expo-router";
 import { Edit, Gift, LogOut, Settings, Tag } from "lucide-react-native";
-import { FlatList, RefreshControl } from "react-native";
+import { FlatList } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { RefreshControl } from "@/components/ui/flat-list";
 import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
 import { View } from "@/components/ui/view";
@@ -64,7 +65,7 @@ export function ProfilePage() {
 					<RefreshControl
 						refreshing={isRefetching}
 						onRefresh={refetch}
-						tintColor="#316342"
+						className="text-primary"
 					/>
 				}
 				ListHeaderComponent={

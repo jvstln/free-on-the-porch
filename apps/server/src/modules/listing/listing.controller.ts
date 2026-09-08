@@ -74,6 +74,12 @@ export class ListingController {
 		return this.listingService.findByUser(session.user.id);
 	}
 
+	@Get("user/:userId")
+	@Public()
+	findByUser(@Param("userId") userId: string) {
+		return this.listingService.findByUser(userId);
+	}
+
 	@Get(":id")
 	@Public()
 	findOne(@Param("id") id: string) {

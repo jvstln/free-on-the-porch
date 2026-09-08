@@ -17,6 +17,7 @@ import { Text } from "@/components/ui/text";
 import { toast } from "@/components/ui/toast";
 import { View } from "@/components/ui/view";
 import { authClient } from "@/lib/auth-client";
+import { queryClient } from "@/lib/query-client";
 import { useGlobalStore } from "@/store/global.store";
 
 type Item = { label: string; icon: Icon.Props["as"]; onPress?: () => void };
@@ -53,6 +54,7 @@ export const UserMenu = () => {
 			onPress: async () => {
 				const toastId = toast.loading("Logging out...");
 				try {
+					queryClient.clear();
 					await authClient.signOut();
 					toast.success("Logged out successfully", { id: toastId });
 					router.replace("/login");

@@ -1,10 +1,12 @@
 import type { ReportReasonDto } from "@free-on-the-porch/shared/schemas";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { Pressable, TextInput } from "react-native";
+import { Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useResolveClassNames } from "uniwind";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/toast";
 import { View } from "@/components/ui/view";
 import { useCreateReport } from "@/features/moderation/use-moderation";
@@ -30,6 +32,11 @@ export default function ReportModal() {
 		null,
 	);
 	const [details, setDetails] = useState("");
+	const placeholderStyles = useResolveClassNames("text-muted-foreground");
+	const placeholderColor =
+		typeof placeholderStyles.color === "string"
+			? placeholderStyles.color
+			: "#414942";
 
 	const canSubmit = !!selectedReason;
 
@@ -113,13 +120,11 @@ export default function ReportModal() {
 					Additional details (optional)
 				</Text>
 				<View className="rounded-xl border border-border bg-card p-3">
-					<TextInput
+					<Textarea
 						className="text-foreground text-sm"
 						onChangeText={setDetails}
-						multiline
-						numberOfLines={4}
 						placeholder="Provide any additional context..."
-						placeholderTextColor="#A89880"
+						placeholderTextColor={placeholderColor}
 						value={details}
 						style={{ minHeight: 80, textAlignVertical: "top" }}
 					/>

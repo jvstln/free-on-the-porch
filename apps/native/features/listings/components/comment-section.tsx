@@ -2,6 +2,7 @@ import { getInitials } from "@free-on-the-porch/shared/utils";
 import { Send, Trash2 } from "lucide-react-native";
 import { useState } from "react";
 import { TextInput } from "react-native";
+import { useResolveClassNames } from "uniwind";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -25,6 +26,11 @@ export function CommentSection({ listingId, currentUserId }: Props) {
 	const { data: comments, isLoading } = useComments(listingId);
 	const createMutation = useCreateComment(listingId);
 	const deleteMutation = useDeleteComment(listingId);
+	const placeholderStyles = useResolveClassNames("text-muted-foreground");
+	const placeholderColor =
+		typeof placeholderStyles.color === "string"
+			? placeholderStyles.color
+			: "#414942";
 
 	const handleSubmit = async () => {
 		const trimmed = body.trim();
@@ -99,7 +105,7 @@ export function CommentSection({ listingId, currentUserId }: Props) {
 					<TextInput
 						className="flex-1 rounded-full border border-border bg-background px-4 py-2.5 text-foreground text-sm"
 						placeholder="Add a comment..."
-						placeholderTextColor="#A89880"
+						placeholderTextColor={placeholderColor}
 						value={body}
 						onChangeText={setBody}
 						onSubmitEditing={handleSubmit}

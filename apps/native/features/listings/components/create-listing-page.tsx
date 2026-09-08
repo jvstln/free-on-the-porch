@@ -32,7 +32,6 @@ export function CreateListingPage() {
 					description: values.description || undefined,
 					category: values.category,
 					condition: values.condition,
-					location: { lat: 40.7312, lng: -74.2644 },
 				},
 				photos: values.photos.length > 0 ? values.photos : undefined,
 			});

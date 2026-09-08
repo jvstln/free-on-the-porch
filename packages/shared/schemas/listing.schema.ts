@@ -22,7 +22,7 @@ export const CreateListingSchema = z.object({
 	category: ListingCategorySchema,
 	condition: ListingConditionSchema,
 	address: z.string().max(200).optional(),
-	location: PointSchema,
+	location: PointSchema.optional(),
 });
 
 export type CreateListingDto = z.infer<typeof CreateListingSchema>;

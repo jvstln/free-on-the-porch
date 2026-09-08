@@ -4,7 +4,15 @@ import {
 	type CreateReportDto,
 	CreateReportSchema,
 } from "@free-on-the-porch/shared/schemas";
-import { Body, Controller, Delete, Param, Post, Session } from "@nestjs/common";
+import {
+	Body,
+	Controller,
+	Delete,
+	Get,
+	Param,
+	Post,
+	Session,
+} from "@nestjs/common";
 import { ZodValidationPipe } from "../../common/pipes/zod.pipe";
 import type { UserSession } from "../auth/auth.type";
 import { ModerationService } from "./moderation.service";
@@ -12,6 +20,11 @@ import { ModerationService } from "./moderation.service";
 @Controller("moderation")
 export class ModerationController {
 	constructor(private readonly moderationService: ModerationService) {}
+
+	@Get("blocks")
+	getBlocks(@Session() session: UserSession) {
+		return this.moderationService.getBlocks(session.user.id);
+	}
 
 	@Post("reports")
 	createReport(

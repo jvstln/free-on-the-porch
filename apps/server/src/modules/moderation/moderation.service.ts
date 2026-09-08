@@ -1,4 +1,4 @@
-import { block, report } from "@free-on-the-porch/db";
+import { block, publicUserSelectFields, report } from "@free-on-the-porch/db";
 import type {
 	CreateBlockDto,
 	CreateReportDto,
@@ -16,6 +16,19 @@ import { DrizzleService } from "../../infrastructures/database/database.service"
 @Injectable()
 export class ModerationService {
 	constructor(private readonly drizzle: DrizzleService) {}
+
+	async getBlocks(userId: string) {
+		const rows = await this.drizzle.db.query.block.findMany({
+			where: { blockerId: userId },
+			with: {
+				blocked: {
+					columns: publicUserSelectFields,
+				},
+			},
+		});
+
+		return buildResponse(rows);
+	}
 
 	async createReport(userId: string, dto: CreateReportDto) {
 		if (dto.reportedUserId && dto.reportedUserId === userId) {

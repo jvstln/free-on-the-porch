@@ -64,6 +64,13 @@ export const listingsService = {
 		return data.data;
 	},
 
+	async getByUser(userId: string): Promise<ListingDto[]> {
+		const { data } = await api.get<{ data: ListingDto[] }>(
+			`/listings/user/${userId}`,
+		);
+		return data.data;
+	},
+
 	async update(id: string, body: UpdateListingDto) {
 		const { data } = await api.patch<{ data: ListingDto }>(
 			`/listings/${id}`,

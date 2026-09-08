@@ -9,7 +9,6 @@ import {
 	ShieldCheck,
 	Trash2,
 } from "lucide-react-native";
-import { useState } from "react";
 import { Alert, Pressable, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "@/components/ui/button";
@@ -26,7 +25,12 @@ import { Switch } from "@/components/ui/switch";
 import { Text } from "@/components/ui/text";
 import { toast } from "@/components/ui/toast";
 import { View } from "@/components/ui/view";
+import {
+	useBlocks,
+	useRemoveBlock,
+} from "@/features/moderation/use-moderation";
 import { authClient } from "@/lib/auth-client";
+import { queryClient } from "@/lib/query-client";
 import { useSettings, useUpdateSettings } from "../hooks/use-user";
 
 export function SettingsPage() {
@@ -36,18 +40,15 @@ export function SettingsPage() {
 	const { data: settings } = useSettings();
 	const updateSettings = useUpdateSettings();
 
-	const [radiusKm, setRadiusKm] = useState(
-		settings?.defaultRadiusKm?.toString() ?? "15",
-	);
+	const radiusKm = settings?.defaultRadiusKm ?? 15;
 
-	// Blocked users state
-	const [blockedUsers, setBlockedUsers] = useState([
-		{ id: "block-1", name: "Spam Neighbor", initials: "SN" },
-		{ id: "block-2", name: "Inappropriate Postings", initials: "IP" },
-	]);
+	const { data: blocksData } = useBlocks();
+	const removeBlock = useRemoveBlock();
+	const blockedUsers = blocksData?.data ?? [];
 
 	const handleSignOut = async () => {
 		try {
+			queryClient.clear();
 			await authClient.signOut();
 			toast.success("Signed out successfully.");
 			router.replace("/login");
@@ -68,7 +69,9 @@ export function SettingsPage() {
 					style: "destructive",
 					onPress: async () => {
 						try {
-							// Simulate account deletion
+							const { api } = await import("@/lib/api");
+							await api.delete("/users/me");
+							queryClient.clear();
 							await authClient.signOut();
 							toast.success("Your account has been deleted.");
 							router.replace("/login");
@@ -81,9 +84,13 @@ export function SettingsPage() {
 		);
 	};
 
-	const handleUnblock = (id: string, name: string) => {
-		setBlockedUsers((prev) => prev.filter((user) => user.id !== id));
-		toast.success(`${name} has been unblocked.`);
+	const handleUnblock = async (blockedId: string, name: string) => {
+		try {
+			await removeBlock.mutateAsync(blockedId);
+			toast.success(`${name} has been unblocked.`);
+		} catch {
+			toast.error("Failed to unblock user. Please try again.");
+		}
 	};
 
 	return (
@@ -188,12 +195,11 @@ export function SettingsPage() {
 
 						<Select
 							value={{
-								value: settings?.defaultRadiusKm?.toString() ?? radiusKm,
-								label: `${settings?.defaultRadiusKm ?? radiusKm} km`,
+								value: String(radiusKm),
+								label: `${radiusKm} km`,
 							}}
 							onValueChange={(val) => {
 								const km = Number(val?.value ?? 15);
-								setRadiusKm(String(km));
 								updateSettings.mutate({ defaultRadiusKm: km });
 							}}
 						>
@@ -239,37 +245,47 @@ export function SettingsPage() {
 							</View>
 						) : (
 							<View className="gap-3">
-								{blockedUsers.map((user) => (
-									<View
-										key={user.id}
-										className="flex-row items-center justify-between"
-									>
-										<View className="flex-row items-center gap-2.5">
-											<View className="size-8 items-center justify-center rounded-full bg-muted">
-												<Text className="font-bold text-muted-foreground text-xs">
-													{user.initials}
+								{blockedUsers.map((item) => {
+									const initials =
+										item.blocked.name
+											?.split(" ")
+											.map((w: string) => w[0])
+											.join("")
+											.toUpperCase() || "??";
+									return (
+										<View
+											key={item.id}
+											className="flex-row items-center justify-between"
+										>
+											<View className="flex-row items-center gap-2.5">
+												<View className="size-8 items-center justify-center rounded-full bg-muted">
+													<Text className="font-bold text-muted-foreground text-xs">
+														{initials}
+													</Text>
+												</View>
+												<Text
+													type="body-sm"
+													className="font-medium text-foreground"
+												>
+													{item.blocked.name}
 												</Text>
 											</View>
-											<Text
-												type="body-sm"
-												className="font-medium text-foreground"
+											<Button
+												appearance="soft"
+												color="neutral"
+												size="sm"
+												className="rounded-lg px-3 py-1"
+												onPress={() =>
+													handleUnblock(item.blockedId, item.blocked.name)
+												}
 											>
-												{user.name}
-											</Text>
+												<Button.Label className="font-bold text-xs">
+													Unblock
+												</Button.Label>
+											</Button>
 										</View>
-										<Button
-											appearance="soft"
-											color="neutral"
-											size="sm"
-											className="rounded-lg px-3 py-1"
-											onPress={() => handleUnblock(user.id, user.name)}
-										>
-											<Button.Label className="font-bold text-xs">
-												Unblock
-											</Button.Label>
-										</Button>
-									</View>
-								))}
+									);
+								})}
 							</View>
 						)}
 					</Card>

@@ -1,23 +1,42 @@
 import type * as React from "react";
 import { Switch as RNSwitch } from "react-native";
-import { withUniwind } from "uniwind";
+import { useResolveClassNames } from "uniwind";
 
 type SwitchProps = React.ComponentProps<typeof RNSwitch>;
 
 function SwitchImpl({
-	trackColor = { false: "#efeee9", true: "#316342" },
-	thumbColor = "#ffffff",
-	ios_backgroundColor = "#efeee9",
+	trackColor,
+	thumbColor,
+	ios_backgroundColor,
 	...props
 }: SwitchProps) {
+	const resolvedPrimary = useResolveClassNames("bg-primary");
+	const resolvedMuted = useResolveClassNames("bg-muted");
+
+	const primaryColor =
+		typeof resolvedPrimary.backgroundColor === "string"
+			? resolvedPrimary.backgroundColor
+			: "#316342";
+	const mutedColor =
+		typeof resolvedMuted.backgroundColor === "string"
+			? resolvedMuted.backgroundColor
+			: "#efeee9";
+
+	const defaultTrackColor = trackColor ?? {
+		false: mutedColor,
+		true: primaryColor,
+	};
+	const defaultThumbColor = thumbColor ?? "#ffffff";
+	const defaultIosBg = ios_backgroundColor ?? mutedColor;
+
 	return (
 		<RNSwitch
-			trackColor={trackColor}
-			thumbColor={thumbColor}
-			ios_backgroundColor={ios_backgroundColor}
+			trackColor={defaultTrackColor}
+			thumbColor={defaultThumbColor}
+			ios_backgroundColor={defaultIosBg}
 			{...props}
 		/>
 	);
 }
 
-export const Switch = withUniwind(SwitchImpl);
+export { SwitchImpl as Switch };
