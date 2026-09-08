@@ -23,10 +23,10 @@ export const colorAliases: Record<
 	Array<string | RegExp>
 > = {
 	default: [],
-	primary: ["good", "like_new", ""],
-	destructive: [],
+	primary: ["GOOD", "LIKE_NEW", "NEW"],
+	destructive: ["WORN"],
 	success: [],
-	warning: ["fair"],
+	warning: ["FAIR"],
 	muted: [],
 	neutral: [],
 } as const;

@@ -39,10 +39,21 @@
 	--destructive: #ba1a1a;
 	--destructive-foreground: #ffffff;
 
+	/* Success — Green (#2d7a4f) */
+	--success: #2d7a4f;
+	--success-foreground: #ffffff;
+
+	/* Warning — Amber (#b8860b) */
+	--warning: #b8860b;
+	--warning-foreground: #ffffff;
+
 	/* Border & Input — Outline Variant (#c1c9bf) */
 	--border: #c1c9bf;
 	--input: #c1c9bf;
 	--ring: #316342;
+
+	/* Neutral — Dark (#262626) */
+	--neutral-800: #262626;
 
 	/* Radius — Standard 0.5rem (8px) per design spec */
 	--radius: 0.5rem;
@@ -50,27 +61,36 @@
 
 @theme {
 	/* ─── Colors ─── */
-	--color-background: var(--background);
-	--color-foreground: var(--foreground);
+	/* Use direct hex values (not var() refs) so Tailwind v4 inlines
+	   them at build-time instead of resolving to HeroUI's oklch values */
+	--color-background: #faf9f4;
+	--color-foreground: #1b1c19;
 
-	--color-primary: var(--primary);
-	--color-primary-foreground: var(--primary-foreground);
+	--color-primary: #316342;
+	--color-primary-foreground: #ffffff;
 
-	--color-card: var(--card);
-	--color-card-foreground: var(--card-foreground);
-	--color-popover: var(--popover);
-	--color-popover-foreground: var(--popover-foreground);
-	--color-secondary: var(--secondary);
-	--color-secondary-foreground: var(--secondary-foreground);
-	--color-muted: var(--muted);
-	--color-muted-foreground: var(--muted-foreground);
-	--color-accent: var(--accent);
-	--color-accent-foreground: var(--accent-foreground);
-	--color-destructive: var(--destructive);
-	--color-destructive-foreground: var(--destructive-foreground);
-	--color-border: var(--border);
-	--color-input: var(--input);
-	--color-ring: var(--ring);
+	--color-card: #ffffff;
+	--color-card-foreground: #1b1c19;
+	--color-popover: #f5f4ef;
+	--color-popover-foreground: #1b1c19;
+	--color-secondary: #795932;
+	--color-secondary-foreground: #fed2a2;
+	--color-muted: #efeee9;
+	--color-muted-foreground: #414942;
+	--color-accent: #316342;
+	--color-accent-foreground: #ffffff;
+	--color-destructive: #ba1a1a;
+	--color-destructive-foreground: #ffffff;
+	--color-border: #c1c9bf;
+	--color-input: #c1c9bf;
+	--color-ring: #316342;
+
+	--color-success: #2d7a4f;
+	--color-success-foreground: #ffffff;
+	--color-warning: #b8860b;
+	--color-warning-foreground: #ffffff;
+	--color-neutral-800: #262626;
+	--color-white: #ffffff;
 
 	/* ─── Radius ─── */
 	--radius-sm: calc(var(--radius) - 4px);
@@ -79,13 +99,12 @@
 	--radius-xl: calc(var(--radius) + 4px);
 }
 
-@layer theme {
-	@variant light {
-		--accent: #316342;
-		--accent-foreground: #ffffff;
+/* Dark mode tokens — uncomment and define when ready */
+/* @layer theme {
+	@variant dark {
+		--background: #1a1c17;
+		--foreground: #e2e3dc;
+		--primary: #5da873;
+		--primary-foreground: #003917;
 	}
-	/* @variant dark {
-		--accent: red;
-		--accent-foreground: white;
-	} */
-}
+} */

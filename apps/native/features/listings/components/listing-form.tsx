@@ -24,10 +24,8 @@ import { Image } from "@/components/ui/image";
 import { Text } from "@/components/ui/text";
 import { toast } from "@/components/ui/toast";
 import { KeyboardAvoidingView, View } from "@/components/ui/view";
+import { resolveColorAlias } from "@/lib/colors.util";
 import { cn } from "@/lib/utils";
-
-const MAP_MOCK =
-	"file:///C:/Users/Jvstln/.gemini/antigravity-ide/brain/0612514b-d3dc-485f-9030-e7bffd3bf88f/pickup_map_mock_1780101925282.png";
 
 const FORM_CATEGORIES = [
 	"Furniture",
@@ -358,6 +356,21 @@ export function ListingForm({
 					<View className="flex-row flex-wrap gap-2">
 						{CONDITIONS.map((cond) => {
 							const isSelected = activeCondition === cond;
+							const colorKey = resolveColorAlias(cond);
+							const colorClasses: Record<string, string> = {
+								primary: "border-primary bg-primary",
+								warning: "border-warning bg-warning",
+								destructive: "border-destructive bg-destructive",
+								success: "border-success bg-success",
+								default: "border-primary bg-primary",
+							};
+							const textColorClasses: Record<string, string> = {
+								primary: "text-primary-foreground",
+								warning: "text-warning-foreground",
+								destructive: "text-destructive-foreground",
+								success: "text-success-foreground",
+								default: "text-primary-foreground",
+							};
 							return (
 								<Pressable
 									key={cond}
@@ -365,7 +378,7 @@ export function ListingForm({
 									className={cn(
 										"rounded-full border px-4 py-2 transition-all duration-200",
 										isSelected
-											? "border-primary bg-primary"
+											? colorClasses[colorKey]
 											: "border-transparent bg-muted",
 									)}
 								>
@@ -373,7 +386,9 @@ export function ListingForm({
 										type="body-xs"
 										className={cn(
 											"font-semibold",
-											isSelected ? "text-white" : "text-muted-foreground",
+											isSelected
+												? textColorClasses[colorKey]
+												: "text-muted-foreground",
 										)}
 									>
 										{CONDITION_LABELS[cond]}
@@ -425,25 +440,12 @@ export function ListingForm({
 					<Text type="body-sm" className="mb-3 font-bold text-secondary">
 						Set Pickup Location
 					</Text>
-					<Card className="relative h-48 w-full overflow-hidden rounded-2xl border border-muted bg-muted p-0 shadow-sm">
-						<Image
-							source={{ uri: MAP_MOCK }}
-							className="h-full w-full opacity-90"
-							contentFit="cover"
-						/>
-						{/* Location details card overlay */}
-						<View className="absolute right-3 bottom-3 left-3 flex-row items-center justify-between rounded-xl border border-muted bg-white/95 p-3 shadow-sm">
-							<View className="flex-row items-center gap-2">
-								<Icon as={MapPin} className="size-5 text-primary" />
-								<Text type="body-xs" className="font-semibold text-foreground">
-									124 Maple Terrace, Maplewood
-								</Text>
-							</View>
-							<TouchableOpacity>
-								<Text type="body-xs" className="font-bold text-primary">
-									Change
-								</Text>
-							</TouchableOpacity>
+					<Card className="relative h-48 w-full items-center justify-center overflow-hidden rounded-2xl border border-muted bg-muted p-0 shadow-sm">
+						<View className="items-center gap-2">
+							<Icon as={MapPin} className="size-8 text-muted-foreground" />
+							<Text type="body-xs" className="text-muted-foreground">
+								Location picker coming soon
+							</Text>
 						</View>
 					</Card>
 				</View>
