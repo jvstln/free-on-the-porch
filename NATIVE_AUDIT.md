@@ -99,12 +99,18 @@ Comprehensive analysis of `apps/native` — Expo SDK 55, Expo Router, React 19, 
 
 ## P5 — Hardcoded Colors / Design System Violations
 
-- [ ] **#N40** `my-listings-page.tsx:37,58,65,70` — `text-[#7A6A5A]`, `text-[#A89880]` instead of `text-muted-foreground`.
-- [ ] **#N41** `comment-section.tsx:102`, `message-thread-page.tsx:274`, `report.tsx:122` — `placeholderTextColor="#A89880"` hardcoded.
-- [ ] **#N42** `form.tsx:184-185` — `SwitchField` uses raw `Switch` with hardcoded colors instead of project's `Switch` component.
-- [ ] **#N43** `switch.tsx:8-10` — Default `trackColor`/`thumbColor` hardcoded as hex instead of CSS variables.
-- [ ] **#N44** `profile-page.tsx:66,273` — `tintColor="#316342"` in RefreshControl. Should use theme token.
-- [ ] **#N45** `report.tsx:116` — Uses raw `TextInput` instead of project's `Input` or `Textarea` UI component.
+- [x] **#N40** `my-listings-page.tsx:37,58,65,70` — `text-[#7A6A5A]`, `text-[#A89880]` instead of `text-muted-foreground`.
+  - **Fix:** Replaced with `text-muted-foreground`. Also switched to project `RefreshControl` wrapper.
+- [x] **#N41** `comment-section.tsx:102`, `message-thread-page.tsx:274`, `report.tsx:122` — `placeholderTextColor="#A89880"` hardcoded.
+  - **Fix:** Used `useResolveClassNames("text-muted-foreground")` for dynamic color resolution.
+- [x] **#N42** `form.tsx:184-185` — `SwitchField` uses raw `Switch` with hardcoded colors instead of project's `Switch` component.
+  - **Fix:** Replaced raw RN `Switch` import with project's `@/components/ui/switch`. Removed hardcoded trackColor/thumbColor.
+- [x] **#N43** `switch.tsx:8-10` — Default `trackColor`/`thumbColor` hardcoded as hex instead of CSS variables.
+  - **Fix:** Rewritten to use `useResolveClassNames` for dynamic trackColor/thumbColor from theme.
+- [x] **#N44** `profile-page.tsx:66,273` — `tintColor="#316342"` in RefreshControl. Should use theme token.
+  - **Fix:** Switched to project `RefreshControl` wrapper with `className="text-primary"`.
+- [x] **#N45** `report.tsx:116` — Uses raw `TextInput` instead of project's `Input` or `Textarea` UI component.
+  - **Fix:** Replaced raw `TextInput` with project's `Textarea` component.
 
 ---
 
@@ -112,12 +118,16 @@ Comprehensive analysis of `apps/native` — Expo SDK 55, Expo Router, React 19, 
 
 - [x] **#N46** `listings-page.tsx:211-213` — Array slicing for bento grid recomputed every render. Needs `useMemo`.
   - **Skip:** React Compiler is enabled (`experiments.reactCompiler: true`). Compiler auto-memoizes.
-- [ ] **#N47** `public-profile-page.tsx:44-54` — Fetches ALL nearby listings (limit 100) and filters client-side to find one user's listings.
+- [x] **#N47** `public-profile-page.tsx:44-54` — Fetches ALL nearby listings (limit 100) and filters client-side to find one user's listings.
+  - **Fix:** Added `GET /listings/user/:userId` public endpoint + `useUserListings` hook. Replaced wasteful fetch-and-filter.
 - [x] **#N48** `listing-detail-page.tsx` — Multiple handlers (`handleClaim`, `navigateToDmThread`, `handleMarkPickedUp`, `handleDelete`) recreated every render without `useCallback`.
   - **Skip:** React Compiler is enabled. Compiler auto-memoizes.
-- [ ] **#N49** `message-thread-page.tsx:85-92` — `scrollToEnd` uses `setTimeout(100ms)` which is fragile on slow devices.
-- [ ] **#N50** `listing-form.tsx:44-68` — Duplicate `CATEGORY_MAP` objects. Same map exists in `listings.constants.ts`.
-- [ ] **#N51** `settings-page.tsx:39-41` — `useState` initializer for `radiusKm` runs once. Stale when `settings` loads async.
+- [x] **#N49** `message-thread-page.tsx:85-92` — `scrollToEnd` uses `setTimeout(100ms)` which is fragile on slow devices.
+  - **Fix:** Replaced `setTimeout` with `onContentSizeChange` on FlatList.
+- [x] **#N50** `listing-form.tsx:44-68` — Duplicate `CATEGORY_MAP` objects. Same map exists in `listings.constants.ts`.
+  - **Fix:** Imports from shared constants, derives `FORM_CATEGORIES` and `CATEGORY_MAP` from `CATEGORY_LABEL`.
+- [x] **#N51** `settings-page.tsx:39-41` — `useState` initializer for `radiusKm` runs once. Stale when `settings` loads async.
+  - **Fix:** Removed local `useState`, derive `radiusKm` directly from async `settings` data.
 
 ---
 
