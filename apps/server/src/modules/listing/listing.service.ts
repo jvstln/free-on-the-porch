@@ -6,7 +6,6 @@ import {
 	publicUserSelectFields,
 	thread,
 	threadMember,
-	user,
 } from "@free-on-the-porch/db";
 import type {
 	CreateListingDto,
@@ -354,7 +353,12 @@ export class ListingService {
 				.orderBy(asc(listingImage.order)),
 		]);
 
-		return { ...updatedListing, images };
+		if (!updatedListing) {
+			// purely for TS narrowing — the update would have thrown
+			throw new Error("Failed to update listing");
+		}
+
+		return buildResponse({ ...updatedListing, images });
 	}
 
 	// Owner-only removal: verifies ownership then deletes the listing (related
@@ -369,7 +373,7 @@ export class ListingService {
 		if (foundListing.userId !== userId) throw new ForbiddenException();
 
 		await this.drizzle.db.delete(listing).where(eq(listing.id, id));
-		return { success: true };
+		return buildResponse({ success: true });
 	}
 
 	// Returns a user's listings with their first image and the owner. Used by
@@ -381,26 +385,29 @@ export class ListingService {
 			.where(eq(listing.userId, userId))
 			.orderBy(desc(listing.createdAt));
 
-		if (listings.length === 0) return [];
-
 		const listingIds = listings.map((l) => l.id);
 
-		const [images, [owner]] = await Promise.all([
+		const [images, owner] = await Promise.all([
 			this.drizzle.db
 				.select()
 				.from(listingImage)
 				.where(inArray(listingImage.listingId, listingIds))
 				.orderBy(asc(listingImage.order)),
-			this.drizzle.db
-				.select({ id: user.id, name: user.name, image: user.image })
-				.from(user)
-				.where(eq(user.id, userId)),
+			this.drizzle.db.query.user.findFirst({
+				where: { id: userId },
+				columns: publicUserSelectFields,
+			}),
 		]);
 
-		return listings.map((l) => ({
-			...l,
-			images: images.filter((img) => img.listingId === l.id).slice(0, 1),
-			user: owner ?? null,
-		}));
+		// The requesting user (who owns these listings) must exist.
+		if (!owner) throw new NotFoundException("User not found");
+
+		return buildResponse(
+			listings.map((l) => ({
+				...l,
+				images: images.filter((img) => img.listingId === l.id).slice(0, 1),
+				user: owner,
+			})),
+		);
 	}
 }

@@ -428,6 +428,6 @@ export class MessagingService {
 					eq(message.read, false),
 				),
 			);
-		return { success: true };
+		return buildResponse({ success: true });
 	}
 }

@@ -16,6 +16,7 @@ import {
 	Session,
 } from "@nestjs/common";
 import { ZodValidationPipe } from "../../common/pipes/zod.pipe";
+import { buildResponse } from "../../common/utils/pagination.util";
 import { type UserSession } from "../auth/auth.type";
 import { MessagingGateway } from "./messaging.gateway";
 import { MessagingService } from "./messaging.service";
@@ -43,7 +44,7 @@ export class MessagingController {
 
 		this.messagingGateway.broadcastMessage(memberIds, message);
 
-		return message;
+		return buildResponse(message);
 	}
 
 	@Get("threads")

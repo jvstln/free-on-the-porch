@@ -27,7 +27,7 @@ export const listingsService = {
 	},
 
 	async create(body: CreateListingDto) {
-		const { data } = await api.post<PaginatedResponse<ListingDto>>(
+		const { data } = await api.post<{ data: ListingDetailDto }>(
 			"/listings",
 			body,
 		);
@@ -48,8 +48,10 @@ export const listingsService = {
 	},
 
 	async remove(id: string): Promise<{ success: boolean }> {
-		const { data } = await api.delete<{ success: boolean }>(`/listings/${id}`);
-		return data;
+		const { data } = await api.delete<{ data: { success: boolean } }>(
+			`/listings/${id}`,
+		);
+		return data.data;
 	},
 
 	async claim(id: string): Promise<ThreadDto> {

@@ -161,4 +161,4 @@
 - [x] **#57** 79 Biome warnings: 43x `noExplicitAny`, 13x `noUnusedImports`, 9x unused params, 6x unused vars (reduced to 0 source warnings; 3 map-related `any` suppressed with biome-ignore for react-native-maps dynamic require/ref)
 - [x] **#58** `app.controller.spec.ts` test asserts wrong return value — will fail (fixed assertion to match "Free on the porch API")
 - [x] **#59** `app.controller.ts` says "free on the pouch" (repo name, not app name) (changed to "Free on the porch API")
-- [ ] **#60** Inconsistent response envelopes — many endpoints don't use `buildResponse()`
+- [x] **#60** Inconsistent response envelopes — many endpoints don't use `buildResponse()` (wrapped `findByUser`, `update`, `remove` in listing; `markRead` + `send` in messaging; `updateProfile` in user; native clients now unwrap `{ data }` consistently)

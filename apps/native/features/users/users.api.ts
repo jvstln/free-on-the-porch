@@ -9,8 +9,11 @@ import { MOCK_USER } from "../mock/mock-data";
 export const usersService = {
 	async updateMe(data: UpdateProfileDto): Promise<CurrentUserDto> {
 		try {
-			const { data: response } = await api.patch("/users/me", data);
-			return response;
+			const { data: response } = await api.patch<{ data: CurrentUserDto }>(
+				"/users/me",
+				data,
+			);
+			return response.data;
 		} catch (_e) {
 			console.log(
 				"[usersService] updateMe API failed/offline, mutating local MOCK_USER...",
@@ -24,8 +27,8 @@ export const usersService = {
 
 	async getUser(id: string): Promise<PublicUserDto> {
 		try {
-			const { data: response } = await api.get(`/users/${id}`);
-			return response;
+			const { data } = await api.get<{ data: PublicUserDto }>(`/users/${id}`);
+			return data.data;
 		} catch (_e) {
 			console.log(
 				`[usersService] getUser API failed/offline for ID: ${id}, searching mock databases...`,

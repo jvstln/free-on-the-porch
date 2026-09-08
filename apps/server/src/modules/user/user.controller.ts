@@ -1,5 +1,6 @@
 import type {
 	CurrentUserDto,
+	PaginatedResponse,
 	UpdateProfileDto,
 } from "@free-on-the-porch/shared/schemas";
 import { UpdateProfileSchema } from "@free-on-the-porch/shared/schemas";
@@ -14,8 +15,10 @@ export class UserController {
 	constructor(private readonly userService: UserService) {}
 
 	@Get("me")
-	async getMe(@Session() session: UserSession): Promise<CurrentUserDto | null> {
-		return session?.user;
+	async getMe(
+		@Session() session: UserSession,
+	): Promise<PaginatedResponse<CurrentUserDto | null>> {
+		return { data: session?.user ?? null };
 	}
 
 	@Get(":id")
@@ -27,7 +30,7 @@ export class UserController {
 	async updateMe(
 		@Session() session: UserSession,
 		@Body(new ZodValidationPipe(UpdateProfileSchema)) body: UpdateProfileDto,
-	): Promise<CurrentUserDto> {
+	): Promise<PaginatedResponse<CurrentUserDto>> {
 		return this.userService.updateProfile(session.user.id, body);
 	}
 }

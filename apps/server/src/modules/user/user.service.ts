@@ -28,7 +28,7 @@ export class UserService {
 	async updateProfile(
 		userId: string,
 		data: UpdateProfileDto,
-	): Promise<CurrentUserDto> {
+	): Promise<PaginatedResponse<CurrentUserDto>> {
 		const set: Partial<typeof user.$inferInsert> = {};
 		if (data.name !== undefined) set.name = data.name;
 		if (data.image !== undefined) set.image = data.image;
@@ -51,6 +51,6 @@ export class UserService {
 			throw new NotFoundException("User not found");
 		}
 
-		return updatedUser as CurrentUserDto;
+		return buildResponse(updatedUser as CurrentUserDto);
 	}
 }

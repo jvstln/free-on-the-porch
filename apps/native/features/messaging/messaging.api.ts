@@ -36,19 +36,19 @@ export const messagingService = {
 	},
 
 	async sendMessage(dto: SendMessageDto): Promise<MessageDto> {
-		const { data } = await api.post<MessageDto>("/messaging", dto);
-		return data;
+		const { data } = await api.post<{ data: MessageDto }>("/messaging", dto);
+		return data.data;
 	},
 
 	async markRead(
 		senderId: string,
 		threadId?: string,
 	): Promise<{ success: boolean }> {
-		const { data } = await api.post<{ success: boolean }>(
+		const { data } = await api.post<{ data: { success: boolean } }>(
 			`/messaging/${senderId}/read`,
 			null,
 			{ params: { threadId } },
 		);
-		return data;
+		return data.data;
 	},
 };
