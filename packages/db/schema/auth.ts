@@ -3,7 +3,15 @@
 // can read/write them directly. `user` also carries domain fields (bio) used
 // by the rest of the app.
 import { PublicUserSchema } from "@free-on-the-porch/shared/schemas";
-import { boolean, index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import {
+	boolean,
+	index,
+	integer,
+	pgTable,
+	text,
+	timestamp,
+	uniqueIndex,
+} from "drizzle-orm/pg-core";
 import { timestamps } from "./common";
 
 export const user = pgTable("user", {
@@ -63,6 +71,23 @@ export const verification = pgTable(
 		...timestamps,
 	},
 	(table) => [index("verification_identifier_idx").on(table.identifier)],
+);
+
+export const userSettings = pgTable(
+	"user_settings",
+	{
+		id: text()
+			.primaryKey()
+			.$defaultFn(() => crypto.randomUUID()),
+		userId: text()
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		notifyNearbyListings: boolean().default(true).notNull(),
+		notifyMessages: boolean().default(true).notNull(),
+		defaultRadiusKm: integer().default(15).notNull(),
+		...timestamps,
+	},
+	(table) => [uniqueIndex("user_settings_userId_key").on(table.userId)],
 );
 
 // --- Public user field whitelist -------------------------------------------

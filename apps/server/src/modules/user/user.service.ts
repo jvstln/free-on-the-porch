@@ -1,9 +1,15 @@
-import { publicUserSelectFields, user } from "@free-on-the-porch/db";
+import {
+	publicUserSelectFields,
+	user,
+	userSettings,
+} from "@free-on-the-porch/db";
 import {
 	type CurrentUserDto,
 	type PaginatedResponse,
 	type PublicUserDto,
 	type UpdateProfileDto,
+	type UpdateUserSettingsDto,
+	type UserSettingsDto,
 } from "@free-on-the-porch/shared/schemas";
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { eq } from "drizzle-orm";
@@ -52,5 +58,53 @@ export class UserService {
 		}
 
 		return buildResponse(updatedUser as CurrentUserDto);
+	}
+
+	async getSettings(
+		userId: string,
+	): Promise<PaginatedResponse<UserSettingsDto>> {
+		let settings = await this.drizzle.db.query.userSettings.findFirst({
+			where: { userId },
+		});
+
+		if (!settings) {
+			const [created] = await this.drizzle.db
+				.insert(userSettings)
+				.values({ userId })
+				.returning();
+			settings = created;
+		}
+
+		if (!settings) throw new Error("Failed to load user settings");
+
+		return buildResponse(settings as UserSettingsDto);
+	}
+
+	async updateSettings(
+		userId: string,
+		data: UpdateUserSettingsDto,
+	): Promise<PaginatedResponse<UserSettingsDto>> {
+		let settings = await this.drizzle.db.query.userSettings.findFirst({
+			where: { userId },
+		});
+
+		if (!settings) {
+			const [created] = await this.drizzle.db
+				.insert(userSettings)
+				.values({ userId, ...data })
+				.returning();
+			settings = created;
+		} else if (Object.keys(data).length > 0) {
+			const [updated] = await this.drizzle.db
+				.update(userSettings)
+				.set(data)
+				.where(eq(userSettings.userId, userId))
+				.returning();
+			settings = updated;
+		}
+
+		if (!settings) throw new Error("Failed to update user settings");
+
+		return buildResponse(settings as UserSettingsDto);
 	}
 }

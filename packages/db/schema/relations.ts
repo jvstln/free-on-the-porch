@@ -6,7 +6,7 @@
 // Note: `verification` (better-auth) has no FK to `user` (it's keyed by an
 // identifier string, not user.id) so it has no relational edge here.
 import { defineRelations } from "drizzle-orm";
-import { account, session, user } from "./auth";
+import { account, session, user, userSettings } from "./auth";
 import { comment, listing, listingClaimRequest, listingImage } from "./listing";
 import { message, notification, thread, threadMember } from "./messaging";
 import { block, report } from "./moderation";
@@ -16,6 +16,7 @@ export const relations = defineRelations(
 		listing,
 		listingImage,
 		user,
+		userSettings,
 		comment,
 		listingClaimRequest,
 		session,
@@ -32,6 +33,10 @@ export const relations = defineRelations(
 		user: {
 			sessions: r.many.session(),
 			accounts: r.many.account(),
+			settings: r.one.userSettings({
+				from: r.user.id,
+				to: r.userSettings.userId,
+			}),
 			threadMembers: r.many.threadMember(),
 			notifications: r.many.notification(),
 			reportsMade: r.many.report({
@@ -134,6 +139,15 @@ export const relations = defineRelations(
 			}),
 			blocked: r.one.user({
 				from: r.block.blockedId,
+				to: r.user.id,
+				optional: false,
+			}),
+		},
+
+		// ---- User Settings ----
+		userSettings: {
+			user: r.one.user({
+				from: r.userSettings.userId,
 				to: r.user.id,
 				optional: false,
 			}),

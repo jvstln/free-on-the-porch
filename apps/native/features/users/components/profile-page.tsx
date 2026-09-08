@@ -152,7 +152,7 @@ export function ProfilePage() {
 						{/* Stats Row */}
 						<View className="flex-row gap-4">
 							<Card className="flex-1 items-center rounded-2xl border border-border bg-card p-4 shadow-sm">
-								<View className="mb-1 size-10 items-center justify-center rounded-full border border-border/40 bg-[#faf9f4]">
+								<View className="mb-1 size-10 items-center justify-center rounded-full border border-border/40 bg-background">
 									<Icon as={Tag} className="size-5 text-secondary" />
 								</View>
 								<Text type="h3" className="font-bold text-foreground">
@@ -167,7 +167,7 @@ export function ProfilePage() {
 							</Card>
 
 							<Card className="flex-1 items-center rounded-2xl border border-border bg-card p-4 shadow-sm">
-								<View className="mb-1 size-10 items-center justify-center rounded-full border border-border/40 bg-[#faf9f4]">
+								<View className="mb-1 size-10 items-center justify-center rounded-full border border-border/40 bg-background">
 									<Icon as={Gift} className="size-5 text-primary" />
 								</View>
 								<Text type="h3" className="font-bold text-foreground">

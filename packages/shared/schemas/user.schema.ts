@@ -1,5 +1,28 @@
 import { z } from "zod";
-import { UrlSchema } from "./generic.schema";
+import { TimestampSchema, UrlSchema } from "./generic.schema";
+
+// ─── User Settings ───────────────────────────────────────────────────────────
+
+export const UserSettingsSchema = z.object({
+	id: z.string(),
+	userId: z.string(),
+	notifyNearbyListings: z.boolean(),
+	notifyMessages: z.boolean(),
+	defaultRadiusKm: z.number().int().min(1).max(100),
+	createdAt: TimestampSchema,
+	updatedAt: TimestampSchema,
+});
+
+export type UserSettingsDto = z.infer<typeof UserSettingsSchema>;
+
+export const UpdateUserSettingsSchema = UserSettingsSchema.omit({
+	id: true,
+	userId: true,
+	createdAt: true,
+	updatedAt: true,
+}).partial();
+
+export type UpdateUserSettingsDto = z.infer<typeof UpdateUserSettingsSchema>;
 
 export const UpdateProfileSchema = z.object({
 	name: z.string().min(2).max(50).optional(),

@@ -27,15 +27,18 @@ import { Text } from "@/components/ui/text";
 import { toast } from "@/components/ui/toast";
 import { View } from "@/components/ui/view";
 import { authClient } from "@/lib/auth-client";
+import { useSettings, useUpdateSettings } from "../hooks/use-user";
 
 export function SettingsPage() {
 	const router = useRouter();
 	const insets = useSafeAreaInsets();
 
-	// Local Settings states (simulation)
-	const [nearbyNotifications, setNearbyNotifications] = useState(true);
-	const [messageNotifications, setMessageNotifications] = useState(true);
-	const [radiusKm, setRadiusKm] = useState("15");
+	const { data: settings } = useSettings();
+	const updateSettings = useUpdateSettings();
+
+	const [radiusKm, setRadiusKm] = useState(
+		settings?.defaultRadiusKm?.toString() ?? "15",
+	);
 
 	// Blocked users state
 	const [blockedUsers, setBlockedUsers] = useState([
@@ -133,8 +136,10 @@ export function SettingsPage() {
 								</Text>
 							</View>
 							<Switch
-								value={nearbyNotifications}
-								onValueChange={setNearbyNotifications}
+								value={settings?.notifyNearbyListings ?? true}
+								onValueChange={(val) =>
+									updateSettings.mutate({ notifyNearbyListings: val })
+								}
 							/>
 						</View>
 
@@ -150,8 +155,10 @@ export function SettingsPage() {
 								</Text>
 							</View>
 							<Switch
-								value={messageNotifications}
-								onValueChange={setMessageNotifications}
+								value={settings?.notifyMessages ?? true}
+								onValueChange={(val) =>
+									updateSettings.mutate({ notifyMessages: val })
+								}
 							/>
 						</View>
 					</Card>
@@ -180,8 +187,15 @@ export function SettingsPage() {
 						</View>
 
 						<Select
-							value={{ value: radiusKm, label: `${radiusKm} km` }}
-							onValueChange={(val) => setRadiusKm(val?.value || "15")}
+							value={{
+								value: settings?.defaultRadiusKm?.toString() ?? radiusKm,
+								label: `${settings?.defaultRadiusKm ?? radiusKm} km`,
+							}}
+							onValueChange={(val) => {
+								const km = Number(val?.value ?? 15);
+								setRadiusKm(String(km));
+								updateSettings.mutate({ defaultRadiusKm: km });
+							}}
 						>
 							<SelectTrigger className="w-28 rounded-xl border-border bg-background">
 								<SelectValue placeholder="Select Radius" />

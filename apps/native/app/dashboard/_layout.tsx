@@ -1,4 +1,5 @@
 import type { Href } from "expo-router";
+import { useRouter } from "expo-router";
 import {
 	TabList,
 	TabSlot,
@@ -6,7 +7,13 @@ import {
 	TabTrigger,
 	type TabTriggerSlotProps,
 } from "expo-router/ui";
-import { Compass, Map, MessageSquare, PlusCircle, User } from "lucide-react-native";
+import {
+	Compass,
+	Map,
+	MessageSquare,
+	PlusCircle,
+	User,
+} from "lucide-react-native";
 import type React from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCSSVariable } from "uniwind";
@@ -56,6 +63,7 @@ export default function DashboardLayout() {
 	const insets = useSafeAreaInsets();
 	const session = authClient.useSession();
 	const setAuthSheetView = useGlobalStore((state) => state.setAuthSheetView);
+	const router = useRouter();
 
 	const isAuthenticated = !!session.data;
 
@@ -70,29 +78,33 @@ export default function DashboardLayout() {
 					const isPublic = getIsPublicPage(tab.href as string);
 					const isAllowed = isPublic || isAuthenticated;
 
-					if (isAllowed) {
+					if (!isAllowed) {
 						return (
-							<TabTrigger
+							<TabButton
 								key={tab.name}
-								name={tab.name}
-								href={tab.href}
-								asChild
-							>
-								<TabButton {...tab} />
-							</TabTrigger>
+								{...tab}
+								isFocused={false}
+								onPress={() => setAuthSheetView("login")}
+							/>
 						);
 					}
 
-					// For private tabs when user is not authenticated:
-					// Render the button directly without TabTrigger to prevent any navigation,
-					// and show the login sheet when pressed.
+					// Post tab: use router.push to avoid focus tracking conflict with [id]
+					if (tab.name === "listings/new") {
+						return (
+							<TabButton
+								key={tab.name}
+								{...tab}
+								isFocused={false}
+								onPress={() => router.push(tab.href)}
+							/>
+						);
+					}
+
 					return (
-						<TabButton
-							key={tab.name}
-							{...tab}
-							isFocused={false}
-							onPress={() => setAuthSheetView("login")}
-						/>
+						<TabTrigger key={tab.name} name={tab.name} href={tab.href} asChild>
+							<TabButton {...tab} />
+						</TabTrigger>
 					);
 				})}
 			</TabList>
