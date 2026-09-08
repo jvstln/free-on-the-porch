@@ -42,6 +42,7 @@ import {
 	useListingDetail,
 	useUpdateListing,
 } from "../hooks/use-listings";
+import { CommentSection } from "./comment-section";
 import { ListingLocationMap } from "./listing-location-map";
 
 type Props = {
@@ -430,6 +431,17 @@ export function ListingDetailPage({ id }: Props) {
 							address={listing.address ?? null}
 						/>
 					</View>
+				</View>
+
+				{/* Comments Section */}
+				<View className="mt-6 px-5">
+					<Text type="h4" className="mb-4 font-bold text-foreground">
+						Comments
+					</Text>
+					<CommentSection
+						listingId={listing.id}
+						currentUserId={session?.user?.id}
+					/>
 				</View>
 			</ScrollView>
 

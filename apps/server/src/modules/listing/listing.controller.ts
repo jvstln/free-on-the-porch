@@ -16,23 +16,48 @@ import {
 	Post,
 	Query,
 	Session,
+	UploadedFiles,
+	UseInterceptors,
 } from "@nestjs/common";
+import { FilesInterceptor } from "@nestjs/platform-express";
+import { memoryStorage } from "multer";
 import { ZodValidationPipe } from "../../common/pipes/zod.pipe";
+import { FileStorageService } from "../../infrastructures/file-storage/file-storage.service";
 import { Public } from "../auth/auth.decorator";
 import type { UserSession } from "../auth/auth.type";
 import { ListingService } from "./listing.service";
 
+const MAX_IMAGES = 5;
+
 @Controller("listings")
 export class ListingController {
-	constructor(private readonly listingService: ListingService) {}
+	constructor(
+		private readonly listingService: ListingService,
+		private readonly fileStorage: FileStorageService,
+	) {}
 
 	@Post()
-	create(
+	@UseInterceptors(
+		FilesInterceptor("images", MAX_IMAGES, {
+			storage: memoryStorage(),
+			limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB per file
+		}),
+	)
+	async create(
 		@Session() session: UserSession,
 		@Body(new ZodValidationPipe(CreateListingSchema)) body: CreateListingDto,
+		@UploadedFiles() files?: Express.Multer.File[],
 	) {
-		// imageUrls come from the upload module — empty array for now
-		return this.listingService.create(session.user.id, body, []);
+		let imageUrls: string[] = [];
+
+		if (files && files.length > 0) {
+			const uploads = await Promise.all(
+				files.map((file) => this.fileStorage.uploadImage({ file })),
+			);
+			imageUrls = uploads.map((u) => u.url);
+		}
+
+		return this.listingService.create(session.user.id, body, imageUrls);
 	}
 
 	@Get("nearby")

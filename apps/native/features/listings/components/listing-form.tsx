@@ -4,12 +4,14 @@ import type {
 	ListingStatusDto,
 } from "@free-on-the-porch/shared/schemas";
 import { revalidateLogic } from "@tanstack/react-form";
+import * as ImagePicker from "expo-image-picker";
 import {
 	Camera,
 	Image as ImageIcon,
 	MapPin,
 	Plus,
 	Send,
+	Trash2,
 } from "lucide-react-native";
 import { useState } from "react";
 import { Pressable, ScrollView, TouchableOpacity } from "react-native";
@@ -112,6 +114,11 @@ type ListingFormValues = {
 	status?: ListingStatusDto;
 };
 
+type PhotoAsset = {
+	uri: string;
+	file?: File;
+};
+
 type Props = {
 	initialValues?: Partial<ListingFormValues>;
 	onSubmit: (values: {
@@ -120,6 +127,7 @@ type Props = {
 		category: ListingCategoryDto;
 		condition: ListingConditionDto;
 		status?: ListingStatusDto;
+		photos: PhotoAsset[];
 	}) => Promise<void>;
 	isSubmitting: boolean;
 	submitLabel?: string;
@@ -149,6 +157,8 @@ export function ListingForm({
 		() => initialValues?.status || "AVAILABLE",
 	);
 
+	const [photos, setPhotos] = useState<PhotoAsset[]>([]);
+
 	const form = useAppForm({
 		defaultValues: {
 			title: initialValues?.title || "",
@@ -166,12 +176,47 @@ export function ListingForm({
 				category,
 				condition: activeCondition,
 				...(showStatusSelector ? { status: activeStatus } : {}),
+				photos,
 			});
 		},
 	});
 
-	const handleSimulatePhoto = () => {
-		toast.success("Simulated photo attached!");
+	const MAX_PHOTOS = 5;
+
+	const pickImage = async (fromCamera: boolean) => {
+		const permissionMethod = fromCamera
+			? ImagePicker.requestCameraPermissionsAsync
+			: ImagePicker.requestMediaLibraryPermissionsAsync;
+
+		const { status } = await permissionMethod();
+		if (status !== "granted") {
+			toast.error(
+				fromCamera
+					? "Camera permission is required"
+					: "Photo library permission is required",
+			);
+			return;
+		}
+
+		const launchMethod = fromCamera
+			? ImagePicker.launchCameraAsync
+			: ImagePicker.launchImageLibraryAsync;
+
+		const result = await launchMethod({
+			mediaTypes: ["images"],
+			allowsMultipleSelection: true,
+			selectionLimit: MAX_PHOTOS - photos.length,
+			quality: 0.8,
+		});
+
+		if (!result.canceled && result.assets.length > 0) {
+			const newPhotos = result.assets.map((asset) => ({ uri: asset.uri }));
+			setPhotos((prev) => [...prev, ...newPhotos].slice(0, MAX_PHOTOS));
+		}
+	};
+
+	const removePhoto = (index: number) => {
+		setPhotos((prev) => prev.filter((_, i) => i !== index));
 	};
 
 	return (
@@ -183,37 +228,69 @@ export function ListingForm({
 			>
 				{/* Add Photos Section */}
 				<View className="mt-4 mb-6">
-					<Text type="body-sm" className="mb-3 font-bold text-[#785832]">
-						Add Photos
+					<Text type="body-sm" className="mb-3 font-bold text-secondary">
+						Add Photos ({photos.length}/{MAX_PHOTOS})
 					</Text>
-					<View className="flex-row gap-3">
-						<TouchableOpacity
-							onPress={handleSimulatePhoto}
-							className="aspect-square flex-1 items-center justify-center rounded-2xl border border-[#c1c9bf] border-dashed bg-[#efeee9]/30 py-4"
-						>
-							<Icon as={Camera} className="mb-1 size-6 text-primary" />
-							<Text type="body-xs" className="font-bold text-[#414942]">
-								Camera
-							</Text>
-						</TouchableOpacity>
 
-						<TouchableOpacity
-							onPress={handleSimulatePhoto}
-							className="aspect-square flex-1 items-center justify-center rounded-2xl border border-[#c1c9bf] border-dashed bg-[#efeee9]/30 py-4"
-						>
-							<Icon as={ImageIcon} className="mb-1 size-6 text-primary" />
-							<Text type="body-xs" className="font-bold text-[#414942]">
-								Gallery
-							</Text>
-						</TouchableOpacity>
+					{photos.length > 0 && (
+						<View className="mb-3 flex-row flex-wrap gap-2">
+							{photos.map((photo, index) => (
+								<View key={photo.uri} className="relative size-20">
+									<Image
+										source={{ uri: photo.uri }}
+										className="size-20 rounded-xl"
+										contentFit="cover"
+									/>
+									<Pressable
+										onPress={() => removePhoto(index)}
+										className="absolute -top-1.5 -right-1.5 size-6 items-center justify-center rounded-full bg-destructive"
+									>
+										<Icon
+											as={Trash2}
+											className="size-3 text-destructive-foreground"
+										/>
+									</Pressable>
+								</View>
+							))}
+						</View>
+					)}
 
-						<TouchableOpacity
-							onPress={handleSimulatePhoto}
-							className="aspect-square flex-1 items-center justify-center rounded-2xl bg-[#efeee9]/50 py-4"
-						>
-							<Icon as={Plus} className="size-8 text-[#c1c9bf]" />
-						</TouchableOpacity>
-					</View>
+					{photos.length < MAX_PHOTOS && (
+						<View className="flex-row gap-3">
+							<TouchableOpacity
+								onPress={() => pickImage(true)}
+								className="aspect-square flex-1 items-center justify-center rounded-2xl border border-border border-dashed bg-muted/30 py-4"
+							>
+								<Icon as={Camera} className="mb-1 size-6 text-primary" />
+								<Text
+									type="body-xs"
+									className="font-bold text-muted-foreground"
+								>
+									Camera
+								</Text>
+							</TouchableOpacity>
+
+							<TouchableOpacity
+								onPress={() => pickImage(false)}
+								className="aspect-square flex-1 items-center justify-center rounded-2xl border border-border border-dashed bg-muted/30 py-4"
+							>
+								<Icon as={ImageIcon} className="mb-1 size-6 text-primary" />
+								<Text
+									type="body-xs"
+									className="font-bold text-muted-foreground"
+								>
+									Gallery
+								</Text>
+							</TouchableOpacity>
+
+							<TouchableOpacity
+								onPress={() => pickImage(false)}
+								className="aspect-square flex-1 items-center justify-center rounded-2xl bg-muted/50 py-4"
+							>
+								<Icon as={Plus} className="size-8 text-border" />
+							</TouchableOpacity>
+						</View>
+					)}
 				</View>
 
 				{/* TanStack Form Fields */}
@@ -241,7 +318,7 @@ export function ListingForm({
 
 				{/* Categories Section */}
 				<View className="mb-6">
-					<Text type="body-sm" className="mb-3 font-bold text-[#785832]">
+					<Text type="body-sm" className="mb-3 font-bold text-secondary">
 						Category
 					</Text>
 					<View className="flex-row flex-wrap gap-2">
@@ -254,15 +331,15 @@ export function ListingForm({
 									className={cn(
 										"rounded-full border px-4 py-2 transition-all duration-200",
 										isSelected
-											? "border-[#316342] bg-[#316342]"
-											: "border-transparent bg-[#efeee9]",
+											? "border-primary bg-primary"
+											: "border-transparent bg-muted",
 									)}
 								>
 									<Text
 										type="body-xs"
 										className={cn(
 											"font-semibold",
-											isSelected ? "text-white" : "text-[#414942]",
+											isSelected ? "text-white" : "text-muted-foreground",
 										)}
 									>
 										{cat}
@@ -275,7 +352,7 @@ export function ListingForm({
 
 				{/* Condition Selector Section */}
 				<View className="mb-6">
-					<Text type="body-sm" className="mb-3 font-bold text-[#785832]">
+					<Text type="body-sm" className="mb-3 font-bold text-secondary">
 						Condition
 					</Text>
 					<View className="flex-row flex-wrap gap-2">
@@ -288,15 +365,15 @@ export function ListingForm({
 									className={cn(
 										"rounded-full border px-4 py-2 transition-all duration-200",
 										isSelected
-											? "border-[#316342] bg-[#316342]"
-											: "border-transparent bg-[#efeee9]",
+											? "border-primary bg-primary"
+											: "border-transparent bg-muted",
 									)}
 								>
 									<Text
 										type="body-xs"
 										className={cn(
 											"font-semibold",
-											isSelected ? "text-white" : "text-[#414942]",
+											isSelected ? "text-white" : "text-muted-foreground",
 										)}
 									>
 										{CONDITION_LABELS[cond]}
@@ -310,7 +387,7 @@ export function ListingForm({
 				{/* Status Selector Section (Conditional) */}
 				{showStatusSelector && (
 					<View className="mb-6">
-						<Text type="body-sm" className="mb-3 font-bold text-[#785832]">
+						<Text type="body-sm" className="mb-3 font-bold text-secondary">
 							Item Status
 						</Text>
 						<View className="flex-row flex-wrap gap-2">
@@ -323,15 +400,15 @@ export function ListingForm({
 										className={cn(
 											"rounded-full border px-4 py-2 transition-all duration-200",
 											isSelected
-												? "border-[#316342] bg-[#316342]"
-												: "border-transparent bg-[#efeee9]",
+												? "border-primary bg-primary"
+												: "border-transparent bg-muted",
 										)}
 									>
 										<Text
 											type="body-xs"
 											className={cn(
 												"font-semibold",
-												isSelected ? "text-white" : "text-[#414942]",
+												isSelected ? "text-white" : "text-muted-foreground",
 											)}
 										>
 											{STATUS_LABELS[status]}
@@ -345,20 +422,20 @@ export function ListingForm({
 
 				{/* Pickup Location Card */}
 				<View className="mb-6">
-					<Text type="body-sm" className="mb-3 font-bold text-[#785832]">
+					<Text type="body-sm" className="mb-3 font-bold text-secondary">
 						Set Pickup Location
 					</Text>
-					<Card className="relative h-48 w-full overflow-hidden rounded-2xl border border-[#efeee9] bg-[#efeee9] p-0 shadow-sm">
+					<Card className="relative h-48 w-full overflow-hidden rounded-2xl border border-muted bg-muted p-0 shadow-sm">
 						<Image
 							source={{ uri: MAP_MOCK }}
 							className="h-full w-full opacity-90"
 							contentFit="cover"
 						/>
 						{/* Location details card overlay */}
-						<View className="absolute right-3 bottom-3 left-3 flex-row items-center justify-between rounded-xl border border-[#efeee9] bg-white/95 p-3 shadow-sm">
+						<View className="absolute right-3 bottom-3 left-3 flex-row items-center justify-between rounded-xl border border-muted bg-white/95 p-3 shadow-sm">
 							<View className="flex-row items-center gap-2">
 								<Icon as={MapPin} className="size-5 text-primary" />
-								<Text type="body-xs" className="font-semibold text-[#1b1c19]">
+								<Text type="body-xs" className="font-semibold text-foreground">
 									124 Maple Terrace, Maplewood
 								</Text>
 							</View>
@@ -377,7 +454,7 @@ export function ListingForm({
 						{(isFormSubmitting) => (
 							<Button
 								size="lg"
-								className="flex-row items-center justify-center gap-2 rounded-xl bg-[#316342] py-4"
+								className="flex-row items-center justify-center gap-2 rounded-xl bg-primary py-4"
 								onPress={form.handleSubmit}
 								isLoading={isFormSubmitting || isSubmitting}
 								loadingText="Saving..."

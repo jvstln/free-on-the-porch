@@ -26,10 +26,33 @@ export const listingsService = {
 		return data.data;
 	},
 
-	async create(body: CreateListingDto) {
+	async create(body: CreateListingDto, photos?: { uri: string }[]) {
+		const formData = new FormData();
+
+		for (const [key, value] of Object.entries(body)) {
+			if (value !== undefined && value !== null) {
+				formData.append(key, String(value));
+			}
+		}
+
+		if (photos && photos.length > 0) {
+			for (const photo of photos) {
+				const filename = photo.uri.split("/").pop() || "photo.jpg";
+				const ext = filename.split(".").pop()?.toLowerCase() || "jpeg";
+				const mimeType = `image/${ext === "jpg" ? "jpeg" : ext}`;
+
+				formData.append("images", {
+					uri: photo.uri,
+					name: filename,
+					type: mimeType,
+				} as unknown as Blob);
+			}
+		}
+
 		const { data } = await api.post<{ data: ListingDetailDto }>(
 			"/listings",
-			body,
+			formData,
+			{ headers: { "Content-Type": "multipart/form-data" } },
 		);
 		return data.data;
 	},
