@@ -17,7 +17,6 @@ export const env = createEnv({
 		DATABASE_URL: z.string().min(1),
 		PORT: z.coerce.number().default(3000),
 		BETTER_AUTH_SECRET: z.string().min(32),
-		BETTER_AUTH_URL: z.url(),
 		CORS_ORIGIN: z.preprocess(
 			(val) =>
 				typeof val === "string"
@@ -39,7 +38,8 @@ export const env = createEnv({
 		CLOUDINARY_URL: z.url({ protocol: /^cloudinary$/ }),
 		MAILJET_API_KEY: z.string().optional(),
 		MAILJET_SECRET: z.string().optional(),
-		MAIL_PROVIDER: z.enum(["mailjet", "console"]).default("console"),
+		RESEND_API_KEY: z.string().optional(),
+		MAIL_PROVIDER: z.enum(["console", "mailjet", "resend"]).default("console"),
 
 		...publicEnvSchema,
 	},

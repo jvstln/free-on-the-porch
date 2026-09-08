@@ -1,5 +1,6 @@
 import { env } from "@free-on-the-porch/env/private";
 import { Injectable } from "@nestjs/common";
+import axios from "axios";
 import { AppLogger } from "../logger/app-logger.service";
 import type { IMailService, MailResponse, SendMailOptions } from "./mail.type";
 
@@ -37,119 +38,123 @@ ${options.html || "(No HTML)"}
 }
 
 /**
- * Production implementation of IMailService that sends emails using the Mailjet API via HTTP.
+ * Production implementation of IMailService that sends emails using the Mailjet API.
  */
 class MailjetMailService implements IMailService {
 	private readonly logger = new AppLogger(MailjetMailService.name);
 
-	constructor(
-		private readonly apiKey: string,
-		private readonly apiSecret: string,
-		private readonly defaultFromEmail: string,
-		private readonly defaultFromName: string,
-	) {}
+	async sendMail(options: SendMailOptions): Promise<MailResponse> {
+		const toEmails = Array.isArray(options.to) ? options.to : [options.to];
+		const fromEmail = options.from?.email || env.PUBLIC_EMAIL;
+		const fromName = options.from?.name || env.PUBLIC_APP_NAME;
+
+		try {
+			const { data } = await axios.post(
+				"https://api.mailjet.com/v3.1/send",
+				{
+					Messages: [
+						{
+							From: { Email: fromEmail, Name: fromName },
+							To: toEmails.map((email) => ({ Email: email })),
+							Subject: options.subject,
+							TextPart: options.text,
+							HTMLPart: options.html,
+							Headers: options.replyTo
+								? { "Reply-To": options.replyTo }
+								: undefined,
+						},
+					],
+				},
+				{
+					// Keys guaranteed non-null by the MailService guard
+					auth: {
+						// biome-ignore lint/style/noNonNullAssertion: guarded by MailService
+						username: env.MAILJET_API_KEY!,
+						// biome-ignore lint/style/noNonNullAssertion: guarded by MailService
+						password: env.MAILJET_SECRET!,
+					},
+					headers: { "Content-Type": "application/json" },
+				},
+			);
+
+			const messageId =
+				data.Messages?.[0]?.To?.[0]?.MessageID || `mailjet-${Date.now()}`;
+			return { success: true, messageId: String(messageId) };
+		} catch (error) {
+			const message = error instanceof Error ? error.message : "Unknown error";
+			this.logger.error(`Mailjet API Error: ${message}`);
+			return { success: false, error: message };
+		}
+	}
+}
+
+/**
+ * Production implementation of IMailService that sends emails using the Resend API.
+ */
+class ResendMailService implements IMailService {
+	private readonly logger = new AppLogger(ResendMailService.name);
 
 	async sendMail(options: SendMailOptions): Promise<MailResponse> {
 		const toEmails = Array.isArray(options.to) ? options.to : [options.to];
-		const toRecipients = toEmails.map((email) => ({ Email: email }));
-
-		const fromEmail = options.from?.email || this.defaultFromEmail;
-		const fromName = options.from?.name || this.defaultFromName;
-
-		const payload = {
-			Messages: [
-				{
-					From: {
-						Email: fromEmail,
-						Name: fromName,
-					},
-					To: toRecipients,
-					Subject: options.subject,
-					TextPart: options.text,
-					HTMLPart: options.html,
-					Headers: options.replyTo
-						? { "Reply-To": options.replyTo }
-						: undefined,
-				},
-			],
-		};
+		const fromEmail = options.from?.email || env.PUBLIC_EMAIL;
+		const fromName = options.from?.name || env.PUBLIC_APP_NAME;
 
 		try {
-			const authHeader = `Basic ${Buffer.from(`${this.apiKey}:${this.apiSecret}`).toString("base64")}`;
-			const response = await fetch("https://api.mailjet.com/v3.1/send", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: authHeader,
+			const { data } = await axios.post(
+				"https://api.resend.com/emails",
+				{
+					from: `${fromName} <${fromEmail}>`,
+					to: toEmails,
+					subject: options.subject,
+					text: options.text,
+					html: options.html,
+					reply_to: options.replyTo,
 				},
-				body: JSON.stringify(payload),
-			});
+				{
+					headers: {
+						Authorization: `Bearer ${env.RESEND_API_KEY}`,
+						"Content-Type": "application/json",
+					},
+				},
+			);
 
-			if (!response.ok) {
-				const errorText = await response.text();
-				this.logger.error(
-					`Mailjet API Error: ${response.status} - ${errorText}`,
-				);
-				return {
-					success: false,
-					error: `Mailjet API Error: ${response.status} - ${errorText}`,
-				};
-			}
-
-			const result = (await response.json()) as {
-				Messages?: Array<{ To?: Array<{ MessageID?: number | string }> }>;
-			};
-			const messageId =
-				result.Messages?.[0]?.To?.[0]?.MessageID || `mailjet-${Date.now()}`;
-			return {
-				success: true,
-				messageId: String(messageId),
-			};
+			return { success: true, messageId: data.id || `resend-${Date.now()}` };
 		} catch (error) {
-			const err = error instanceof Error ? error : new Error(String(error));
-			this.logger.error("Failed to send email via Mailjet", err.stack);
-			return {
-				success: false,
-				error: err.message || "Unknown error",
-			};
+			const message = error instanceof Error ? error.message : "Unknown error";
+			this.logger.error(`Resend API Error: ${message}`);
+			return { success: false, error: message };
 		}
 	}
 }
 
 /**
  * MailService serves as the primary gateway (facade) for sending emails in the application.
- * It dynamically delegates the actual email sending operation to either ConsoleMailService
- * (for local development mock printing) or MailjetMailService (for production API delivery)
- * based on the configuration of environment variables.
+ * It dynamically delegates the actual email sending operation to Console, Mailjet, or Resend
+ * based on the MAIL_PROVIDER environment variable.
  */
 @Injectable()
 export class MailService implements IMailService {
 	private readonly delegate: IMailService;
 
-	// provider = env.MAIL_PROVIDER;
-	provider = "console";
-	fromEmail = env.PUBLIC_EMAIL;
-	fromName = env.PUBLIC_APP_NAME;
-
 	constructor(private readonly logger: AppLogger) {
 		this.logger.setContext(MailService.name);
 
-		if (
-			this.provider === "mailjet" &&
-			env.MAILJET_API_KEY &&
-			env.MAILJET_SECRET
-		) {
+		const provider = env.MAIL_PROVIDER;
+
+		if (provider === "mailjet" && env.MAILJET_API_KEY && env.MAILJET_SECRET) {
 			this.logger.log("Initializing Mailjet for MailService.");
-			this.delegate = new MailjetMailService(
-				env.MAILJET_API_KEY,
-				env.MAILJET_SECRET,
-				this.fromEmail,
-				this.fromName,
-			);
+			this.delegate = new MailjetMailService();
+		} else if (provider === "resend" && env.RESEND_API_KEY) {
+			this.logger.log("Initializing Resend for MailService.");
+			this.delegate = new ResendMailService();
 		} else {
-			if (this.provider === "mailjet") {
+			if (provider === "mailjet") {
 				this.logger.warn(
-					"Mailjet provider was selected but MAILJET_API_KEY or MAILJET_SECRET is missing. Falling back to Console provider.",
+					"Mailjet selected but MAILJET_API_KEY or MAILJET_SECRET missing. Falling back to console.",
+				);
+			} else if (provider === "resend") {
+				this.logger.warn(
+					"Resend selected but RESEND_API_KEY missing. Falling back to console.",
 				);
 			} else {
 				this.logger.log("Initializing Console provider for MailService.");
@@ -159,14 +164,11 @@ export class MailService implements IMailService {
 	}
 
 	async sendMail(options: SendMailOptions): Promise<MailResponse> {
-		const fromEmail = options.from?.email || this.fromEmail;
-		const fromName = options.from?.name || this.fromName;
-
 		return this.delegate.sendMail({
 			...options,
 			from: {
-				email: fromEmail,
-				name: fromName,
+				email: options.from?.email || env.PUBLIC_EMAIL,
+				name: options.from?.name || env.PUBLIC_APP_NAME,
 			},
 		});
 	}
