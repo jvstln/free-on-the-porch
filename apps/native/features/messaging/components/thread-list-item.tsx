@@ -82,7 +82,7 @@ export function ThreadListItem({ thread, onPress }: ThreadListItemProps) {
 					<View className="mt-1 flex-row flex-wrap items-center gap-1.5">
 						<Text
 							type="body-xs"
-							className="max-w-[120px] font-bold text-[#795932] uppercase tracking-wider"
+							className="max-w-[120px] font-bold text-secondary uppercase tracking-wider"
 							numberOfLines={1}
 						>
 							{listingTitle}
