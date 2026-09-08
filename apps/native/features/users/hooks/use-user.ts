@@ -9,7 +9,7 @@ export const useUpdateProfile = () => {
 		mutationFn: (data: UpdateProfileDto) => usersService.updateMe(data),
 		onSuccess: () => {
 			// Invalidate own listings in case owner info needs a refresh
-			queryClient.invalidateQueries({ queryKey: ["listings", "mine"] });
+			queryClient.invalidateQueries({ queryKey: ["myListings"] });
 		},
 	});
 };

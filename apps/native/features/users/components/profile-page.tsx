@@ -12,7 +12,6 @@ import { Text } from "@/components/ui/text";
 import { View } from "@/components/ui/view";
 import { ListingCard } from "@/features/listings/components/listing-card";
 import { useMyListings } from "@/features/listings/hooks/use-listings";
-import { MOCK_USER } from "@/features/mock/mock-data";
 import { authClient } from "@/lib/auth-client";
 
 export function ProfilePage() {
@@ -23,10 +22,8 @@ export function ProfilePage() {
 	// Load own listings
 	const { data: listings = [], refetch, isRefetching } = useMyListings();
 
-	const user = (session?.user || MOCK_USER) as unknown as CurrentUserDto;
-	const joinedDate = user.createdAt
-		? new Date(user.createdAt)
-		: new Date(MOCK_USER.createdAt);
+	const user = session?.user as unknown as CurrentUserDto;
+	const joinedDate = user.createdAt ? new Date(user.createdAt) : new Date();
 	const formattedDate = joinedDate.toLocaleDateString(undefined, {
 		month: "long",
 		year: "numeric",

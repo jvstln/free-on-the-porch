@@ -6,7 +6,7 @@ import {
 	TabTrigger,
 	type TabTriggerSlotProps,
 } from "expo-router/ui";
-import { Compass, MessageSquare, PlusCircle, User } from "lucide-react-native";
+import { Compass, Map, MessageSquare, PlusCircle, User } from "lucide-react-native";
 import type React from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCSSVariable } from "uniwind";
@@ -27,9 +27,15 @@ type Tab = {
 const tabs: Tab[] = [
 	{
 		name: "index",
-		label: "Explore",
+		label: "Feed",
 		icon: Compass,
 		href: "/dashboard/listings",
+	},
+	{
+		name: "map",
+		label: "Map",
+		icon: Map,
+		href: "/dashboard/map",
 	},
 	{
 		name: "listings/new",

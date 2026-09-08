@@ -60,12 +60,15 @@
 
 ## P3 — Data Integrity / Race Conditions
 
-- [ ] **#16** `claim` uses `this.drizzle.db` for reads inside `drizzle.db.transaction()` — race condition allowing duplicate claims
+- [x] **#16** `claim` uses `this.drizzle.db` for reads inside `drizzle.db.transaction()` — race condition allowing duplicate claims
   - File: `apps/server/src/modules/listing/listing.service.ts:237-254`
-- [ ] **#17** `claim` never updates `listing.status` or `claimedByUserId` — half-wired
+  - **Fix:** Moved all reads (listing lookup, existing claim check, thread lookup) inside the transaction using `tx`. Concurrent claims now serialize on the listing row within the DB transaction.
+- [x] **#17** `claim` never updates `listing.status` or `claimedByUserId` — half-wired
   - File: `apps/server/src/modules/listing/listing.service.ts:201-291`
-- [ ] **#18** `listing.update` allows arbitrary status changes without enforcing `claimedByUserId` check constraint
+  - **Fix:** Added `tx.update(listing).set({ status: "RESERVED", claimedByUserId: userId })` inside the claim transaction, atomically reserving the listing.
+- [x] **#18** `listing.update` allows arbitrary status changes without enforcing `claimedByUserId` check constraint
   - File: `apps/server/src/modules/listing/listing.service.ts:293-328`
+  - **Fix:** Added status transition validation — only allows AVAILABLE → PICKED_UP/RESERVED transitions (owner claim). Non-claimed statuses clear `claimedByUserId` to satisfy the CHECK constraint.
 
 ---
 
@@ -114,19 +117,23 @@
 
 ## P6 — Native App Gaps
 
-- [ ] **#30** Map not a separate tab — deviates from REQUIRED_SCREENS (should be Feed/Map/Inbox/Profile)
+- [x] **#30** Map not a separate tab — deviates from REQUIRED_SCREENS (should be Feed/Map/Inbox/Profile)
   - File: `apps/native/app/dashboard/_layout.tsx`
+  - **Fix:** Added Map tab to dashboard layout, renamed "Explore" to "Feed", created `app/dashboard/map.tsx` rendering `NativeMap`/`WebMapFallback` with nearby listings.
 - [ ] **#31** Modal screen is a static example — Report Sheet, Image Viewer, Confirm Delete not implemented
   - File: `apps/native/app/modal.tsx`
 - [ ] **#32** Profile/report actions are `Alert.alert` only — no API calls
   - File: `apps/native/features/user/public-profile-page.tsx:199-212`
 - [ ] **#33** Settings notification toggles are dummy `useState(true)` with no backend
   - File: `apps/native/features/user/settings-page.tsx:36-37`
-- [ ] **#34** Mock data fallbacks (`MOCK_USER`, `MAP_MOCK`) used in multiple files
-- [ ] **#35** Cache key mismatch: `["myListings"]` vs `["listings","mine"]`
+- [x] **#34** Mock data fallbacks (`MOCK_USER`, `MAP_MOCK`) used in multiple files
+  - **Fix:** Removed MOCK_USER fallback from `users.api.ts` (updateMe, getUser now propagate errors). Removed MOCK_USER fallback from `edit-profile-page.tsx` and `profile-page.tsx` (auth guard ensures session exists). MAP_MOCK remains as a local placeholder image in listing-form.tsx (visual only).
+- [x] **#35** Cache key mismatch: `["myListings"]` vs `["listings","mine"]`
   - File: `apps/native/features/user/use-user.ts:12`
-- [ ] **#36** `router.push(... as any)` defeats typed routes
+  - **Fix:** Changed `useUpdateProfile` invalidation from `["listings", "mine"]` to `["myListings"]` to match the actual query key.
+- [x] **#36** `router.push(... as any)` defeats typed routes
   - File: `apps/native/features/user/public-profile-page.tsx:89,102,156`
+  - **Status:** No `as any` casts remain. The only remaining cast is `as Href` in message-thread-page.tsx which is the correct Expo Router pattern for dynamic route params (typed routes can't statically verify dynamic strings).
 - [ ] **#37** Hardcoded hex colors instead of `global.css` tokens
   - Files: form, my-listings, maps, profile screens
 

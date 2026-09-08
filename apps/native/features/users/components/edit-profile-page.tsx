@@ -13,7 +13,6 @@ import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
 import { toast } from "@/components/ui/toast";
 import { KeyboardAvoidingView, ScrollView, View } from "@/components/ui/view";
-import { MOCK_USER } from "@/features/mock/mock-data";
 import { authClient } from "@/lib/auth-client";
 import { useUpdateProfile } from "../hooks/use-user";
 
@@ -35,7 +34,7 @@ export function EditProfilePage() {
 	const updateMutation = useUpdateProfile();
 	const { data: session } = authClient.useSession();
 
-	const user = (session?.user || MOCK_USER) as unknown as CurrentUserDto;
+	const user = session?.user as unknown as CurrentUserDto;
 
 	const [image, setImage] = useState<string>(user.image || "");
 

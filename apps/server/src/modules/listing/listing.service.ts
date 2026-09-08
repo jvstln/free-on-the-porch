@@ -226,47 +226,47 @@ export class ListingService {
 		listingId: string,
 		userId: string,
 	): Promise<PaginatedResponse<ThreadMinimalDto>> {
-		const foundListing = await this.drizzle.db.query.listing.findFirst({
-			where: { id: listingId },
-		});
-
-		if (!foundListing) {
-			throw new NotFoundException("Listing not found");
-		}
-
-		if (foundListing.userId === userId) {
-			throw new BadRequestException("You cannot claim your own listing");
-		}
-
-		if (foundListing.status !== "AVAILABLE") {
-			throw new BadRequestException(
-				"Listing is no longer available for claiming",
-			);
-		}
-
-		// Check if claim request already exists
-		const existingClaim =
-			await this.drizzle.db.query.listingClaimRequest.findFirst({
-				where: { listingId: listingId, userId: userId },
-			});
-
-		if (existingClaim) {
-			throw new ConflictException(
-				"You have already requested to claim this listing",
-			);
-		}
-
-		// Find existing thread or create new one
-		// Insert claim request and auto-message owner in a transaction
-		//
-		// Note: reads the existing thread via `this.drizzle.db` (not `tx`), then
-		// writes via `tx`. The read is a best-effort check; the write path is
-		// what's guaranteed atomic.
+		// All reads and writes happen inside the transaction to prevent race
+		// conditions (two concurrent claims on the same listing both passing
+		// the availability check).
 		const foundThread = await this.drizzle.db.transaction(async (tx) => {
+			// Lock the listing row and verify it's claimable. Using tx ensures
+			// concurrent claim attempts serialize on this row.
+			const [foundListing] = await tx
+				.select()
+				.from(listing)
+				.where(eq(listing.id, listingId));
+
+			if (!foundListing) {
+				throw new NotFoundException("Listing not found");
+			}
+
+			if (foundListing.userId === userId) {
+				throw new BadRequestException("You cannot claim your own listing");
+			}
+
+			if (foundListing.status !== "AVAILABLE") {
+				throw new BadRequestException(
+					"Listing is no longer available for claiming",
+				);
+			}
+
+			// Check if claim request already exists (inside tx — accurate read)
+			const existingClaim =
+				await tx.query.listingClaimRequest.findFirst({
+					where: { listingId: listingId, userId: userId },
+				});
+
+			if (existingClaim) {
+				throw new ConflictException(
+					"You have already requested to claim this listing",
+				);
+			}
+
 			// Reuse an existing LISTING thread for this listing IF the current
 			// user is already a member of it (so repeat claims don't spawn
 			// duplicate conversation threads).
-			let foundThread = await this.drizzle.db.query.thread.findFirst({
+			let foundThread = await tx.query.thread.findFirst({
 				where: {
 					listingId,
 					threadMembers: {
@@ -302,6 +302,15 @@ export class ListingService {
 				userId,
 			});
 
+			// Mark listing as RESERVED so no one else can claim it.
+			await tx
+				.update(listing)
+				.set({
+					status: "RESERVED",
+					claimedByUserId: userId,
+				})
+				.where(eq(listing.id, listingId));
+
 			// Auto-send the first message so the owner gets a notification/thread
 			// ping as soon as someone claims.
 			await tx.insert(message).values({
@@ -317,7 +326,8 @@ export class ListingService {
 	}
 
 	// Owner-only update: verifies the requesting user owns the listing, then
-	// applies only the fields present in the (partial) update DTO.
+	// applies only the fields present in the (partial) update DTO. Status
+	// transitions are validated against the CHECK constraint on the listing table.
 	async update(id: string, userId: string, data: UpdateListingDto) {
 		const [foundListing] = await this.drizzle.db
 			.select()
@@ -334,10 +344,33 @@ export class ListingService {
 			updateData.description = data.description;
 		if (data.category !== undefined) updateData.category = data.category;
 		if (data.condition !== undefined) updateData.condition = data.condition;
-		if (data.status !== undefined) updateData.status = data.status;
 		if (data.address !== undefined) updateData.address = data.address;
 		if (data.location) {
 			updateData.location = data.location;
+		}
+
+		// Validate status transitions. The CHECK constraint on the listing table
+		// requires claimedByUserId to be set iff status is PICKED_UP or RESERVED.
+		if (data.status !== undefined && data.status !== foundListing.status) {
+			const isClaimedStatus =
+				data.status === "PICKED_UP" || data.status === "RESERVED";
+
+			if (isClaimedStatus) {
+				// Cannot claim/assign a listing that isn't AVAILABLE
+				if (foundListing.status !== "AVAILABLE") {
+					throw new BadRequestException(
+						`Cannot change status from ${foundListing.status} to ${data.status}`,
+					);
+				}
+				updateData.claimedByUserId = userId;
+			}
+
+			// Transitioning to a non-claimed status — clear claimedByUserId
+			if (!isClaimedStatus) {
+				updateData.claimedByUserId = null;
+			}
+
+			updateData.status = data.status;
 		}
 
 		const [[updatedListing], images] = await Promise.all([
