@@ -23,6 +23,10 @@ import {
 	INITIAL_THREADS,
 	THREADS_DETAILS,
 } from "@/features/mock/mock-data";
+import {
+	useCreateBlock,
+	useCreateReport,
+} from "@/features/moderation/use-moderation";
 import { useUserProfile } from "../hooks/use-user";
 
 type Props = {
@@ -50,6 +54,9 @@ export function PublicProfilePage({ id }: Props) {
 	});
 
 	const allListings = data?.listings ?? [];
+
+	const reportMutation = useCreateReport();
+	const blockMutation = useCreateBlock();
 
 	if (isUserLoading) {
 		return (
@@ -196,9 +203,14 @@ export function PublicProfilePage({ id }: Props) {
 				{
 					text: "Block",
 					style: "destructive",
-					onPress: () => {
-						toast.success(`${user.name} has been blocked.`);
-						router.back();
+					onPress: async () => {
+						try {
+							await blockMutation.mutateAsync({ blockedId: user.id });
+							toast.success(`${user.name} has been blocked.`);
+							router.back();
+						} catch {
+							toast.error("Failed to block user. Please try again.");
+						}
 					},
 				},
 			],
@@ -223,10 +235,18 @@ export function PublicProfilePage({ id }: Props) {
 		]);
 	};
 
-	const submitReport = (reason: string) => {
-		toast.success(
-			`Neighbor reported for: ${reason}. Our moderation team is reviewing it.`,
-		);
+	const submitReport = async (reason: "SPAM" | "INAPPROPRIATE" | "OTHER") => {
+		try {
+			await reportMutation.mutateAsync({
+				reason,
+				reportedUserId: user.id,
+			});
+			toast.success(
+				`Neighbor reported for: ${reason}. Our moderation team is reviewing it.`,
+			);
+		} catch {
+			toast.error("Failed to submit report. Please try again.");
+		}
 	};
 
 	const joinedDate = user.createdAt ? new Date(user.createdAt) : new Date();
