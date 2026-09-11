@@ -9,7 +9,7 @@ import {
 } from "expo-router/ui";
 import {
 	Compass,
-	Map,
+	Map as MapIcon,
 	MessageSquare,
 	PlusCircle,
 	User,
@@ -41,7 +41,7 @@ const tabs: Tab[] = [
 	{
 		name: "map",
 		label: "Map",
-		icon: Map,
+		icon: MapIcon,
 		href: "/dashboard/map",
 	},
 	{

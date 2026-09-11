@@ -3,11 +3,21 @@
 		"scheme": "free-on-the-pouch",
 		"userInterfaceStyle": "automatic",
 		"orientation": "default",
+		"icon": "./assets/logo-icon.png",
 		"web": {
 			"bundler": "metro"
 		},
 		"android": {
-			"package": "com.free_on_the_porch.app"
+			"package": "com.free_on_the_porch.app",
+			"adaptiveIcon": {
+				"foregroundImage": "./assets/logo-icon.png",
+				"backgroundColor": "#faf9f4"
+			},
+			"permissions": [
+				"ACCESS_COARSE_LOCATION",
+				"ACCESS_FINE_LOCATION",
+				"CAMERA"
+			]
 		},
 		"ios": {
 			"bundleIdentifier": "com.free-on-the-porch.app"
@@ -24,7 +34,21 @@
 				{
 					"image": "./assets/logo-icon.png",
 					"resizeMode": "contain",
-					"backgroundColor": "red"
+					"backgroundColor": "#faf9f4"
+				}
+			],
+			[
+				"expo-image-picker",
+				{
+					"photosPermission": "Allow $(PRODUCT_NAME) to access your photos to select item images.",
+					"cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to take item photos."
+				}
+			],
+			[
+				"expo-location",
+				{
+					"locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location to discover and post free items nearby.",
+					"locationWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location to discover and post free items nearby."
 				}
 			]
 		],

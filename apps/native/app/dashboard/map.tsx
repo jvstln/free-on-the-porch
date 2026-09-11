@@ -43,7 +43,10 @@ export default function MapRoute() {
 	if (listings.length === 0) {
 		return (
 			<View className="flex-1 items-center justify-center bg-background px-6">
-				<Text type="h4" className="mb-2 text-center font-semibold text-foreground">
+				<Text
+					type="h4"
+					className="mb-2 text-center font-semibold text-foreground"
+				>
 					No listings nearby
 				</Text>
 				<Text type="body-sm" className="text-center text-muted-foreground">
