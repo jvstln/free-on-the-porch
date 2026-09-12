@@ -14,13 +14,17 @@
 				"backgroundColor": "#faf9f4"
 			},
 			"permissions": [
-				"ACCESS_COARSE_LOCATION",
-				"ACCESS_FINE_LOCATION",
-				"CAMERA"
+				"android.permission.ACCESS_COARSE_LOCATION",
+				"android.permission.ACCESS_FINE_LOCATION",
+				"android.permission.CAMERA",
+				"android.permission.RECORD_AUDIO"
 			]
 		},
 		"ios": {
-			"bundleIdentifier": "com.free-on-the-porch.app"
+			"bundleIdentifier": "com.free-on-the-porch.app",
+			"infoPlist": {
+				"ITSAppUsesNonExemptEncryption": false
+			}
 		},
 		"name": "free-on-the-pouch",
 		"slug": "free-on-the-pouch",
