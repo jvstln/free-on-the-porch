@@ -39,7 +39,7 @@ export function RegisterForm({ onRegister, onError }: RegisterFormProps) {
 					name: value.name,
 					email: value.email,
 					password: value.password,
-					callbackURL: `${env.PUBLIC_SCHEME}://dashboard`,
+					callbackURL: `${env.PUBLIC_SERVER_URL}/api/v1/auth/verify-status?redirect=${encodeURIComponent(`${env.PUBLIC_SCHEME}://dashboard`)}`,
 				},
 				{
 					onError(error) {

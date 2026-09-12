@@ -25,7 +25,7 @@ export function EmailVerificationView({
 		await authClient.sendVerificationEmail(
 			{
 				email,
-				callbackURL: `${env.PUBLIC_SCHEME}://dashboard`,
+				callbackURL: `${env.PUBLIC_SERVER_URL}/api/v1/auth/verify-status?redirect=${encodeURIComponent(`${env.PUBLIC_SCHEME}://dashboard`)}`,
 			},
 			{
 				onSuccess() {

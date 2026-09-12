@@ -10,6 +10,7 @@ import { MailService } from "../../infrastructures/mail/mail.service";
 import {
 	getEmailVerificationTemplate,
 	getResetPasswordTemplate,
+	getVerificationStatusHtml,
 } from "../../infrastructures/mail/templates";
 
 // Factory building the better-auth instance. It's kept as a plain function
@@ -36,7 +37,11 @@ const createBetterAuth = <
 			schema,
 		}) as unknown,
 
-		trustedOrigins: env.CORS_ORIGIN,
+		trustedOrigins: [
+			...env.CORS_ORIGIN,
+			env.PUBLIC_SERVER_URL,
+			`${env.PUBLIC_SCHEME}://`,
+		],
 		emailAndPassword: {
 			enabled: true,
 			requireEmailVerification: true,
@@ -57,9 +62,28 @@ const createBetterAuth = <
 			sendOnSignUp: true,
 			autoSignInAfterVerification: true,
 			sendVerificationEmail: async ({ user, url }) => {
+				let verificationUrl = url;
+				try {
+					const parsedUrl = new URL(url);
+					const callbackParam = parsedUrl.searchParams.get("callbackURL");
+					const statusBaseUrl = `${env.PUBLIC_SERVER_URL}/api/v1/auth/verify-status`;
+
+					// If callbackURL doesn't already point to our web status UI, redirect to verify-status
+					if (!callbackParam?.startsWith(statusBaseUrl)) {
+						const redirectTarget =
+							callbackParam || `${env.PUBLIC_SCHEME}://dashboard`;
+						const newCallback = new URL(statusBaseUrl);
+						newCallback.searchParams.set("redirect", redirectTarget);
+						parsedUrl.searchParams.set("callbackURL", newCallback.toString());
+						verificationUrl = parsedUrl.toString();
+					}
+				} catch {
+					// Fallback to original url if parsing fails
+				}
+
 				const { html, text } = getEmailVerificationTemplate({
 					email: user.email,
-					url,
+					url: verificationUrl,
 				});
 				mailService.sendMail({
 					to: user.email,
@@ -93,6 +117,13 @@ export class AuthService {
 		private readonly mailService: MailService,
 	) {
 		this.auth = createBetterAuth(this.drizzle.db, this.mailService);
+	}
+
+	renderVerificationCallbackHtml(options: {
+		error?: string;
+		redirect?: string;
+	}) {
+		return getVerificationStatusHtml(options);
 	}
 
 	getHandler() {
