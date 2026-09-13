@@ -6,6 +6,7 @@ import {
 	isNull,
 	notInArray,
 	or,
+	type SQL,
 	sql,
 } from "drizzle-orm";
 import {
@@ -27,6 +28,14 @@ import {
 	listingStatusEnum,
 } from "./enums";
 
+// ─── Custom Types ─────────────────────────────────────────────────────────────
+
+const tsvector = customType<{ data: string }>({
+	dataType() {
+		return "tsvector";
+	},
+});
+
 export interface Point {
 	lat: number;
 	lng: number;
@@ -34,7 +43,7 @@ export interface Point {
 
 // Custom Drizzle type bridging JS { lat, lng } objects and PostGIS
 // geography(Point, 4326) columns. This is what enables geospatial queries
-// (ST_DWithin, <->, ST_Distance) in the listing service's findNearby().
+// (ST_DWithin, <->, ST_Distance) in the listing service's findFeed().
 //
 // - toDriver: serializes to WKT text, e.g. "SRID=4326;POINT(-0.36 51.47)".
 // - fromDriver: Postgres may return EWKB (hex binary) OR WKT text depending
@@ -111,6 +120,13 @@ export const listing = pgTable(
 			.notNull()
 			.references(() => user.id, { onDelete: "cascade" }),
 		claimedByUserId: text().references(() => user.id),
+		// Stored tsvector for full-text search across title (weight A) and
+		// description (weight B). Generated automatically on insert/update;
+		// the GIN index below makes search queries index-scanned.
+		searchVector: tsvector().generatedAlwaysAs(
+			(): SQL =>
+				sql`setweight(to_tsvector('english', coalesce(${listing.title}, '')), 'A') || setweight(to_tsvector('english', coalesce(${listing.description}, '')), 'B')`,
+		),
 		...timestamps,
 	},
 	(table) => [
@@ -145,6 +161,8 @@ export const listing = pgTable(
 		// GiST spatial index backing ST_DWithin/<-> near-me queries on the
 		// PostGIS geography column (otherwise every nearby query is a full scan).
 		index("listing_location_gist_idx").using("gist", table.location),
+		// GIN index backing the full-text search column (@@ / ts_rank).
+		index("listing_search_vector_idx").using("gin", table.searchVector),
 	],
 );
 

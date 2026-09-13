@@ -34,21 +34,29 @@ export const UpdateListingSchema = z.object({
 
 export type UpdateListingDto = z.infer<typeof UpdateListingSchema>;
 
-export const NearbyListingsQuerySchema = z.object({
+export const FeedListingsQuerySchema = z.object({
 	radiusMeters: z
 		.union([z.enum(["closest"]), z.coerce.number<number>().min(0)])
 		.default("closest"),
+	// Feed ordering: "closest" (default) blends proximity + freshness, "newest"
+	// is pure recency. When `query` is present, relevance rank wins instead.
+	sort: z.enum(["closest", "newest"]).default("closest"),
 	category: z
 		.union([ListingCategorySchema, z.literal("")])
 		.transform((val) => val || undefined)
+		.optional(),
+	query: z
+		.string()
+		.max(100)
+		.transform((val) => val.trim() || undefined)
 		.optional(),
 	...PointSchema.shape,
 	...CursorPaginationSchema.shape,
 });
 
-export type NearbyListingsQueryDto = z.input<typeof NearbyListingsQuerySchema>;
-export type NearbyListingsQueryOutputDto = z.infer<
-	typeof NearbyListingsQuerySchema
+export type FeedListingsQueryDto = z.input<typeof FeedListingsQuerySchema>;
+export type FeedListingsQueryOutputDto = z.infer<
+	typeof FeedListingsQuerySchema
 >;
 
 export const ListingImageSchema = z.object({
@@ -73,7 +81,7 @@ export type ListingCommentDto = z.infer<typeof ListingCommentSchema>;
 
 /**
  * Minimal listing shape used in card/list views (feed, my-listings, map pins).
- * Returned by GET /listings/nearby and GET /listings/mine.
+ * Returned by GET /listings/feed and GET /listings/mine.
  */
 export const ListingSchema = z.object({
 	...CreateListingSchema.shape,
@@ -81,6 +89,8 @@ export const ListingSchema = z.object({
 	status: ListingStatusSchema,
 	address: z.string().nullable().optional(),
 	distanceMeters: z.number().nullable().optional(),
+	// Full-text search relevance (0..1), only present when a `query` was sent.
+	matchRank: z.number().nullable().optional(),
 	images: z.array(ListingImageSchema),
 	user: PublicUserSchema,
 	createdAt: TimestampSchema,

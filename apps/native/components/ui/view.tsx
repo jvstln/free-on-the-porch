@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import {
 	KeyboardAvoidingView as KeyboardAvoidingViewPrimitive,
 	ScrollView as ScrollViewPrimitive,
@@ -9,15 +9,19 @@ import { withUniwind } from "uniwind";
 import { cn } from "@/lib/utils";
 import { getInheritableTextClassNames, TextClassContext } from "./text";
 
-export const View = (props: React.ComponentProps<typeof ViewPrimitive>) => {
+export const View = React.forwardRef<
+	React.ElementRef<typeof ViewPrimitive>,
+	React.ComponentProps<typeof ViewPrimitive>
+>((props, ref) => {
 	return (
 		<TextClassContext.Provider
 			value={getInheritableTextClassNames(props.className)}
 		>
-			<ViewPrimitive {...props} className={cn("", props.className)} />
+			<ViewPrimitive ref={ref} {...props} className={cn("", props.className)} />
 		</TextClassContext.Provider>
 	);
-};
+});
+View.displayName = "View";
 
 const ScrollViewWithUniwind = withUniwind(ScrollViewPrimitive);
 export const ScrollView = (

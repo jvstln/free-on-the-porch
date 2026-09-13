@@ -9,9 +9,9 @@ import {
 } from "@free-on-the-porch/db";
 import type {
 	CreateListingDto,
+	FeedListingsQueryOutputDto,
 	ListingDetailDto,
 	ListingDto,
-	NearbyListingsQueryOutputDto,
 	PaginatedResponse,
 	ThreadMinimalDto,
 	UpdateListingDto,
@@ -40,30 +40,11 @@ import {
 	decodeCursor,
 } from "../../common/utils/pagination.util";
 import { DrizzleService } from "../../infrastructures/database/database.service";
-
-// ─── Geo Cursor (listing-specific keyset for PostGIS distance ordering) ───────
-// The nearby feed orders listings by distance from the user. Since distance is
-// not a stored column, we can't use a simple id/createdAt cursor — instead the
-// cursor carries the distance of the last item plus its id as a tie-breaker so
-// keyset pagination stays stable and correct.
-
-interface GeoCursor {
-	/** distanceMeters of the last item */
-	d: number;
-	/** id of the last item (tie-break) */
-	id: string;
-}
-
-// Runtime type guard used by decodeCursor to validate the decoded cursor JSON
-// actually matches a GeoCursor before it's trusted.
-function isGeoCursor(val: unknown): val is GeoCursor {
-	return (
-		typeof val === "object" &&
-		val !== null &&
-		typeof (val as GeoCursor).d === "number" &&
-		typeof (val as GeoCursor).id === "string"
-	);
-}
+import {
+	buildFeedBlendScore,
+	buildFeedKeysetWhere,
+	resolveFeedOrder,
+} from "./listing-feed";
 
 @Injectable()
 export class ListingService {
@@ -112,26 +93,41 @@ export class ListingService {
 		return this.findOne({ id: newListing.id });
 	}
 
-	// PostGIS geospatial feed. Returns listings near a lat/lng point, ordered
-	// by distance ascending, using cursor-based keyset pagination.
-	async findNearby(
-		query: NearbyListingsQueryOutputDto,
+	// FTS + PostGIS feed. Returns the feed: AVAILABLE listings ordered by the
+	// active mode (blend, newest, or FTS relevance), filtered by category/radius
+	// and full-text search, with cursor-based keyset pagination. Ordering, cursor
+	// shapes and the keyset clauses live in listing-feed.ts so they're defined
+	// once.
+	async findFeed(
+		query: FeedListingsQueryOutputDto,
 	): Promise<PaginatedResponse<ListingDto[]>> {
 		// Reusable search point built once from the query coords.
 		const pointSql = sql`ST_SetSRID(ST_MakePoint(${query.lng}, ${query.lat}), 4326)::geography`;
 
-		// Cursor-based keyset condition: skip items already seen
-		const decodedCursor = query.cursor
-			? decodeCursor(query.cursor, isGeoCursor)
+		// Full-text query (only when a search term was provided).
+		const tsquery = query.query
+			? sql`websearch_to_tsquery('english', ${query.query})`
 			: null;
 
-		// Fetch limit + 1 to detect if a next page exists
-		const nearbyListings = await this.drizzle.db.query.listing.findMany({
+		// Resolves the ordering mode + fragments for this request (also picks
+		// the matching cursor guard).
+		const order = resolveFeedOrder(query, tsquery, pointSql);
+
+		const decodedCursor = query.cursor
+			? decodeCursor(query.cursor, order.cursorGuard)
+			: null;
+
+		// Fetch limit + 1 to detect if a next page exists.
+		const feedListings = await this.drizzle.db.query.listing.findMany({
 			extras: {
-				// Compute distance for each row so it can be used both in ordering
-				// and as the cursor payload (distanceMeters of the last item).
+				// Compute distance for each row so it can drive the UI badge.
 				distanceMeters: (t) =>
 					sql<number>`ST_Distance(${t.location}, ${pointSql})`,
+				// Blend score (only displayed on the featured card, but cheap).
+				feedScore: (t) => sql<number>`${buildFeedBlendScore(t, pointSql)}`,
+				// Search relevance (null when not searching).
+				matchRank: (t) =>
+					sql<number>`ts_rank_cd(${t.searchVector}, ${tsquery ?? sql`NULL::tsquery`})`,
 			},
 			with: {
 				user: {
@@ -141,7 +137,7 @@ export class ListingService {
 				pendingClaims: true,
 			},
 			where: {
-				// RAW escape hatch: mix typed conditions with raw PostGIS SQL.
+				// RAW escape hatch: mix typed conditions with raw PostGIS/FTS SQL.
 				RAW: (t) => {
 					const whereConditions: (SQL | undefined)[] = [
 						// Only available, not-yet-expired listings.
@@ -160,27 +156,28 @@ export class ListingService {
 						);
 					}
 
-					if (decodedCursor) {
-						// Keyset condition continuing past the last seen item:
-						// strictly greater distance, OR equal distance with a
-						// greater id (tie-break) to match the ordering below.
-						whereConditions.push(
-							sql`(${t.location} <-> ${pointSql} > ${decodedCursor.d}) OR (${t.location} <-> ${pointSql} = ${decodedCursor.d} AND ${t.id} > ${decodedCursor.id})`,
-						);
+					// Optional full-text match on title/description.
+					if (tsquery) {
+						whereConditions.push(sql`${t.searchVector} @@ ${tsquery}`);
 					}
+
+					// Keyset condition continuing past the last seen item; the
+					// shape matches the active ordering mode.
+					whereConditions.push(
+						buildFeedKeysetWhere(decodedCursor, tsquery, pointSql, t),
+					);
+
 					return and(...whereConditions) ?? sql`true`;
 				},
 			},
-			// <-> is the PostGIS KNN "rough distance" operator used to order
-			// rows by proximity. id is the deterministic tie-breaker.
-			orderBy: (t) => sql`${t.location} <-> ${pointSql}, ${t.id}`,
+			orderBy: order.orderBy,
 			limit: query.limit + 1,
 		});
 
-		return buildResponse(nearbyListings, {
+		return buildResponse(feedListings, {
 			type: "cursor",
 			limit: query.limit,
-			getCursor: (l) => ({ d: l.distanceMeters, id: l.id }),
+			getCursor: (l) => order.getCursor(l),
 		});
 	}
 

@@ -249,7 +249,9 @@ export const SEED_LISTINGS = [
 	},
 ] as const;
 
-export type SeededListing = typeof listing.$inferSelect;
+// Insert rows exclude searchVector: it's a DB-generated FTS column computed
+// on write (schema/listing.ts), so it can't be supplied from a seed row.
+export type SeededListing = Omit<typeof listing.$inferSelect, "searchVector">;
 
 export async function seedListings(
 	db: NodePgDatabase,

@@ -84,7 +84,7 @@ The `geographyPoint` custom type maps a JS `{ lat, lng }` object to a PostGIS `g
 - **`toDriver`** serializes to WKT (`SRID=4326;POINT(lng lat)`).
 - **`fromDriver`** handles both EWKB hex binary parsing and WKT text fallback.
 
-This is what enables geospatial queries using raw `sql` with `ST_DWithin`, `ST_Distance`, `<->` operators (see the listing service's `findNearby`).
+This is what enables geospatial queries using raw `sql` with `ST_DWithin`, `ST_Distance`, `<->` operators (see the listing service's `findFeed`).
 
 ### 3. Public user field protection (in `auth.ts`)
 

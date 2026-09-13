@@ -1,8 +1,8 @@
 import type {
 	CreateListingDto,
+	FeedListingsQueryDto,
 	ListingDetailDto,
 	ListingDto,
-	NearbyListingsQueryDto,
 	PaginatedResponse,
 	ThreadMinimalDto,
 	UpdateListingDto,
@@ -10,11 +10,11 @@ import type {
 import { api } from "@/lib/api";
 
 export const listingsService = {
-	async getNearby(
-		query: NearbyListingsQueryDto,
+	async getFeed(
+		query: FeedListingsQueryDto,
 	): Promise<PaginatedResponse<ListingDto[]>> {
 		const { data } = await api.get<PaginatedResponse<ListingDto[]>>(
-			"/listings/nearby",
+			"/listings/feed",
 			{ params: query },
 		);
 

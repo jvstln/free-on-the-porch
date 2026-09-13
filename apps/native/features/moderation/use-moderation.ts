@@ -25,7 +25,7 @@ export const useCreateBlock = () => {
 		mutationFn: (data: CreateBlockDto) => moderationService.createBlock(data),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["moderation", "blocks"] });
-			queryClient.invalidateQueries({ queryKey: ["listings", "nearby"] });
+			queryClient.invalidateQueries({ queryKey: ["listings", "feed"] });
 		},
 	});
 };

@@ -1,7 +1,7 @@
 import {
+	type FeedListingsQueryDto,
+	FeedListingsQuerySchema,
 	LISTING_CATEGORY,
-	type NearbyListingsQueryDto,
-	NearbyListingsQuerySchema,
 } from "@free-on-the-porch/shared/schemas";
 import { useState } from "react";
 import {
@@ -47,8 +47,8 @@ export function TabFilter({ value, onValueChange, className }: TabFilterProps) {
 // ─── Category Filter ──────────────────────────────────────────────────────────
 
 export interface CategoryFilterProps {
-	value?: NearbyListingsQueryDto["category"];
-	onValueChange: (category: NearbyListingsQueryDto["category"]) => void;
+	value?: FeedListingsQueryDto["category"];
+	onValueChange: (category: FeedListingsQueryDto["category"]) => void;
 	className?: string;
 	contentContainerClassName?: string;
 }
@@ -61,7 +61,7 @@ export function CategoryFilter({
 }: CategoryFilterProps) {
 	const handleValueChange = (val: string | number) => {
 		onValueChange(
-			val === value ? "" : (val as NearbyListingsQueryDto["category"]),
+			val === value ? "" : (val as FeedListingsQueryDto["category"]),
 		);
 	};
 
@@ -83,10 +83,37 @@ export function CategoryFilter({
 	);
 }
 
+// ─── Sort Filter ──────────────────────────────────────────────────────────────
+
+export interface SortFilterProps {
+	value?: FeedListingsQueryDto["sort"];
+	onValueChange: (sort: "closest" | "newest") => void;
+	className?: string;
+}
+
+export function SortFilter({
+	value = "closest",
+	onValueChange,
+	className,
+}: SortFilterProps) {
+	return (
+		<ToggleGroup
+			value={value}
+			onValueChange={(val) => onValueChange(val as "closest" | "newest")}
+			type="pill"
+			className={className}
+			contentContainerClassName="gap-[6px]"
+		>
+			<ToggleGroup.Item value="closest">Recommended</ToggleGroup.Item>
+			<ToggleGroup.Item value="newest">Newest</ToggleGroup.Item>
+		</ToggleGroup>
+	);
+}
+
 // ─── Radius Filter ────────────────────────────────────────────────────────────
 
 export interface RadiusFilterProps {
-	value?: NearbyListingsQueryDto["radiusMeters"];
+	value?: FeedListingsQueryDto["radiusMeters"];
 	onValueChange: (radius: "closest" | number) => void;
 	className?: string;
 }
@@ -111,7 +138,7 @@ export function RadiusFilter({
 						setIsOpen(true);
 					} else {
 						const parsed =
-							NearbyListingsQuerySchema.shape.radiusMeters.parse(val);
+							FeedListingsQuerySchema.shape.radiusMeters.parse(val);
 						onValueChange(parsed);
 					}
 				}}

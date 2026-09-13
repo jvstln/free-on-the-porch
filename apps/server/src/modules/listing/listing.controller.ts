@@ -1,8 +1,8 @@
 import {
 	type CreateListingDto,
 	CreateListingSchema,
-	type NearbyListingsQueryOutputDto,
-	NearbyListingsQuerySchema,
+	type FeedListingsQueryOutputDto,
+	FeedListingsQuerySchema,
 	type UpdateListingDto,
 	UpdateListingSchema,
 } from "@free-on-the-porch/shared/schemas";
@@ -60,13 +60,13 @@ export class ListingController {
 		return this.listingService.create(session.user.id, body, imageUrls);
 	}
 
-	@Get("nearby")
+	@Get("feed")
 	@Public()
-	findNearby(
-		@Query(new ZodValidationPipe(NearbyListingsQuerySchema))
-		query: NearbyListingsQueryOutputDto,
+	findFeed(
+		@Query(new ZodValidationPipe(FeedListingsQuerySchema))
+		query: FeedListingsQueryOutputDto,
 	) {
-		return this.listingService.findNearby(query);
+		return this.listingService.findFeed(query);
 	}
 
 	@Get("mine")

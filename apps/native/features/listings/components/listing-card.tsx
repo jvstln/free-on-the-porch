@@ -15,6 +15,7 @@ import {
 	DEFAULT_LOCATION,
 	formatDistance,
 } from "../constants/listings.constants";
+import { HighlightedTitle } from "./highlighted-title";
 
 // ─── Variants ─────────────────────────────────────────────────────────────────
 
@@ -24,6 +25,7 @@ type ListingCardProps = {
 	onPress: (id: string) => void;
 	className?: string;
 	aspectRatioClassName?: string;
+	searchTerm?: string;
 };
 
 export function ListingCard({
@@ -31,6 +33,7 @@ export function ListingCard({
 	onPress,
 	className,
 	aspectRatioClassName,
+	searchTerm,
 }: ListingCardProps) {
 	const thumb = item.images[0]?.url;
 	const isUnavailable = item.status !== "AVAILABLE";
@@ -77,13 +80,22 @@ export function ListingCard({
 				</View>
 
 				<View className="gap-1 px-3 pt-2.5 pb-3">
-					<Text
+					<HighlightedTitle
+						title={item.title}
+						searchTerm={searchTerm}
 						type="body-sm"
 						className="font-semibold text-foreground"
 						numberOfLines={1}
-					>
-						{item.title}
-					</Text>
+					/>
+					{item.address ? (
+						<Text
+							type="body-xs"
+							className="text-muted-foreground"
+							numberOfLines={1}
+						>
+							{item.address}
+						</Text>
+					) : null}
 					<View className="flex-row items-center justify-between">
 						<Text type="body-xs" className="text-muted-foreground">
 							{CATEGORY_LABEL[item.category]}
@@ -107,9 +119,10 @@ export function ListingCard({
 type FeaturedCardProps = {
 	item: ListingDto;
 	onPress: (id: string) => void;
+	searchTerm?: string;
 };
 
-export function FeaturedCard({ item, onPress }: FeaturedCardProps) {
+export function FeaturedCard({ item, onPress, searchTerm }: FeaturedCardProps) {
 	const thumb = item.images[0]?.url;
 
 	return (
@@ -143,9 +156,12 @@ export function FeaturedCard({ item, onPress }: FeaturedCardProps) {
 				</View>
 
 				<View className="p-4">
-					<Text type="h4" className="mb-1.5 font-bold text-foreground">
-						{item.title}
-					</Text>
+					<HighlightedTitle
+						title={item.title}
+						searchTerm={searchTerm}
+						type="h4"
+						className="mb-1.5 font-bold text-foreground"
+					/>
 					<View className="flex-row items-center justify-between">
 						<View className="flex-row items-center gap-1">
 							<Icon as={MapPin} className="size-3.5 text-secondary" />
@@ -167,9 +183,14 @@ export function FeaturedCard({ item, onPress }: FeaturedCardProps) {
 type RecentListRowProps = {
 	item: ListingDto;
 	onPress: (id: string) => void;
+	searchTerm?: string;
 };
 
-export function RecentListRow({ item, onPress }: RecentListRowProps) {
+export function RecentListRow({
+	item,
+	onPress,
+	searchTerm,
+}: RecentListRowProps) {
 	const thumb = item.images[0]?.url;
 	const distanceText = formatDistance(item.distanceMeters);
 
@@ -189,13 +210,13 @@ export function RecentListRow({ item, onPress }: RecentListRowProps) {
 				)}
 
 				<View className="mx-3 flex-1 justify-center">
-					<Text
+					<HighlightedTitle
+						title={item.title}
+						searchTerm={searchTerm}
 						type="body-sm"
 						className="mb-0.5 font-bold text-foreground"
 						numberOfLines={1}
-					>
-						{item.title}
-					</Text>
+					/>
 					<Text type="body-xs" className="font-medium text-muted-foreground">
 						{[distanceText, item.address ?? DEFAULT_LOCATION]
 							.filter(Boolean)

@@ -64,7 +64,7 @@ The server uses **better-auth** for authentication. It is configured in `modules
 
 ### Public endpoints
 
-Any route can opt out of auth with the `@Public()` decorator (e.g. `GET /listings/nearby`, `GET /listings/:id`, and the auth catch-all). The guard checks `Reflector.getAllAndOverride(Public, [...])` and returns `true` early.
+Any route can opt out of auth with the `@Public()` decorator (e.g. `GET /listings/feed`, `GET /listings/:id`, and the auth catch-all). The guard checks `Reflector.getAllAndOverride(Public, [...])` and returns `true` early.
 
 ### Accessing the current user
 

@@ -47,7 +47,7 @@ src/
 │   └── websocket/             #   Composite @AppWebSocketGateway decorator
 └── modules/                   # Feature modules
     ├── auth/                  #   better-auth, AuthGuard, @Public/@Session decorators
-    ├── listing/               #   listing CRUD, nearby (PostGIS), claim
+    ├── listing/               #   listing CRUD, feed (PostGIS+FTS), claim
     ├── messaging/             #   threads/messages, Socket.IO gateway
     └── user/                  #   profile endpoints (WIP)
 ```
@@ -63,7 +63,7 @@ All routes are behind the global prefix `/api/v1`. Everything is **auth-protecte
 | GET | `/users/:id` | ✅ | Public user profile (WIP) |
 | PATCH | `/users/me` | ✅ | Update profile (under maintenance) |
 | POST | `/listings` | ✅ | Create a listing |
-| GET | `/listings/nearby` | Public | Near-map, PostGIS cursor pagination |
+| GET | `/listings/feed` | Public | Feed: PostGIS distance + FTS search, cursor pagination |
 | GET | `/listings/mine` | ✅ | Current user's listings |
 | GET | `/listings/:id` | Public | Single listing detail |
 | POST | `/listings/:id/claim` | ✅ | Claim a listing (creates thread + auto-message) |

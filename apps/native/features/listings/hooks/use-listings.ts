@@ -1,6 +1,6 @@
 import type {
 	CreateListingDto,
-	NearbyListingsQueryDto,
+	FeedListingsQueryDto,
 	UpdateListingDto,
 } from "@free-on-the-porch/shared/schemas";
 import {
@@ -13,16 +13,16 @@ import { toast } from "@/components/ui/toast";
 import { listingsService } from "../listings.api";
 
 /**
- * Nearby listings with cursor-based infinite scroll.
+ * Feed listings with cursor-based infinite scroll.
  * Pages are keyed by cursor so React Query can stitch them together.
  */
-export const useNearbyListings = (
-	query: Omit<NearbyListingsQueryDto, "cursor">,
+export const useFeedListings = (
+	query: Omit<FeedListingsQueryDto, "cursor">,
 ) => {
 	return useInfiniteQuery({
-		queryKey: ["listings", "nearby", query],
+		queryKey: ["listings", "feed", query],
 		queryFn: ({ pageParam }) =>
-			listingsService.getNearby({ ...query, cursor: pageParam ?? undefined }),
+			listingsService.getFeed({ ...query, cursor: pageParam ?? undefined }),
 		initialPageParam: null as string | null,
 		getNextPageParam: (lastPage) => lastPage.pagination.nextCursor,
 		select: (data) => ({
@@ -69,7 +69,7 @@ export const useCreateListing = () => {
 		}) => listingsService.create(data, photos),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["myListings"] });
-			queryClient.invalidateQueries({ queryKey: ["listings", "nearby"] });
+			queryClient.invalidateQueries({ queryKey: ["listings", "feed"] });
 		},
 	});
 };
@@ -82,7 +82,7 @@ export const useUpdateListing = (id: string) => {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["myListings"] });
 			queryClient.invalidateQueries({ queryKey: ["listings", id] });
-			queryClient.invalidateQueries({ queryKey: ["listings", "nearby"] });
+			queryClient.invalidateQueries({ queryKey: ["listings", "feed"] });
 		},
 	});
 };
@@ -95,7 +95,7 @@ export const useDeleteListing = () => {
 		onSuccess: (_data, id) => {
 			queryClient.invalidateQueries({ queryKey: ["myListings"] });
 			queryClient.invalidateQueries({ queryKey: ["listings", id] });
-			queryClient.invalidateQueries({ queryKey: ["listings", "nearby"] });
+			queryClient.invalidateQueries({ queryKey: ["listings", "feed"] });
 		},
 	});
 };

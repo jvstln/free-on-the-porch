@@ -1,11 +1,18 @@
 import type {
+	FeedListingsQueryDto,
 	ListingDto,
-	NearbyListingsQueryDto,
 } from "@free-on-the-porch/shared/schemas";
 import { useRouter } from "expo-router";
 import { Compass, Tag } from "lucide-react-native";
-import { useState } from "react";
-import { Platform, Pressable, RefreshControl } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+	Keyboard,
+	Platform,
+	Pressable,
+	RefreshControl,
+	type View as RNView,
+	type TextInput,
+} from "react-native";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -17,6 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { ScrollView, View } from "@/components/ui/view";
 import { UserMenu } from "@/features/users/components/user-menu";
+import { useDebounce } from "@/hooks/use-debounce";
 import { resolveColorAlias } from "@/lib/colors.util";
 import { cn } from "@/lib/utils";
 import {
@@ -25,7 +33,7 @@ import {
 	DEFAULT_LOCATION,
 	formatDistance,
 } from "../constants/listings.constants";
-import { useNearbyListings } from "../hooks/use-listings";
+import { useFeedListings } from "../hooks/use-listings";
 import {
 	FeaturedCard,
 	FeaturedCardSkeleton,
@@ -36,13 +44,12 @@ import {
 import {
 	CategoryFilter,
 	RadiusFilter,
+	SortFilter,
 	TABS,
 	type Tab,
 	TabFilter,
 } from "./listing-filters";
 import { MapView, NativeMap, WebMapFallback } from "./listings-map";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 // ─── Skeleton Loading State Page ──────────────────────────────────────────────
 
@@ -85,9 +92,11 @@ function LoadingState() {
 function BentoGrid({
 	items,
 	onPress,
+	searchTerm,
 }: {
 	items: ListingDto[];
 	onPress: (id: string) => void;
+	searchTerm?: string;
 }) {
 	return (
 		<View className="mb-4 gap-4">
@@ -99,6 +108,7 @@ function BentoGrid({
 						onPress={onPress}
 						className="flex-1"
 						aspectRatioClassName="aspect-[3/4]"
+						searchTerm={searchTerm}
 					/>
 				)}
 				<View className="flex-1 gap-4">
@@ -107,6 +117,7 @@ function BentoGrid({
 							item={items[1]}
 							onPress={onPress}
 							aspectRatioClassName="aspect-[16/10]"
+							searchTerm={searchTerm}
 						/>
 					)}
 					{items[2] && (
@@ -114,6 +125,7 @@ function BentoGrid({
 							item={items[2]}
 							onPress={onPress}
 							aspectRatioClassName="aspect-[16/10]"
+							searchTerm={searchTerm}
 						/>
 					)}
 				</View>
@@ -128,6 +140,7 @@ function BentoGrid({
 								item={items[3]}
 								onPress={onPress}
 								aspectRatioClassName="aspect-[16/10]"
+								searchTerm={searchTerm}
 							/>
 						)}
 						{items[4] && (
@@ -135,6 +148,7 @@ function BentoGrid({
 								item={items[4]}
 								onPress={onPress}
 								aspectRatioClassName="aspect-[16/10]"
+								searchTerm={searchTerm}
 							/>
 						)}
 					</View>
@@ -144,6 +158,7 @@ function BentoGrid({
 							onPress={onPress}
 							className="flex-1"
 							aspectRatioClassName="aspect-[3/4]"
+							searchTerm={searchTerm}
 						/>
 					)}
 				</View>
@@ -155,19 +170,31 @@ function BentoGrid({
 type RecentSectionProps = {
 	items: ListingDto[];
 	onPress: (id: string) => void;
+	searchTerm?: string;
+	title?: string;
 };
 
-function RecentSection({ items, onPress }: RecentSectionProps) {
+function RecentSection({
+	items,
+	onPress,
+	searchTerm,
+	title = "Recently Posted Nearby",
+}: RecentSectionProps) {
 	if (items.length === 0) return null;
 
 	return (
 		<View className="mb-8">
 			<Text type="h4" className="mb-3 font-bold text-foreground">
-				Recently Posted Nearby
+				{title}
 			</Text>
 			<View className="gap-2.5">
 				{items.map((item) => (
-					<RecentListRow key={item.id} item={item} onPress={onPress} />
+					<RecentListRow
+						key={item.id}
+						item={item}
+						onPress={onPress}
+						searchTerm={searchTerm}
+					/>
 				))}
 			</View>
 		</View>
@@ -180,17 +207,66 @@ export const ListingsPage = () => {
 	const router = useRouter();
 	const [activeTab, setActiveTab] = useState<Tab>("Feed");
 	const [filters, setFilters] = useState<
-		Pick<NearbyListingsQueryDto, "category" | "radiusMeters">
-	>({ category: "", radiusMeters: "closest" });
+		Pick<FeedListingsQueryDto, "category" | "radiusMeters" | "sort">
+	>({ category: "", radiusMeters: "closest", sort: "closest" });
 	const [selectedListing, setSelectedListing] = useState<ListingDto | null>(
 		null,
 	);
+	const [searchQuery, setSearchQuery] = useState("");
+	const debouncedSearch = useDebounce(searchQuery, 350);
+	const hasSearch = debouncedSearch.trim().length > 0;
 
-	// Query nearby listings with cursor-based infinite scroll
-	const nearbyListingsQuery = useNearbyListings({
+	const inputRef = useRef<TextInput>(null);
+	const searchContainerRef = useRef<RNView>(null);
+	const isSearchFocusedRef = useRef(false);
+
+	const dismissSearch = useCallback(() => {
+		inputRef.current?.blur();
+		Keyboard.dismiss();
+		if (Platform.OS === "web" && typeof document !== "undefined") {
+			(document.activeElement as HTMLElement | null)?.blur?.();
+		}
+	}, []);
+
+	// On Web, clicking outside the search container or scrolling should blur the active search input
+	useEffect(() => {
+		if (Platform.OS !== "web" || typeof document === "undefined") return;
+
+		const handlePointerDown = (event: MouseEvent | PointerEvent) => {
+			const target = event.target as HTMLElement | null;
+			if (
+				(
+					searchContainerRef.current as unknown as HTMLElement | null
+				)?.contains?.(target) ||
+				target?.closest?.("#search-input-container")
+			) {
+				return;
+			}
+			dismissSearch();
+		};
+
+		const handleScroll = (event: Event) => {
+			const target = event.target as HTMLElement | null;
+			if (target?.closest?.("#search-input-container")) {
+				return;
+			}
+			dismissSearch();
+		};
+
+		document.addEventListener("pointerdown", handlePointerDown, true);
+		window.addEventListener("scroll", handleScroll, true);
+		return () => {
+			document.removeEventListener("pointerdown", handlePointerDown, true);
+			window.removeEventListener("scroll", handleScroll, true);
+		};
+	}, [dismissSearch]);
+
+	// Query feed listings with cursor-based infinite scroll
+	const feedListingsQuery = useFeedListings({
 		lat: DEFAULT_COORDS.lat,
 		lng: DEFAULT_COORDS.lng,
 		...filters,
+		query: debouncedSearch,
 	});
 
 	const {
@@ -200,11 +276,12 @@ export const ListingsPage = () => {
 		fetchNextPage,
 		hasNextPage,
 		isFetchingNextPage,
-	} = nearbyListingsQuery;
+	} = feedListingsQuery;
 
 	const listings = data?.listings ?? [];
 
 	const handleListingPress = (id: string) => {
+		dismissSearch();
 		router.push(`/dashboard/listings/${id}`);
 	};
 
@@ -214,17 +291,42 @@ export const ListingsPage = () => {
 
 	return (
 		<View className="flex-1 bg-background">
-			{/* Listings header */}
 			<PageHeader>
-				<SearchInput className="grow" />
-				<UserMenu />
+				<SearchInput
+					containerRef={searchContainerRef}
+					inputRef={inputRef}
+					className="grow"
+					value={searchQuery}
+					onChange={setSearchQuery}
+					onFocus={() => {
+						isSearchFocusedRef.current = true;
+					}}
+					onBlur={() => {
+						isSearchFocusedRef.current = false;
+					}}
+					onSubmitEditing={dismissSearch}
+					placeholder="Search the porch…"
+				/>
+				<View onTouchStart={dismissSearch}>
+					<UserMenu />
+				</View>
 			</PageHeader>
 
-			<View className="flex-1">
+			<View
+				className="flex-1"
+				onTouchStart={() => {
+					if (isSearchFocusedRef.current) {
+						dismissSearch();
+					}
+				}}
+			>
 				{activeTab === "Feed" ? (
 					<ScrollView
 						className="flex-1 px-4"
 						contentContainerClassName="pt-3 pb-8"
+						keyboardShouldPersistTaps="handled"
+						keyboardDismissMode="on-drag"
+						onScrollBeginDrag={dismissSearch}
 						refreshControl={
 							<RefreshControl refreshing={isRefetching} onRefresh={refetch} />
 						}
@@ -243,12 +345,19 @@ export const ListingsPage = () => {
 								</Text>
 							</View>
 
-							<TabFilter value={activeTab} onValueChange={setActiveTab} />
+							<TabFilter
+								value={activeTab}
+								onValueChange={(tab) => {
+									dismissSearch();
+									setActiveTab(tab);
+								}}
+							/>
 						</View>
 
 						<CategoryFilter
 							value={filters.category}
 							onValueChange={(category) => {
+								dismissSearch();
 								setFilters((f) => ({
 									...f,
 									category,
@@ -262,11 +371,31 @@ export const ListingsPage = () => {
 								type="body-xs"
 								className="font-bold text-muted-foreground uppercase tracking-wider"
 							>
+								Sort:
+							</Text>
+							<SortFilter
+								value={filters.sort}
+								onValueChange={(sort) => {
+									dismissSearch();
+									setFilters((f) => ({
+										...f,
+										sort,
+									}));
+								}}
+							/>
+						</View>
+
+						<View className="mb-4 flex-row items-center gap-2">
+							<Text
+								type="body-xs"
+								className="font-bold text-muted-foreground uppercase tracking-wider"
+							>
 								Radius:
 							</Text>
 							<RadiusFilter
 								value={filters.radiusMeters}
 								onValueChange={(radius) => {
+									dismissSearch();
 									setFilters((f) => ({
 										...f,
 										radiusMeters: radius,
@@ -276,20 +405,26 @@ export const ListingsPage = () => {
 						</View>
 
 						<QueryState
-							query={nearbyListingsQuery}
+							query={feedListingsQuery}
 							getIsLoading={(q) => (q.isLoading ? <LoadingState /> : false)}
 							getIsEmpty={(q) => {
 								return q.data?.listings?.length === 0
 									? {
-											title: "Nothing on the porch nearby",
-											description:
-												"Be the first to post a free item in this category or expand your search radius!",
+											title: hasSearch
+												? `No matches for "${debouncedSearch.trim()}"`
+												: "Nothing on the porch nearby",
+											description: hasSearch
+												? "Try a different search term or widen your search radius."
+												: "Be the first to post a free item in this category or expand your search radius!",
 											cta: (
 												<Button
 													onPress={() => {
+														dismissSearch();
+														setSearchQuery("");
 														setFilters({
 															category: "",
 															radiusMeters: "closest",
+															sort: "closest",
 														});
 													}}
 													appearance="soft"
@@ -306,19 +441,32 @@ export const ListingsPage = () => {
 								<FeaturedCard
 									item={featuredItem}
 									onPress={handleListingPress}
+									searchTerm={debouncedSearch}
 								/>
 							)}
 							{bentoItems.length > 0 && (
-								<BentoGrid items={bentoItems} onPress={handleListingPress} />
+								<BentoGrid
+									items={bentoItems}
+									onPress={handleListingPress}
+									searchTerm={debouncedSearch}
+								/>
 							)}
-							<RecentSection items={recentItems} onPress={handleListingPress} />
+							<RecentSection
+								items={recentItems}
+								onPress={handleListingPress}
+								searchTerm={debouncedSearch}
+								title={hasSearch ? "More matches" : "Recently Posted Nearby"}
+							/>
 							{hasNextPage && (
 								<Button
 									color="neutral"
 									appearance="soft"
 									size="sm"
 									className="mb-4 self-center"
-									onPress={() => fetchNextPage()}
+									onPress={() => {
+										dismissSearch();
+										fetchNextPage();
+									}}
 									disabled={isFetchingNextPage}
 								>
 									<Button.Label>
@@ -333,13 +481,19 @@ export const ListingsPage = () => {
 						{Platform.OS === "web" || !MapView ? (
 							<WebMapFallback
 								listings={listings}
-								onSelectPin={setSelectedListing}
+								onSelectPin={(listing) => {
+									dismissSearch();
+									setSelectedListing(listing);
+								}}
 								centerCoords={DEFAULT_COORDS}
 							/>
 						) : (
 							<NativeMap
 								listings={listings}
-								onSelectPin={setSelectedListing}
+								onSelectPin={(listing) => {
+									dismissSearch();
+									setSelectedListing(listing);
+								}}
 								centerCoords={DEFAULT_COORDS}
 							/>
 						)}
@@ -348,12 +502,13 @@ export const ListingsPage = () => {
 						<View className="absolute top-4 right-0 left-0">
 							<CategoryFilter
 								value={filters.category}
-								onValueChange={(category) =>
+								onValueChange={(category) => {
+									dismissSearch();
 									setFilters((f) => ({
 										...f,
 										category,
-									}))
-								}
+									}));
+								}}
 							/>
 						</View>
 
@@ -365,7 +520,10 @@ export const ListingsPage = () => {
 									return (
 										<Pressable
 											key={tab}
-											onPress={() => setActiveTab(tab)}
+											onPress={() => {
+												dismissSearch();
+												setActiveTab(tab);
+											}}
 											className={cn(
 												"rounded-full px-4 py-1.5",
 												isActive ? "bg-primary" : "bg-transparent",
@@ -441,7 +599,10 @@ export const ListingsPage = () => {
 										appearance="soft"
 										size="sm"
 										className="flex-1 py-2"
-										onPress={() => setSelectedListing(null)}
+										onPress={() => {
+											dismissSearch();
+											setSelectedListing(null);
+										}}
 									>
 										Close
 									</Button>
@@ -450,7 +611,10 @@ export const ListingsPage = () => {
 										appearance="solid"
 										size="sm"
 										className="flex-1 py-2"
-										onPress={() => handleListingPress(selectedListing.id)}
+										onPress={() => {
+											dismissSearch();
+											handleListingPress(selectedListing.id);
+										}}
 									>
 										View Details
 									</Button>

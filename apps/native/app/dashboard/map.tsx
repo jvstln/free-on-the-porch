@@ -8,7 +8,7 @@ import {
 	NativeMap,
 	WebMapFallback,
 } from "@/features/listings/components/listings-map";
-import { useNearbyListings } from "@/features/listings/hooks/use-listings";
+import { useFeedListings } from "@/features/listings/hooks/use-listings";
 
 // Default center: Maplewood, NJ (the app's community)
 const DEFAULT_CENTER = { lat: 40.7312, lng: -74.2644 };
@@ -17,7 +17,7 @@ export default function MapRoute() {
 	const router = useRouter();
 	const [center] = useState(DEFAULT_CENTER);
 
-	const { data, isLoading } = useNearbyListings({
+	const { data, isLoading } = useFeedListings({
 		lat: center.lat,
 		lng: center.lng,
 		radiusMeters: 10000,
