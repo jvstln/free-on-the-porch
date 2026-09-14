@@ -88,7 +88,7 @@ export function ProfilePage() {
 						{/* Profile details card */}
 						<Card className="rounded-3xl border border-border bg-card p-5 shadow-sm">
 							<View className="flex-row items-center gap-4">
-								<Avatar className="size-16 rounded-full bg-muted">
+								<Avatar className="size-16 rounded-full bg-surface">
 									{user.image ? (
 										<Avatar.Image src={user.image} />
 									) : (
@@ -127,7 +127,7 @@ export function ProfilePage() {
 									appearance="soft"
 									color="primary"
 									size="sm"
-									className="flex-1 flex-row items-center gap-1.5 rounded-xl py-2.5"
+									className="flex-1"
 									onPress={() => router.push("/dashboard/profile/edit")}
 								>
 									<Icon as={Edit} className="size-4" />
@@ -140,7 +140,7 @@ export function ProfilePage() {
 									appearance="outline"
 									color="destructive"
 									size="sm"
-									className="flex-1 flex-row items-center gap-1.5 rounded-xl py-2.5"
+									className="flex-1"
 									onPress={handleSignOut}
 								>
 									<Icon as={LogOut} className="size-4" />
@@ -199,7 +199,7 @@ export function ProfilePage() {
 				}
 				ListEmptyComponent={
 					<View className="items-center justify-center py-12 text-center">
-						<View className="mb-3 size-12 items-center justify-center rounded-full bg-muted">
+						<View className="mb-3 size-12 items-center justify-center rounded-full bg-surface">
 							<Icon as={Tag} className="size-6 text-muted-foreground" />
 						</View>
 						<Text type="body-sm" className="font-bold text-foreground">
