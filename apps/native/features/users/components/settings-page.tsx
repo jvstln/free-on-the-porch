@@ -189,7 +189,7 @@ export function SettingsPage() {
 								Default Radius
 							</Text>
 							<Text type="body-xs" className="mt-0.5 text-muted-foreground">
-								Set your standard browsing area around Maplewood.
+								Set your standard search and discovery radius.
 							</Text>
 						</View>
 

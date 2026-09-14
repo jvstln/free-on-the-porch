@@ -1,11 +1,10 @@
 import { env } from "@free-on-the-porch/env/public";
-import { emailSchema } from "@free-on-the-porch/shared/schemas";
+import { ForgotPasswordSchema } from "@free-on-the-porch/shared/schemas";
 import { revalidateLogic } from "@tanstack/react-form";
 import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Mail, RefreshCw } from "lucide-react-native";
 import { useState } from "react";
-import z from "zod";
 import { Button } from "@/components/ui/button";
 import { useAppForm } from "@/components/ui/form";
 import { Icon } from "@/components/ui/icon";
@@ -30,9 +29,7 @@ export function ForgotPasswordPage() {
 		},
 		validationLogic: revalidateLogic(),
 		validators: {
-			onDynamic: z.object({
-				email: emailSchema,
-			}),
+			onDynamic: ForgotPasswordSchema,
 		},
 		onSubmit: async ({ value }) => {
 			setIsLoading(true);

@@ -1,11 +1,14 @@
-import type { CurrentUserDto } from "@free-on-the-porch/shared/schemas";
+import {
+	type CurrentUserDto,
+	type UpdateProfileDto,
+	UpdateProfileSchema,
+} from "@free-on-the-porch/shared/schemas";
 import { revalidateLogic } from "@tanstack/react-form";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Camera, Check } from "lucide-react-native";
 import { useState } from "react";
 import { Pressable, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { z } from "zod";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useAppForm } from "@/components/ui/form";
@@ -15,14 +18,6 @@ import { toast } from "@/components/ui/toast";
 import { KeyboardAvoidingView, ScrollView, View } from "@/components/ui/view";
 import { authClient } from "@/lib/auth-client";
 import { useUpdateProfile } from "../hooks/use-user";
-
-const profileFormSchema = z.object({
-	name: z
-		.string()
-		.min(2, "Name must be at least 2 characters")
-		.max(50, "Name must be under 50 characters"),
-	bio: z.string().max(200, "Bio must be under 200 characters"),
-});
 
 // A nice mock portrait to toggle to when simulating image upload
 const MOCK_PORTRAIT =
@@ -49,10 +44,10 @@ export function EditProfilePage() {
 		defaultValues: {
 			name: user.name || "",
 			bio: user.bio || "",
-		},
+		} as UpdateProfileDto,
 		validationLogic: revalidateLogic(),
 		validators: {
-			onDynamic: profileFormSchema,
+			onDynamic: UpdateProfileSchema,
 		},
 		onSubmit: async ({ value }) => {
 			try {

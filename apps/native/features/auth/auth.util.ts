@@ -4,8 +4,9 @@ const PUBLIC_PAGES: Array<string | RegExp> = [
 	"/register",
 	"/forgot-password",
 	"/reset-password",
-	"/dashboard/listings",
 	/^\/dashboard\/?$/, // Exactly /dashboard (Explore Feed)
+	/^\/dashboard\/listings\/?$/, // Listings feed
+	/^\/dashboard\/listings\/(?!new(?:\/|$)|me(?:\/|$))[^/]+\/?$/, // Public listing detail (excluding 'new' and 'me')
 ];
 
 export function getIsPublicPage(pathname: string) {

@@ -1,4 +1,4 @@
-import { PasswordSchema } from "@free-on-the-porch/shared/schemas";
+import { ResetPasswordSchema } from "@free-on-the-porch/shared/schemas";
 import { revalidateLogic } from "@tanstack/react-form";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -8,7 +8,6 @@ import {
 	Key,
 } from "lucide-react-native";
 import { useState } from "react";
-import z from "zod";
 import { Button } from "@/components/ui/button";
 import { useAppForm } from "@/components/ui/form";
 import { Icon } from "@/components/ui/icon";
@@ -17,16 +16,6 @@ import { toast } from "@/components/ui/toast";
 import { View } from "@/components/ui/view";
 import { authClient } from "@/lib/auth-client";
 import { OnboardingLayout } from "./onboarding-layout";
-
-const resetFormSchema = z
-	.object({
-		password: PasswordSchema,
-		confirmPassword: z.string().min(1, "Please confirm your password"),
-	})
-	.refine((data) => data.password === data.confirmPassword, {
-		message: "Passwords do not match",
-		path: ["confirmPassword"],
-	});
 
 type Step = "FORM" | "SUCCESS";
 
@@ -44,7 +33,7 @@ export function ResetPasswordPage() {
 		},
 		validationLogic: revalidateLogic(),
 		validators: {
-			onDynamic: resetFormSchema,
+			onDynamic: ResetPasswordSchema,
 		},
 		onSubmit: async ({ value }) => {
 			if (!token || typeof token !== "string") {
