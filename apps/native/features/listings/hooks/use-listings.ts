@@ -84,7 +84,7 @@ export const useCreateListing = () => {
 			photos,
 		}: {
 			data: CreateListingDto;
-			photos?: { uri: string }[];
+			photos: { uri: string }[];
 		}) => listingsService.create(data, photos),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["myListings"] });

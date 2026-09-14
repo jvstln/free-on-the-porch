@@ -28,7 +28,13 @@ export const listingsService = {
 		return data.data;
 	},
 
-	async create(body: CreateListingDto, photos?: { uri: string }[]) {
+	async create(body: CreateListingDto, photos: { uri: string }[]) {
+		if (!photos || photos.length === 0) {
+			throw new Error("At least one photo is required to create a listing.");
+		}
+
+		console.log(photos);
+
 		const formData = new FormData();
 
 		for (const [key, value] of Object.entries(body)) {
@@ -41,18 +47,16 @@ export const listingsService = {
 			}
 		}
 
-		if (photos && photos.length > 0) {
-			for (const photo of photos) {
-				const filename = photo.uri.split("/").pop() || "photo.jpg";
-				const ext = filename.split(".").pop()?.toLowerCase() || "jpeg";
-				const mimeType = `image/${ext === "jpg" ? "jpeg" : ext}`;
+		for (const photo of photos) {
+			const filename = photo.uri.split("/").pop() || "photo.jpg";
+			const ext = filename.split(".").pop()?.toLowerCase() || "jpeg";
+			const mimeType = `image/${ext === "jpg" ? "jpeg" : ext}`;
 
-				formData.append("images", {
-					uri: photo.uri,
-					name: filename,
-					type: mimeType,
-				} as unknown as Blob);
-			}
+			formData.append("images", {
+				uri: photo.uri,
+				name: filename,
+				type: mimeType,
+			} as unknown as Blob);
 		}
 
 		const { data } = await api.post<{ data: ListingDetailDto }>(

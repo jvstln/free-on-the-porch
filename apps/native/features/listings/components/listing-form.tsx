@@ -73,6 +73,7 @@ export function ListingForm({
 	showStatusSelector = false,
 }: Props) {
 	const [photos, setPhotos] = useState<ImagePickerAsset[]>(initialPhotos ?? []);
+	const [photoError, setPhotoError] = useState<string | null>(null);
 	const {
 		coords,
 		address: currentAddress,
@@ -80,6 +81,13 @@ export function ListingForm({
 		isLoading: isLocating,
 		error: locationError,
 	} = useLocation();
+
+	const handlePhotosChange = (newPhotos: ImagePickerAsset[]) => {
+		setPhotos(newPhotos);
+		if (newPhotos.length > 0) {
+			setPhotoError(null);
+		}
+	};
 
 	const handleGetLocation = async () => {
 		const result = await getCurrentLocation(true);
@@ -93,6 +101,14 @@ export function ListingForm({
 					"Could not capture GPS location. Please check device permissions.",
 			);
 		}
+	};
+
+	const handleSubmitPress = () => {
+		if (photos.length === 0) {
+			setPhotoError("At least one photo is required to post an item.");
+			toast.error("Please add at least one photo of the item.");
+		}
+		form.handleSubmit();
 	};
 
 	const form = useAppForm({
@@ -110,6 +126,12 @@ export function ListingForm({
 			onDynamic: CreateListingSchema,
 		},
 		onSubmit: async ({ value }) => {
+			if (photos.length === 0) {
+				setPhotoError("At least one photo is required to post an item.");
+				toast.error("Please add at least one photo of the item.");
+				return;
+			}
+
 			let loc = value.location;
 			let addr = value.address;
 
@@ -175,16 +197,29 @@ export function ListingForm({
 			>
 				{/* Photos Section */}
 				<View className="mt-4 mb-6">
-					<Text type="body-sm" className="mb-3 font-bold text-secondary">
-						Add Photos ({photos.length}/{MAX_PHOTOS})
-					</Text>
+					<View className="mb-3 flex-row items-center gap-1">
+						<Text type="body-sm" className="font-bold text-secondary">
+							Add Photos
+						</Text>
+						<Text type="body-sm" className="font-bold text-destructive">
+							*
+						</Text>
+						<Text type="body-xs" className="text-muted-foreground">
+							({photos.length}/{MAX_PHOTOS})
+						</Text>
+					</View>
 					<ImagePicker
 						value={photos}
-						onChange={setPhotos}
+						onChange={handlePhotosChange}
 						max={MAX_PHOTOS}
 						title="Add photos of the item"
 						description={`Snap it on your porch or choose an existing photo (up to ${MAX_PHOTOS})`}
 					/>
+					{photoError && (
+						<Text type="body-xs" className="mt-2 font-medium text-destructive">
+							{photoError}
+						</Text>
+					)}
 				</View>
 
 				{/* TanStack Form Fields */}
@@ -323,7 +358,7 @@ export function ListingForm({
 								size="lg"
 								color="primary"
 								className="w-full"
-								onPress={form.handleSubmit}
+								onPress={handleSubmitPress}
 								isLoading={isFormSubmitting || isSubmitting}
 								loadingText="Saving..."
 							>

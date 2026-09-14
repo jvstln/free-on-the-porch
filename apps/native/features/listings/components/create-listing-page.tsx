@@ -19,6 +19,11 @@ export function CreateListingPage() {
 	const handleSubmit = async (
 		values: CreateListingDto & { photos: { uri: string }[] },
 	) => {
+		if (values.photos.length === 0) {
+			toast.error("Please add at least one photo of the item.");
+			return;
+		}
+
 		try {
 			await createMutation.mutateAsync({
 				data: {
@@ -30,7 +35,7 @@ export function CreateListingPage() {
 					location: values.location,
 					status: values.status,
 				},
-				photos: values.photos.length > 0 ? values.photos : undefined,
+				photos: values.photos,
 			});
 
 			toast.success("Listing posted!");
