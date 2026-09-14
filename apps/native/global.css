@@ -27,9 +27,12 @@
 	--secondary: #795932;
 	--secondary-foreground: #fed2a2;
 
-	/* Muted — Surface Container (#efeee9) */
-	--muted: #efeee9;
+	/* Muted — dim readable text (#414942) — matches HeroUI Native's semantic for text-muted */
+	--muted: #414942;
 	--muted-foreground: #414942;
+
+	/* Surface — neutral placeholder/container background (#efeee9) */
+	--surface: #efeee9;
 
 	/* Accent — Primary Container (#4a7c59) */
 	--accent: #4a7c59;
@@ -75,8 +78,9 @@
 	--color-popover-foreground: #1b1c19;
 	--color-secondary: #795932;
 	--color-secondary-foreground: #fed2a2;
-	--color-muted: #efeee9;
+	--color-muted: #414942; /* dim text — HeroUI text-muted, field placeholder, toast description */
 	--color-muted-foreground: #414942;
+	--color-surface: #efeee9; /* neutral placeholder/container background — use bg-surface */
 	--color-accent: #316342;
 	--color-accent-foreground: #ffffff;
 	--color-destructive: #ba1a1a;

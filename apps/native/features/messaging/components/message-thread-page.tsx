@@ -166,11 +166,11 @@ export function MessageThreadPage({ threadId }: { threadId: string }) {
 						{listingImageUrl ? (
 							<Image
 								source={{ uri: listingImageUrl }}
-								className="size-10 rounded-md bg-muted"
+								className="size-10 rounded-md bg-surface"
 								contentFit="cover"
 							/>
 						) : (
-							<View className="size-10 items-center justify-center rounded-md bg-muted">
+							<View className="size-10 items-center justify-center rounded-md bg-surface">
 								<Icon as={Tag} className="size-5 text-muted-foreground" />
 							</View>
 						)}

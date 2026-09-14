@@ -216,13 +216,13 @@ export function WebMapFallback({
 			<View className="absolute top-24 right-4 gap-2">
 				<Pressable
 					onPress={() => setZoom((z) => Math.min(2, z + 0.15))}
-					className="size-10 items-center justify-center rounded-full border border-border bg-card shadow-md active:bg-muted"
+					className="size-10 items-center justify-center rounded-full border border-border bg-card shadow-md active:bg-surface"
 				>
 					<Text className="font-bold text-base text-primary">+</Text>
 				</Pressable>
 				<Pressable
 					onPress={() => setZoom((z) => Math.max(0.5, z - 0.15))}
-					className="size-10 items-center justify-center rounded-full border border-border bg-card shadow-md active:bg-muted"
+					className="size-10 items-center justify-center rounded-full border border-border bg-card shadow-md active:bg-surface"
 				>
 					<Text className="font-bold text-base text-primary">-</Text>
 				</Pressable>

@@ -198,7 +198,7 @@ export function ImagePicker({
 	return (
 		<View className={cn("w-full", className)}>
 			{normalizedValue.length === 0 ? (
-				<View className="flex-col items-center justify-center rounded-2xl border border-border border-dashed bg-muted/30 p-6">
+				<View className="flex-col items-center justify-center rounded-2xl border border-border border-dashed bg-surface/30 p-6">
 					<View className="mb-2 size-12 items-center justify-center rounded-full bg-primary/10">
 						<Icon as={Camera} className="size-6 text-primary" />
 					</View>
@@ -274,7 +274,7 @@ export function ImagePicker({
 					{multiple && normalizedValue.length < max && !disabled && (
 						<Pressable
 							onPress={handleAddPress}
-							className="size-20 items-center justify-center rounded-xl border border-border border-dashed bg-muted/30 active:opacity-75"
+							className="size-20 items-center justify-center rounded-xl border border-border border-dashed bg-surface/30 active:opacity-75"
 							accessibilityLabel="Add more photos"
 						>
 							<Icon as={Plus} className="size-6 text-primary" />

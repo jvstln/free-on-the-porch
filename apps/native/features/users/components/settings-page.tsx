@@ -258,7 +258,7 @@ export function SettingsPage() {
 											className="flex-row items-center justify-between"
 										>
 											<View className="flex-row items-center gap-2.5">
-												<View className="size-8 items-center justify-center rounded-full bg-muted">
+												<View className="size-8 items-center justify-center rounded-full bg-surface">
 													<Text className="font-bold text-muted-foreground text-xs">
 														{initials}
 													</Text>

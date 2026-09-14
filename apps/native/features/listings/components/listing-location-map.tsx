@@ -37,7 +37,7 @@ export function ListingLocationMap({ location, address }: Props) {
 
 	if (Platform.OS !== "web" && MapView) {
 		return (
-			<Card className="relative h-48 w-full overflow-hidden rounded-2xl border border-border bg-muted p-0 shadow-sm">
+			<Card className="relative h-48 w-full overflow-hidden rounded-2xl border border-border bg-surface p-0 shadow-sm">
 				<MapView
 					style={{ flex: 1 }}
 					initialRegion={{

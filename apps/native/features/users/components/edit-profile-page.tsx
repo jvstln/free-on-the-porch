@@ -94,7 +94,7 @@ export function EditProfilePage() {
 						onPress={handleImagePick}
 						className="relative active:opacity-90"
 					>
-						<Avatar className="size-28 rounded-full border-2 border-border/20 bg-muted shadow-sm">
+						<Avatar className="size-28 rounded-full border-2 border-border/20 bg-surface shadow-sm">
 							{image ? (
 								<Avatar.Image src={image} />
 							) : (

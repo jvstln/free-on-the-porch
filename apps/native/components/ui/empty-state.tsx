@@ -18,7 +18,7 @@ export function EmptyState({
 }: EmptyStateProps) {
 	return (
 		<View className="flex-1 items-center justify-center px-6 py-20">
-			<View className="mb-4 size-16 items-center justify-center rounded-full bg-muted">
+			<View className="mb-4 size-16 items-center justify-center rounded-full bg-surface">
 				<Icon as={icon} className="size-8 text-muted-foreground" />
 			</View>
 			<Text type="h4" className="mb-2 text-center font-bold text-foreground">

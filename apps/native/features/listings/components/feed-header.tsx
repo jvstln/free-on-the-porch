@@ -123,7 +123,7 @@ export function FeedHeader({
 					) : address ? (
 						<Pressable
 							onPress={onRefreshLocation}
-							className="h-7 flex-row items-center gap-1.5 self-start rounded-full border border-border bg-card px-2.5 active:bg-muted/50"
+							className="h-7 flex-row items-center gap-1.5 self-start rounded-full border border-border bg-card px-2.5 active:bg-surface/50"
 						>
 							<Icon as={MapPin} className="size-3 shrink-0 text-primary" />
 							<Text
@@ -151,7 +151,7 @@ export function FeedHeader({
 					) : (
 						<Pressable
 							onPress={onRefreshLocation}
-							className="h-7 flex-row items-center gap-1.5 self-start rounded-full border border-border bg-card px-2.5 active:bg-muted/50"
+							className="h-7 flex-row items-center gap-1.5 self-start rounded-full border border-border bg-card px-2.5 active:bg-surface/50"
 						>
 							<Icon
 								as={Compass}

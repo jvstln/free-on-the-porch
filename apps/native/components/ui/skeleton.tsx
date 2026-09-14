@@ -14,7 +14,7 @@ export function Skeleton({
 	return (
 		<HeroUISkeleton
 			variant={variant}
-			className={cn("rounded-md bg-muted", className)}
+			className={cn("rounded-md bg-surface", className)}
 			{...props}
 		/>
 	);

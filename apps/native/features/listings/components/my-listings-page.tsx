@@ -62,7 +62,7 @@ export function MyListingsPage() {
 					</View>
 				) : listings.length === 0 ? (
 					<View className="flex-1 items-center justify-center px-6 py-20 text-center">
-						<View className="mb-4 size-16 items-center justify-center rounded-full bg-muted">
+						<View className="mb-4 size-16 items-center justify-center rounded-full bg-surface">
 							<Icon as={Gift} className="size-8 text-muted-foreground" />
 						</View>
 						<Text type="h4" className="mb-2 font-bold text-foreground">

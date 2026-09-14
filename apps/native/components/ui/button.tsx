@@ -86,12 +86,13 @@ const buttonVariants = cva(
 				appearance: "outline",
 				color: "default",
 				className:
-					"border-border bg-card text-muted-foreground active:bg-muted/50",
+					"border-border bg-card text-muted-foreground active:bg-surface/50",
 			},
 			{
 				appearance: "ghost",
 				color: "default",
-				className: "text-muted-foreground hover:bg-muted/50 active:bg-muted",
+				className:
+					"text-muted-foreground hover:bg-surface/50 active:bg-surface",
 			},
 		],
 	},

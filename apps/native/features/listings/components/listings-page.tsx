@@ -554,11 +554,11 @@ export const ListingsPage = () => {
 									{selectedListing.images[0]?.url ? (
 										<Image
 											source={{ uri: selectedListing.images[0].url }}
-											className="size-16 rounded-xl bg-muted"
+											className="size-16 rounded-xl bg-surface"
 											contentFit="cover"
 										/>
 									) : (
-										<View className="size-16 items-center justify-center rounded-xl bg-muted">
+										<View className="size-16 items-center justify-center rounded-xl bg-surface">
 											<Icon as={Tag} className="size-6 text-muted-foreground" />
 										</View>
 									)}

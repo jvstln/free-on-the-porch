@@ -45,7 +45,7 @@ export function ThreadListItem({ thread, onPress }: ThreadListItemProps) {
 		<Pressable
 			onPress={() => onPress(thread)}
 			className={cn(
-				"flex-row items-center border-border border-b bg-card p-4 transition-all active:bg-muted/30",
+				"flex-row items-center border-border border-b bg-card p-4 transition-all active:bg-surface/30",
 				hasUnread ? "bg-primary/5" : "bg-card",
 			)}
 		>
@@ -132,11 +132,11 @@ export function ThreadListItem({ thread, onPress }: ThreadListItemProps) {
 			{imageUrl ? (
 				<Image
 					source={{ uri: imageUrl }}
-					className="size-12 rounded-lg bg-muted"
+					className="size-12 rounded-lg bg-surface"
 					contentFit="cover"
 				/>
 			) : thread.listing?.id ? (
-				<View className="size-12 items-center justify-center rounded-lg bg-muted">
+				<View className="size-12 items-center justify-center rounded-lg bg-surface">
 					<Icon as={MessageSquare} className="size-5 text-muted-foreground" />
 				</View>
 			) : null}

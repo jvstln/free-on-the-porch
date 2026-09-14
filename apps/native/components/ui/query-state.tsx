@@ -107,7 +107,7 @@ const LoadingState = ({ classNames, loadingText }: LoadingStateProps) => {
 				classNames?.loadingRoot,
 			)}
 		>
-			<View className="mb-6 rounded-2xl bg-muted/50 p-4">
+			<View className="mb-6 rounded-2xl bg-surface/50 p-4">
 				<Spinner className="size-8 text-primary" />
 			</View>
 			{loadingText && (

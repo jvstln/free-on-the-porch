@@ -212,7 +212,7 @@ export function ListingDetailPage({ id }: Props) {
 				contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
 			>
 				{/* Hero Image Section */}
-				<View className="relative h-80 w-full overflow-hidden bg-muted">
+				<View className="relative h-80 w-full overflow-hidden bg-surface">
 					{listing.images && listing.images.length > 0 ? (
 						<>
 							<FlatList
@@ -249,8 +249,8 @@ export function ListingDetailPage({ id }: Props) {
 							)}
 						</>
 					) : (
-						<View className="flex-1 items-center justify-center gap-3 rounded-2xl border border-border/10 bg-muted/40 p-6">
-							<View className="size-16 items-center justify-center rounded-full bg-muted shadow-sm">
+						<View className="flex-1 items-center justify-center gap-3 rounded-2xl border border-border/10 bg-surface/40 p-6">
+							<View className="size-16 items-center justify-center rounded-full bg-surface shadow-sm">
 								<Icon as={Tag} className="size-8 text-muted-foreground" />
 							</View>
 							<Text type="body-sm" className="font-semibold text-foreground">
@@ -386,7 +386,7 @@ export function ListingDetailPage({ id }: Props) {
 					{/* Poster Profile Row */}
 					<Pressable
 						onPress={() => router.push(`/dashboard/user/${listing.userId}`)}
-						className="flex-row items-center gap-3 border-border border-t border-b py-4 active:bg-muted/20"
+						className="flex-row items-center gap-3 border-border border-t border-b py-4 active:bg-surface/20"
 					>
 						<Avatar>
 							<Avatar.Image src={listing.user?.image} />

@@ -11,7 +11,7 @@ function SwitchImpl({
 	...props
 }: SwitchProps) {
 	const resolvedPrimary = useResolveClassNames("bg-primary");
-	const resolvedMuted = useResolveClassNames("bg-muted");
+	const resolvedMuted = useResolveClassNames("bg-surface");
 
 	const primaryColor =
 		typeof resolvedPrimary.backgroundColor === "string"

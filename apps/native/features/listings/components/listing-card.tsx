@@ -43,7 +43,7 @@ export function ListingCard({
 			className={cn("active:opacity-80", className)}
 		>
 			<View className="overflow-hidden rounded-2xl bg-card shadow-black/10 shadow-sm">
-				<View className={cn("aspect-4/3 bg-muted", aspectRatioClassName)}>
+				<View className={cn("aspect-4/3 bg-surface", aspectRatioClassName)}>
 					{thumb ? (
 						<Image
 							source={{ uri: thumb }}
@@ -138,7 +138,7 @@ export function FeaturedCard({ item, onPress, searchTerm }: FeaturedCardProps) {
 							contentFit="cover"
 						/>
 					) : (
-						<View className="h-full w-full items-center justify-center bg-muted">
+						<View className="h-full w-full items-center justify-center bg-surface">
 							<Icon as={Tag} className="size-8 text-muted-foreground" />
 						</View>
 					)}
@@ -211,7 +211,7 @@ export function RecentListRow({
 						contentFit="cover"
 					/>
 				) : (
-					<View className="size-16 items-center justify-center rounded-xl bg-muted">
+					<View className="size-16 items-center justify-center rounded-xl bg-surface">
 						<Icon as={Tag} className="size-6 text-muted-foreground" />
 					</View>
 				)}
