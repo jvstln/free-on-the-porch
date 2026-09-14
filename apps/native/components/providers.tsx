@@ -18,7 +18,7 @@ export const RootProviders = ({ children }: { children: React.ReactNode }) => {
 						<ToastListener />
 						<QueryClientProvider client={queryClient}>
 							<SafeAreaView
-								edges={["top", "left", "right"]}
+								edges={["left", "right"]}
 								className="flex-1 bg-background"
 							>
 								<AuthGuardProvider>{children}</AuthGuardProvider>
