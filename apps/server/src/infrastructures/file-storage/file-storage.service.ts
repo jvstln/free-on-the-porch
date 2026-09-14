@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable } from "@nestjs/common";
 import type { UploadApiResponse } from "cloudinary";
 import { cloudinaryProvider } from "./cloudinary.provider";
 import type {
@@ -19,15 +19,21 @@ export class FileStorageService implements IFileStorageService {
 		>,
 	) {}
 
-	private uploadBuffer(
+	private async uploadBuffer(
 		buffer: Buffer,
 		options: object,
 	): Promise<UploadApiResponse> {
-		return new Promise((resolve, reject) => {
+		return new Promise<UploadApiResponse>((resolve, reject) => {
 			const stream = this.cloudinary.uploader.upload_stream(
 				options,
 				(error, result) => {
-					if (error || !result) return reject(error);
+					if (error || !result) {
+						return reject(
+							new BadRequestException(
+								`Error uploading ${"resource_type" in options && options.resource_type} file`,
+							),
+						);
+					}
 					resolve(result);
 				},
 			);

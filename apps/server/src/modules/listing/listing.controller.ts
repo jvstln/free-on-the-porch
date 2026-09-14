@@ -7,6 +7,7 @@ import {
 	UpdateListingSchema,
 } from "@free-on-the-porch/shared/schemas";
 import {
+	BadRequestException,
 	Body,
 	Controller,
 	Delete,
@@ -48,14 +49,16 @@ export class ListingController {
 		@Body(new ZodValidationPipe(CreateListingSchema)) body: CreateListingDto,
 		@UploadedFiles() files?: Express.Multer.File[],
 	) {
-		let imageUrls: string[] = [];
-
-		if (files && files.length > 0) {
-			const uploads = await Promise.all(
-				files.map((file) => this.fileStorage.uploadImage({ file })),
+		if (!files || files.length === 0) {
+			throw new BadRequestException(
+				"At least one image is required to create a listing",
 			);
-			imageUrls = uploads.map((u) => u.url);
 		}
+
+		const uploads = await Promise.all(
+			files.map((file) => this.fileStorage.uploadImage({ file })),
+		);
+		const imageUrls = uploads.map((u) => u.url);
 
 		return this.listingService.create(session.user.id, body, imageUrls);
 	}

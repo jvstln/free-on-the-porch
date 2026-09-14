@@ -64,37 +64,44 @@ export class ListingService {
 			);
 		}
 
-		// Insert the listing, then its images (if any) with an order index.
-		// Note: the listing + image insert is not wrapped in a transaction —
-		// if image insertion fails the listing is left valid on its own.
-		const [newListing] = await this.drizzle.db
-			.insert(listing)
-			.values({
-				title: data.title,
-				description: data.description ?? null,
-				category: data.category,
-				condition: data.condition,
-				location: data.location,
-				address: data.address ?? null,
-				userId,
-				expiresAt,
-			})
-			.returning();
-
-		if (!newListing) {
-			// # purely for TS narrowing — the insert would have thrown
-			throw new Error("Failed to create listing");
+		if (!imageUrls || imageUrls.length === 0) {
+			throw new BadRequestException(
+				"At least one image is required to create a listing",
+			);
 		}
 
-		if (imageUrls.length > 0) {
-			await this.drizzle.db.insert(listingImage).values(
+		const location = data.location;
+
+		const newListing = await this.drizzle.db.transaction(async (tx) => {
+			const [created] = await tx
+				.insert(listing)
+				.values({
+					title: data.title,
+					description: data.description ?? null,
+					category: data.category,
+					condition: data.condition,
+					location,
+					address: data.address ?? null,
+					userId,
+					expiresAt,
+				})
+				.returning();
+
+			if (!created) {
+				// purely for TS narrowing — the insert would have thrown
+				throw new Error("Failed to create listing");
+			}
+
+			await tx.insert(listingImage).values(
 				imageUrls.map((url, i) => ({
 					url,
 					order: i,
-					listingId: newListing.id,
+					listingId: created.id,
 				})),
 			);
-		}
+
+			return created;
+		});
 
 		return this.findOne({ id: newListing.id });
 	}
