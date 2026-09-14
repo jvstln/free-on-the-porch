@@ -41,12 +41,12 @@ src/
 ├── common/                    # Cross-cutting: zodiac pipe, pagination util, constants
 ├── infrastructures/           # Wrappers over external systems
 │   ├── database/              #   DrizzleService (the sanctioned Drizzle access)
-│   ├── file-storage/          #   Cloudinary adapter
 │   ├── logger/                #   AppLogger + request logging interceptor
 │   ├── mail/                  #   Email (Mailjet or console mock) + templates
 │   └── websocket/             #   Composite @AppWebSocketGateway decorator
 └── modules/                   # Feature modules
     ├── auth/                  #   better-auth, AuthGuard, @Public/@Session decorators
+    ├── file-storage/          #   Cloudinary upload/delete endpoints & service
     ├── listing/               #   listing CRUD, feed (PostGIS+FTS), claim
     ├── messaging/             #   threads/messages, Socket.IO gateway
     └── user/                  #   profile endpoints (WIP)

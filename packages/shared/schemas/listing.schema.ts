@@ -6,6 +6,7 @@ import {
 } from "./enum.schema";
 import {
 	CursorPaginationSchema,
+	stripEmptyStrings,
 	TimestampSchema,
 	UrlSchema,
 } from "./generic.schema";
@@ -35,14 +36,19 @@ export const CreateListingSchema = z.object({
 	address: z.string().max(200).optional(),
 	location: PointSchema.optional(),
 	status: ListingStatusSchema.optional(),
+	images: z
+		.array(UrlSchema)
+		.min(1, "At least one image is required")
+		.max(5, "Maximum 5 images allowed"),
 });
 
 export type CreateListingDto = z.infer<typeof CreateListingSchema>;
 
-export const UpdateListingSchema = z.object({
-	...CreateListingSchema.partial().shape,
-	status: ListingStatusSchema.optional(),
-});
+export const UpdateListingSchema = z
+	.object({
+		...CreateListingSchema.partial().shape,
+	})
+	.transform(stripEmptyStrings);
 
 export type UpdateListingDto = z.infer<typeof UpdateListingSchema>;
 

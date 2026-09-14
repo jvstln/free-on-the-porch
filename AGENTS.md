@@ -25,7 +25,7 @@ pnpm dev                     # all apps; or dev:native / dev:server
 
 ## Layout
 
-- `apps/server` — NestJS API. Global prefix `/api/v1`. Swagger UI at `/docs` (set up in `main.ts`; controllers carry no Swagger decorators). Feature modules in `src/modules/{auth,listing,messaging,user}`, cross-cutting wrappers in `src/common/`, external-system adapters in `src/infrastructures/{database,file-storage,logger,mail,websocket}`.
+- `apps/server` — NestJS API. Global prefix `/api/v1`. Swagger UI at `/docs` (set up in `main.ts`; controllers carry no Swagger decorators). Feature modules in `src/modules/{auth,file-storage,listing,messaging,user}`, cross-cutting wrappers in `src/common/`, external-system adapters in `src/infrastructures/{database,logger,mail,websocket}`.
 - `apps/native` — Expo app. Routes in `app/`, feature code in `features/`, reusable primitives in `components/ui`, API/socket/query clients in `lib/`.
 - `packages/db` — Drizzle client + schema split by domain (`schema/{auth,listing,messaging,moderation}.ts`, all relations in `relations.ts`). Exports `@free-on-the-porch/db` and `@free-on-the-porch/db/schema`.
 - `packages/env` — zod-validated env (`private.ts` for server vars, `public.ts` for `PUBLIC_*` vars).
@@ -55,7 +55,7 @@ pnpm dev                     # all apps; or dev:native / dev:server
 - **Multi-step writes** run in `this.drizzle.db.transaction(async (tx) => ...)` (e.g. claim creates thread + members + claim request + first message atomically).
 - **Errors**: throw NestJS HTTP exceptions (`NotFoundException`, `BadRequestException`, `ConflictException`, `ForbiddenException`). After destructuring `.returning()`, add `if (!row) throw new Error(...)` purely for TS narrowing.
 - **Realtime**: gateways extend nothing but use the composite `@AppWebSocketGateway({ namespace })` decorator (applies `AuthGuard` + CORS). Gateways only broadcast into `userId:<id>` rooms; controllers trigger broadcast after the REST write for dual REST+WS delivery.
-- Infra services (mail, Cloudinary file storage, logger, DB) are wrapped as Nest modules under `src/infrastructures/` — feature modules depend on those abstractions, never on vendor SDKs directly.
+- Infra services (mail, logger, DB) are wrapped as Nest modules under `src/infrastructures/` — feature modules depend on those abstractions, never on vendor SDKs directly.
 
 ## Shared package patterns (`packages/shared`)
 

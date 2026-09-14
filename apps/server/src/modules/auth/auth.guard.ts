@@ -26,12 +26,11 @@ export class AuthGuard implements CanActivate {
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const type = context.getType<"http" | "ws">();
 
-		// Honor @Public(): skip validation for explicitly public endpoints.
+		// Honor @Public(): skip validation for explicitly public endpoints. Condition will be checked at the end of hydrating user session.
 		const isPublic = this.reflector.getAllAndOverride(Public, [
 			context.getHandler(),
 			context.getClass(),
 		]);
-		if (isPublic) return true;
 
 		if (type === "http") {
 			const request = context.switchToHttp().getRequest<Request>();
@@ -40,7 +39,7 @@ export class AuthGuard implements CanActivate {
 				headers: request.headers,
 			});
 
-			if (!authSession) {
+			if (!authSession && !isPublic) {
 				throw new UnauthorizedException("Unauthorized. User not logged in");
 			}
 

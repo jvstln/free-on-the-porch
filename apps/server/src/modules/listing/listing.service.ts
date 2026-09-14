@@ -23,18 +23,7 @@ import {
 	Injectable,
 	NotFoundException,
 } from "@nestjs/common";
-import {
-	and,
-	asc,
-	desc,
-	eq,
-	gt,
-	inArray,
-	isNull,
-	or,
-	SQL,
-	sql,
-} from "drizzle-orm";
+import { and, asc, desc, eq, inArray, SQL, sql } from "drizzle-orm";
 import {
 	buildResponse,
 	decodeCursor,
@@ -53,7 +42,6 @@ export class ListingService {
 	async create(
 		userId: string,
 		data: CreateListingDto,
-		imageUrls: string[],
 	): Promise<PaginatedResponse<ListingDetailDto>> {
 		const expiresAt = new Date();
 		expiresAt.setDate(expiresAt.getDate() + 7); // listings expire in 7 days
@@ -64,7 +52,7 @@ export class ListingService {
 			);
 		}
 
-		if (!imageUrls || imageUrls.length === 0) {
+		if (!data.images || data.images.length === 0) {
 			throw new BadRequestException(
 				"At least one image is required to create a listing",
 			);
@@ -93,7 +81,7 @@ export class ListingService {
 			}
 
 			await tx.insert(listingImage).values(
-				imageUrls.map((url, i) => ({
+				data.images.map((url, i) => ({
 					url,
 					order: i,
 					listingId: created.id,
@@ -113,6 +101,7 @@ export class ListingService {
 	// once.
 	async findFeed(
 		query: FeedListingsQueryOutputDto,
+		userId?: string,
 	): Promise<PaginatedResponse<ListingDto[]>> {
 		// Reusable search point built once from the query coords.
 		const pointSql = sql`ST_SetSRID(ST_MakePoint(${query.lng}, ${query.lat}), 4326)::geography`;
@@ -150,17 +139,16 @@ export class ListingService {
 				pendingClaims: true,
 			},
 			where: {
+				status: "AVAILABLE",
+				expiresAt: {
+					OR: [{ gt: new Date() }, { isNull: true }],
+				},
+				...(userId && { userId: { ne: userId } }),
+				...(query.category && { category: query.category }),
+
 				// RAW escape hatch: mix typed conditions with raw PostGIS/FTS SQL.
 				RAW: (t) => {
-					const whereConditions: (SQL | undefined)[] = [
-						// Only available, not-yet-expired listings.
-						eq(t.status, "AVAILABLE"),
-						or(gt(t.expiresAt, new Date()), isNull(t.expiresAt)),
-					];
-
-					if (query.category) {
-						whereConditions.push(eq(t.category, query.category));
-					}
+					const whereConditions: (SQL | undefined)[] = [];
 
 					// Optional radius filter via PostGIS ST_DWithin.
 					if (typeof query.radiusMeters === "number") {
@@ -354,25 +342,15 @@ export class ListingService {
 	// applies only the fields present in the (partial) update DTO. Status
 	// transitions are validated against the CHECK constraint on the listing table.
 	async update(id: string, userId: string, data: UpdateListingDto) {
-		const [foundListing] = await this.drizzle.db
-			.select()
-			.from(listing)
-			.where(eq(listing.id, id));
+		const foundListing = await this.drizzle.db.query.listing.findFirst({
+			where: { id },
+		});
 
 		if (!foundListing) throw new NotFoundException("Listing not found");
 		// Authorization: only the listing owner may edit it.
 		if (foundListing.userId !== userId) throw new ForbiddenException();
 
-		const updateData: Partial<typeof listing.$inferInsert> = {};
-		if (data.title !== undefined) updateData.title = data.title;
-		if (data.description !== undefined)
-			updateData.description = data.description;
-		if (data.category !== undefined) updateData.category = data.category;
-		if (data.condition !== undefined) updateData.condition = data.condition;
-		if (data.address !== undefined) updateData.address = data.address;
-		if (data.location) {
-			updateData.location = data.location;
-		}
+		const updateData: Partial<typeof listing.$inferInsert> = { ...data };
 
 		// Validate status transitions. The CHECK constraint on the listing table
 		// requires claimedByUserId to be set iff status is PICKED_UP or RESERVED.
@@ -396,6 +374,20 @@ export class ListingService {
 			}
 
 			updateData.status = data.status;
+		}
+
+		if (data.images !== undefined && data.images.length > 0) {
+			const imagesToInsert = data.images;
+			await this.drizzle.db.transaction(async (tx) => {
+				await tx.delete(listingImage).where(eq(listingImage.listingId, id));
+				await tx.insert(listingImage).values(
+					imagesToInsert.map((url, i) => ({
+						url,
+						order: i,
+						listingId: id,
+					})),
+				);
+			});
 		}
 
 		const [[updatedListing], images] = await Promise.all([

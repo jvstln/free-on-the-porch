@@ -28,41 +28,10 @@ export const listingsService = {
 		return data.data;
 	},
 
-	async create(body: CreateListingDto, photos: { uri: string }[]) {
-		if (!photos || photos.length === 0) {
-			throw new Error("At least one photo is required to create a listing.");
-		}
-
-		console.log(photos);
-
-		const formData = new FormData();
-
-		for (const [key, value] of Object.entries(body)) {
-			if (value !== undefined && value !== null) {
-				if (typeof value === "object") {
-					formData.append(key, JSON.stringify(value));
-				} else {
-					formData.append(key, String(value));
-				}
-			}
-		}
-
-		for (const photo of photos) {
-			const filename = photo.uri.split("/").pop() || "photo.jpg";
-			const ext = filename.split(".").pop()?.toLowerCase() || "jpeg";
-			const mimeType = `image/${ext === "jpg" ? "jpeg" : ext}`;
-
-			formData.append("images", {
-				uri: photo.uri,
-				name: filename,
-				type: mimeType,
-			} as unknown as Blob);
-		}
-
+	async create(body: CreateListingDto): Promise<ListingDetailDto> {
 		const { data } = await api.post<{ data: ListingDetailDto }>(
 			"/listings",
-			formData,
-			{ headers: { "Content-Type": "multipart/form-data" } },
+			body,
 		);
 		return data.data;
 	},

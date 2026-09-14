@@ -18,7 +18,6 @@ import { queryClient } from "@/lib/query-client";
 
 export function ProfilePage() {
 	const router = useRouter();
-	const insets = useSafeAreaInsets();
 	const { data: session } = authClient.useSession();
 
 	// Load own listings
@@ -58,9 +57,7 @@ export function ProfilePage() {
 				numColumns={2}
 				columnWrapperStyle={{ gap: 16 }}
 				showsVerticalScrollIndicator={false}
-				contentContainerClassName="px-4"
-				style={{ paddingTop: Math.max(insets.top, 12) }}
-				contentContainerStyle={{ paddingBottom: insets.bottom + 60 }}
+				contentContainerClassName="px-4 pb-4"
 				refreshControl={
 					<RefreshControl
 						refreshing={isRefetching}

@@ -31,3 +31,15 @@ export type PaginatedResponse<T> = T extends unknown[]
 			data: T;
 			pagination?: { nextCursor: string | null };
 		};
+
+export const stripEmptyStrings = <T extends Record<string, unknown>>(
+	obj: T,
+) => {
+	const result = {} as T;
+	for (const [key, value] of Object.entries(obj)) {
+		if (value !== "") {
+			result[key as keyof T] = value as T[keyof T];
+		}
+	}
+	return result;
+};

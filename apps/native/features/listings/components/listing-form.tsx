@@ -28,18 +28,13 @@ import {
 } from "../constants/listings.constants";
 import { ListingLocationMap } from "./listing-location-map";
 
-type PhotoAsset = {
-	uri: string;
-	file?: File;
-};
-
 type Props = {
 	initialValues?: Partial<CreateListingDto>;
-	initialPhotos?: PhotoAsset[];
+	initialPhotos?: ImagePickerAsset[];
 	onSubmit: (
-		values: CreateListingDto & { photos: PhotoAsset[] },
+		values: Omit<CreateListingDto, "images"> & { photos: ImagePickerAsset[] },
 	) => Promise<void>;
-	isSubmitting: boolean;
+	isSubmitting?: boolean;
 	submitLabel?: string;
 	showStatusSelector?: boolean;
 };
@@ -68,7 +63,7 @@ export function ListingForm({
 	initialValues,
 	initialPhotos,
 	onSubmit,
-	isSubmitting,
+	isSubmitting = false,
 	submitLabel = "Post Item",
 	showStatusSelector = false,
 }: Props) {
@@ -120,10 +115,10 @@ export function ListingForm({
 			address: initialValues?.address ?? currentAddress ?? "",
 			location: initialValues?.location ?? coords ?? undefined,
 			status: initialValues?.status ?? "AVAILABLE",
-		} as CreateListingDto,
+		} as Omit<CreateListingDto, "images">,
 		validationLogic: revalidateLogic(),
 		validators: {
-			onDynamic: CreateListingSchema,
+			onDynamic: CreateListingSchema.omit({ images: true }),
 		},
 		onSubmit: async ({ value }) => {
 			if (photos.length === 0) {

@@ -35,7 +35,14 @@ export const env = createEnv({
 		NODE_ENV: z
 			.enum(["development", "production", "test"])
 			.default("development"),
-		CLOUDINARY_URL: z.url({ protocol: /^cloudinary$/ }),
+		CLOUDINARY_URL: z.templateLiteral([
+			"cloudinary://",
+			z.string(), // API_KEY
+			":",
+			z.string(), // API_SECRET
+			"@",
+			z.string(), // CLOUD_NAME
+		]),
 		MAILJET_API_KEY: z.string().optional(),
 		MAILJET_SECRET: z.string().optional(),
 		RESEND_API_KEY: z.string().optional(),

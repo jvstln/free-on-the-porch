@@ -44,7 +44,6 @@ External systems (database, file storage, email, logging, WebSockets) are wrappe
 | Module | What it wraps | How it's used |
 |--------|---------------|---------------|
 | `database/` | Drizzle client (`@free-on-the-porch/db`) | Inject `DrizzleService`, access via `this.drizzle.db` |
-| `file-storage/` | Cloudinary | `FileStorageService.uploadImage(...)` etc. |
 | `logger/` | Custom `AppLogger` + `RequestLoggingInterceptor` | Global logging for every request |
 | `mail/` | `MailService` facade → Mailjet or console mock | Send auth/template emails |
 | `websocket/` | Composite `@AppWebSocketGateway` decorator | Applies `AuthGuard` + CORS to gateways |

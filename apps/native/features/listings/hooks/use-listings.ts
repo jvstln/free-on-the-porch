@@ -79,13 +79,7 @@ export const useCreateListing = () => {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: ({
-			data,
-			photos,
-		}: {
-			data: CreateListingDto;
-			photos: { uri: string }[];
-		}) => listingsService.create(data, photos),
+		mutationFn: (data: CreateListingDto) => listingsService.create(data),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["myListings"] });
 			queryClient.invalidateQueries({ queryKey: ["listings", "feed"] });

@@ -7,7 +7,6 @@ import {
 	UpdateListingSchema,
 } from "@free-on-the-porch/shared/schemas";
 import {
-	BadRequestException,
 	Body,
 	Controller,
 	Delete,
@@ -17,50 +16,26 @@ import {
 	Post,
 	Query,
 	Session,
-	UploadedFiles,
-	UseInterceptors,
 } from "@nestjs/common";
-import { FilesInterceptor } from "@nestjs/platform-express";
-import { memoryStorage } from "multer";
 import { ZodValidationPipe } from "../../common/pipes/zod.pipe";
-import { FileStorageService } from "../../infrastructures/file-storage/file-storage.service";
 import { Public } from "../auth/auth.decorator";
 import type { UserSession } from "../auth/auth.type";
 import { ListingService } from "./listing.service";
 
-const MAX_IMAGES = 5;
-
 @Controller("listings")
 export class ListingController {
-	constructor(
-		private readonly listingService: ListingService,
-		private readonly fileStorage: FileStorageService,
-	) {}
+	constructor(private readonly listingService: ListingService) {}
 
+	/**
+	 * Creates a new listing with item details and uploaded image URLs.
+	 * Expects a JSON body validated against CreateListingSchema.
+	 */
 	@Post()
-	@UseInterceptors(
-		FilesInterceptor("images", MAX_IMAGES, {
-			storage: memoryStorage(),
-			limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB per file
-		}),
-	)
-	async create(
+	create(
 		@Session() session: UserSession,
 		@Body(new ZodValidationPipe(CreateListingSchema)) body: CreateListingDto,
-		@UploadedFiles() files?: Express.Multer.File[],
 	) {
-		if (!files || files.length === 0) {
-			throw new BadRequestException(
-				"At least one image is required to create a listing",
-			);
-		}
-
-		const uploads = await Promise.all(
-			files.map((file) => this.fileStorage.uploadImage({ file })),
-		);
-		const imageUrls = uploads.map((u) => u.url);
-
-		return this.listingService.create(session.user.id, body, imageUrls);
+		return this.listingService.create(session.user.id, body);
 	}
 
 	@Get("feed")
@@ -68,8 +43,9 @@ export class ListingController {
 	findFeed(
 		@Query(new ZodValidationPipe(FeedListingsQuerySchema))
 		query: FeedListingsQueryOutputDto,
+		@Session() session?: UserSession,
 	) {
-		return this.listingService.findFeed(query);
+		return this.listingService.findFeed(query, session?.user.id);
 	}
 
 	@Get("mine")

@@ -1,14 +1,17 @@
 import type { CreateListingDto } from "@free-on-the-porch/shared/schemas";
+import { getErrorMessage } from "@free-on-the-porch/shared/utils";
 import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import { Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
+import type { ImagePickerAsset } from "@/components/ui/image-picker";
 import { Spinner } from "@/components/ui/spinner";
 import { Text } from "@/components/ui/text";
 import { toast } from "@/components/ui/toast";
 import { View } from "@/components/ui/view";
+import { uploadMediaAssets } from "@/features/file-storage/hooks/use-file-upload";
 import { authClient } from "@/lib/auth-client";
 import { useListingDetail, useUpdateListing } from "../hooks/use-listings";
 import { ListingForm } from "./listing-form";
@@ -71,9 +74,12 @@ export function EditListingPage({ id }: Props) {
 	}
 
 	const handleSubmit = async (
-		values: CreateListingDto & { photos: { uri: string }[] },
+		values: Omit<CreateListingDto, "images"> & { photos: ImagePickerAsset[] },
 	) => {
 		try {
+			// Upload any newly picked photos while preserving existing remote photo URLs
+			const imageUrls = await uploadMediaAssets(values.photos);
+
 			await updateMutation.mutateAsync({
 				title: values.title,
 				description: values.description || undefined,
@@ -82,13 +88,16 @@ export function EditListingPage({ id }: Props) {
 				address: values.address,
 				location: values.location,
 				status: values.status,
+				images: imageUrls,
 			});
 
 			toast.success("Listing updated successfully!");
 
 			router.back();
-		} catch (_err) {
-			toast.error("Failed to update listing. Please try again.");
+		} catch (error) {
+			toast.error("Failed to update listing. Please try again.", {
+				description: getErrorMessage(error),
+			});
 		}
 	};
 
@@ -122,7 +131,6 @@ export function EditListingPage({ id }: Props) {
 				}}
 				initialPhotos={listing.images.map((img) => ({ uri: img.url }))}
 				onSubmit={handleSubmit}
-				isSubmitting={updateMutation.isPending}
 				submitLabel="Save Changes"
 				showStatusSelector={true}
 			/>

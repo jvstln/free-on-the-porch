@@ -1,24 +1,32 @@
 import { BadRequestException, Inject, Injectable } from "@nestjs/common";
 import type { UploadApiResponse } from "cloudinary";
+import { AppLogger } from "../../infrastructures/logger/app-logger.service";
 import { cloudinaryProvider } from "./cloudinary.provider";
 import type {
+	DeleteOption,
 	IFileStorageService,
-	UploadOptions,
+	UploadOption,
 	UploadResult,
 } from "./file-storage.type";
 
+/**
+ * FileStorageService wraps Cloudinary SDK operations.
+ * Controllers and other services consume this abstraction rather than
+ * interacting directly with the third-party Cloudinary SDK.
+ */
 @Injectable()
-// File-storage adapter on top of Cloudinary. Feature code depends on this
-// abstraction (IFileStorageService) rather than hitting the Cloudinary SDK
-// directly, so the underlying provider can be swapped.
 export class FileStorageService implements IFileStorageService {
 	constructor(
+		private readonly logger: AppLogger,
 		@Inject(cloudinaryProvider.provide)
 		private readonly cloudinary: ReturnType<
 			typeof cloudinaryProvider.useFactory
 		>,
 	) {}
 
+	/**
+	 * Uploads an in-memory buffer via Cloudinary upload stream.
+	 */
 	private async uploadBuffer(
 		buffer: Buffer,
 		options: object,
@@ -28,6 +36,8 @@ export class FileStorageService implements IFileStorageService {
 				options,
 				(error, result) => {
 					if (error || !result) {
+						this.logger.error("Error uploading file", error);
+
 						return reject(
 							new BadRequestException(
 								`Error uploading ${"resource_type" in options && options.resource_type} file`,
@@ -41,41 +51,50 @@ export class FileStorageService implements IFileStorageService {
 		});
 	}
 
-	async uploadImage(options: UploadOptions): Promise<UploadResult> {
+	async uploadImages(options: UploadOption): Promise<UploadResult>;
+	async uploadImages(options: UploadOption[]): Promise<UploadResult[]>;
+	async uploadImages(options: UploadOption | UploadOption[]) {
+		if (Array.isArray(options)) {
+			return Promise.all(options.map((option) => this.uploadImages(option)));
+		}
+
 		const result = await this.uploadBuffer(options.file.buffer, {
 			resource_type: "image",
-			type: "upload",
 		});
 		return { publicId: result.public_id, url: result.secure_url };
 	}
 
-	async uploadVideo(options: UploadOptions): Promise<UploadResult> {
+	async uploadVideos(options: UploadOption): Promise<UploadResult>;
+	async uploadVideos(options: UploadOption[]): Promise<UploadResult[]>;
+	async uploadVideos(options: UploadOption | UploadOption[]) {
+		if (Array.isArray(options)) {
+			return Promise.all(options.map((option) => this.uploadVideos(option)));
+		}
+
 		const result = await this.uploadBuffer(options.file.buffer, {
 			resource_type: "video",
-			type: "upload",
 		});
 		return { publicId: result.public_id, url: result.secure_url };
 	}
 
-	async uploadRaw(options: UploadOptions): Promise<UploadResult> {
+	async uploadRaw(options: UploadOption): Promise<UploadResult> {
 		const result = await this.uploadBuffer(options.file.buffer, {
 			resource_type: "raw",
-			type: "upload",
 		});
 		return { publicId: result.public_id, url: result.secure_url };
 	}
 
-	async delete(
-		publicId: string,
-		options?: { resourceType?: string; type?: string },
-	): Promise<void> {
-		await this.cloudinary.uploader.destroy(publicId, {
+	async deleteFiles(options: DeleteOption): Promise<void>;
+	async deleteFiles(options: DeleteOption[]): Promise<void>;
+	async deleteFiles(options: DeleteOption | DeleteOption[]) {
+		if (Array.isArray(options)) {
+			Promise.all(options.map((option) => this.deleteFiles(option)));
+			return;
+		}
+
+		await this.cloudinary.uploader.destroy(options.id, {
 			resource_type: options?.resourceType || "image",
 			type: options?.type || "upload",
 		});
-	}
-
-	async cleanupOrphaned(publicIds: string[]): Promise<void> {
-		await Promise.all(publicIds.map((id) => this.delete(id)));
 	}
 }
