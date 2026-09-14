@@ -25,9 +25,14 @@ export const UpdateUserSettingsSchema = UserSettingsSchema.omit({
 export type UpdateUserSettingsDto = z.infer<typeof UpdateUserSettingsSchema>;
 
 export const UpdateProfileSchema = z.object({
-	name: z.string().min(2).max(50).optional(),
+	name: z
+		.string()
+		.trim()
+		.min(2, "Name must be at least 2 characters")
+		.max(50, "Name must be under 50 characters")
+		.optional(),
 	image: UrlSchema.optional(),
-	bio: z.string().max(200).optional(),
+	bio: z.string().max(200, "Bio must be under 200 characters").optional(),
 });
 
 export type UpdateProfileDto = z.infer<typeof UpdateProfileSchema>;

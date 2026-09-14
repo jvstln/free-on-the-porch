@@ -58,6 +58,12 @@ export class ListingService {
 		const expiresAt = new Date();
 		expiresAt.setDate(expiresAt.getDate() + 7); // listings expire in 7 days
 
+		if (!data.location) {
+			throw new BadRequestException(
+				"Location coordinates are required to create a listing",
+			);
+		}
+
 		// Insert the listing, then its images (if any) with an order index.
 		// Note: the listing + image insert is not wrapped in a transaction —
 		// if image insertion fails the listing is left valid on its own.
@@ -68,7 +74,7 @@ export class ListingService {
 				description: data.description ?? null,
 				category: data.category,
 				condition: data.condition,
-				location: data.location ?? { lat: 40.7312, lng: -74.2738 },
+				location: data.location,
 				address: data.address ?? null,
 				userId,
 				expiresAt,

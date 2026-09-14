@@ -12,17 +12,29 @@ import {
 import { PublicUserSchema } from "./user.schema";
 
 const PointSchema = z.object({
+	lat: z.number().min(-90).max(90),
+	lng: z.number().min(-180).max(180),
+});
+
+const CoercedPointSchema = z.object({
 	lat: z.coerce.number().min(-90).max(90),
 	lng: z.coerce.number().min(-180).max(180),
 });
 
 export const CreateListingSchema = z.object({
-	title: z.string().min(3).max(80),
-	description: z.string().max(500).nullish(),
+	title: z
+		.string()
+		.min(3, "Title must be at least 3 characters")
+		.max(80, "Title must be under 80 characters"),
+	description: z
+		.string()
+		.max(500, "Description must be under 500 characters")
+		.nullish(),
 	category: ListingCategorySchema,
 	condition: ListingConditionSchema,
 	address: z.string().max(200).optional(),
 	location: PointSchema.optional(),
+	status: ListingStatusSchema.optional(),
 });
 
 export type CreateListingDto = z.infer<typeof CreateListingSchema>;
@@ -50,7 +62,7 @@ export const FeedListingsQuerySchema = z.object({
 		.max(100)
 		.transform((val) => val.trim() || undefined)
 		.optional(),
-	...PointSchema.shape,
+	...CoercedPointSchema.shape,
 	...CursorPaginationSchema.shape,
 });
 
