@@ -32,7 +32,10 @@ export const ScrollView = (
 			showsVerticalScrollIndicator={false}
 			showsHorizontalScrollIndicator={false}
 			{...props}
-			className={cn("size-full flex-1", props.className)}
+			className={cn(
+				props.horizontal ? "" : "size-full flex-1",
+				props.className,
+			)}
 			contentContainerClassName={props.contentContainerClassName}
 		/>
 	);

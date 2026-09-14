@@ -91,7 +91,8 @@ export function ToggleGroup({
 		return (
 			<ScrollView
 				horizontal
-				className={className}
+				showsHorizontalScrollIndicator={false}
+				className={cn("shrink-0 grow-0", className)}
 				contentContainerClassName={cn(
 					!isSegmented && "gap-2",
 					contentContainerClassName,
@@ -120,12 +121,14 @@ export interface ToggleGroupItemProps {
 	value: string | number;
 	children: React.ReactNode;
 	className?: string;
+	color?: React.ComponentProps<typeof Button>["color"];
 }
 
 export function ToggleGroupItem({
 	value,
 	children,
 	className,
+	color = "primary",
 }: ToggleGroupItemProps) {
 	const context = useToggleGroupContext();
 	const isActive = context.value === value;
@@ -134,7 +137,7 @@ export function ToggleGroupItem({
 	return (
 		<Button
 			onPress={() => context.onValueChange(value)}
-			color={isActive ? "primary" : "default"}
+			color={isActive ? color : "default"}
 			appearance={isActive ? "solid" : isSegmented ? "ghost" : "outline"}
 			size={context.size}
 			className={cn(

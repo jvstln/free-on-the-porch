@@ -1,10 +1,17 @@
 import { createFormHook, createFormHookContexts } from "@tanstack/react-form";
 import { ControlField } from "heroui-native";
 import * as React from "react";
+import type { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+	ImagePicker,
+	type ImagePickerAsset,
+	type ImagePickerProps,
+} from "@/components/ui/image-picker";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { ToggleGroup } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import { Field, FieldDescription, FieldError, FieldLabel } from "./field";
 import { Text } from "./text";
@@ -39,14 +46,14 @@ export type InputFieldProps = FieldProps &
 	React.ComponentProps<typeof Input> & {};
 
 export function InputField({ label, description, ...props }: InputFieldProps) {
-	const field = useFieldContext<string>();
+	const field = useFieldContext<string | null | undefined>();
 	const hasError = field.state.meta.errors.length > 0;
 
 	return (
 		<Field invalid={hasError}>
 			{label && <FieldLabel>{label}</FieldLabel>}
 			<Input
-				value={field.state.value}
+				value={field.state.value ?? ""}
 				onChangeText={field.handleChange}
 				onBlur={field.handleBlur}
 				className={cn(hasError && "border-destructive")}
@@ -78,14 +85,14 @@ export function TextareaField({
 	placeholder,
 	numberOfLines,
 }: TextareaFieldProps) {
-	const field = useFieldContext<string>();
+	const field = useFieldContext<string | null | undefined>();
 	const hasError = field.state.meta.errors.length > 0;
 
 	return (
 		<Field invalid={hasError}>
 			{label && <FieldLabel>{label}</FieldLabel>}
 			<Textarea
-				value={field.state.value}
+				value={field.state.value ?? ""}
 				onChangeText={field.handleChange}
 				onBlur={field.handleBlur}
 				placeholder={placeholder}
@@ -185,6 +192,122 @@ export function SwitchField({
 	);
 }
 
+/**
+ * Single-select option group field (pills or segmented) with label, description, and error message.
+ *
+ * @example
+ * ```tsx
+ * <form.AppField name="category">
+ *   {(field) => (
+ *     <field.ToggleGroupField
+ *       label="Category"
+ *       options={[
+ *         { value: "FURNITURE", label: "Furniture" },
+ *         { value: "ELECTRONICS", label: "Electronics" },
+ *       ]}
+ *     />
+ *   )}
+ * </form.AppField>
+ * ```
+ */
+export type ToggleGroupFieldOption<
+	T extends string | number = string | number,
+> = {
+	value: T;
+	label: string;
+	color?: React.ComponentProps<typeof Button>["color"];
+};
+
+export type ToggleGroupFieldProps<T extends string | number = string | number> =
+	FieldProps & {
+		options: ToggleGroupFieldOption<T>[];
+		type?: "pill" | "segmented";
+		size?: React.ComponentProps<typeof Button>["size"];
+		scrollable?: boolean;
+		className?: string;
+		contentContainerClassName?: string;
+	};
+
+export function ToggleGroupField<T extends string | number = string | number>({
+	label,
+	description,
+	options,
+	type = "pill",
+	size = "xs",
+	scrollable = false,
+	className,
+	contentContainerClassName,
+}: ToggleGroupFieldProps<T>) {
+	const field = useFieldContext<T | undefined>();
+	const hasError = field.state.meta.errors.length > 0;
+
+	return (
+		<Field invalid={hasError}>
+			{label && <FieldLabel>{label}</FieldLabel>}
+			<ToggleGroup
+				value={field.state.value}
+				onValueChange={(val) => field.handleChange(val as T)}
+				type={type}
+				size={size}
+				scrollable={scrollable}
+				className={className}
+				contentContainerClassName={contentContainerClassName}
+			>
+				{options.map((opt) => (
+					<ToggleGroup.Item key={opt.value} value={opt.value} color={opt.color}>
+						{opt.label}
+					</ToggleGroup.Item>
+				))}
+			</ToggleGroup>
+			{description && <FieldDescription>{description}</FieldDescription>}
+			<FieldError errors={field.state.meta.errors} />
+		</Field>
+	);
+}
+
+// ─── Image Picker Field ──────────────────────────────────────────────────────
+
+/**
+ * Image picker field for single or multi-photo upload with camera, library, and preview support.
+ *
+ * @example
+ * ```tsx
+ * <form.AppField name="photos">
+ *   {(field) => (
+ *     <field.ImagePickerField
+ *       label="Add Photos"
+ *       max={5}
+ *       multiple
+ *     />
+ *   )}
+ * </form.AppField>
+ * ```
+ */
+export type ImagePickerFieldProps = FieldProps &
+	Omit<ImagePickerProps, "value" | "onChange">;
+
+export function ImagePickerField({
+	label,
+	description,
+	...props
+}: ImagePickerFieldProps) {
+	const field = useFieldContext<ImagePickerAsset[] | string[]>();
+	const hasError = field.state.meta.errors.length > 0;
+
+	return (
+		<Field invalid={hasError}>
+			{label && <FieldLabel>{label}</FieldLabel>}
+			<ImagePicker
+				value={field.state.value}
+				onChange={field.handleChange}
+				{...props}
+			/>
+			{description && <FieldDescription>{description}</FieldDescription>}
+			<FieldError errors={field.state.meta.errors} />
+		</Field>
+	);
+}
+
 // ─── Form Hook ──────────────────────────────────────────────────────────────
 
 export const { useAppForm } = createFormHook({
@@ -195,6 +318,8 @@ export const { useAppForm } = createFormHook({
 		TextareaField,
 		CheckboxField,
 		SwitchField,
+		ToggleGroupField,
+		ImagePickerField,
 	},
 	formComponents: {},
 });
