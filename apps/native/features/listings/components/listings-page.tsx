@@ -3,7 +3,7 @@ import type {
 	ListingDto,
 } from "@free-on-the-porch/shared/schemas";
 import { useRouter } from "expo-router";
-import { Compass, Tag } from "lucide-react-native";
+import { Compass, LocateFixed, Tag } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	Keyboard,
@@ -25,15 +25,15 @@ import { Text } from "@/components/ui/text";
 import { ScrollView, View } from "@/components/ui/view";
 import { UserMenu } from "@/features/users/components/user-menu";
 import { useDebounce } from "@/hooks/use-debounce";
+import { useLocation } from "@/hooks/use-location";
 import { resolveColorAlias } from "@/lib/colors.util";
 import { cn } from "@/lib/utils";
 import {
 	CONDITION_LABEL,
-	DEFAULT_COORDS,
-	DEFAULT_LOCATION,
 	formatDistance,
 } from "../constants/listings.constants";
 import { useFeedListings } from "../hooks/use-listings";
+import { FeedHeader } from "./feed-header";
 import {
 	FeaturedCard,
 	FeaturedCardSkeleton,
@@ -41,14 +41,7 @@ import {
 	RecentListRow,
 	RecentListRowSkeleton,
 } from "./listing-card";
-import {
-	CategoryFilter,
-	RadiusFilter,
-	SortFilter,
-	TABS,
-	type Tab,
-	TabFilter,
-} from "./listing-filters";
+import { CategoryFilter, TABS, type Tab } from "./listing-filters";
 import { MapView, NativeMap, WebMapFallback } from "./listings-map";
 
 // ─── Skeleton Loading State Page ──────────────────────────────────────────────
@@ -261,13 +254,32 @@ export const ListingsPage = () => {
 		};
 	}, [dismissSearch]);
 
+	const {
+		coords,
+		address,
+		isLoading: isLocating,
+		isPermissionDenied,
+		getCurrentLocation,
+	} = useLocation();
+
+	// Automatically fetch current user location on mount if not already present
+	useEffect(() => {
+		if (!coords) {
+			getCurrentLocation(false);
+		}
+	}, [coords, getCurrentLocation]);
+
 	// Query feed listings with cursor-based infinite scroll
-	const feedListingsQuery = useFeedListings({
-		lat: DEFAULT_COORDS.lat,
-		lng: DEFAULT_COORDS.lng,
-		...filters,
-		query: debouncedSearch,
-	});
+	const feedListingsQuery = useFeedListings(
+		coords
+			? {
+					lat: coords.lat,
+					lng: coords.lng,
+					...filters,
+					query: debouncedSearch,
+				}
+			: null,
+	);
 
 	const {
 		data,
@@ -331,150 +343,137 @@ export const ListingsPage = () => {
 							<RefreshControl refreshing={isRefetching} onRefresh={refetch} />
 						}
 					>
-						<View className="mb-4 flex-row items-center justify-between">
-							<View className="flex-row items-center gap-1.5">
-								<Icon as={Compass} className="size-4 text-muted-foreground" />
-								<Text
-									type="body-sm"
-									className="font-medium text-muted-foreground"
-								>
-									Nearby:{" "}
-									<Text type="body-sm" className="font-bold text-primary">
-										{DEFAULT_LOCATION}
-									</Text>
-								</Text>
-							</View>
-
-							<TabFilter
-								value={activeTab}
-								onValueChange={(tab) => {
-									dismissSearch();
-									setActiveTab(tab);
-								}}
-							/>
-						</View>
-
-						<CategoryFilter
-							value={filters.category}
-							onValueChange={(category) => {
+						<FeedHeader
+							category={filters.category}
+							onCategoryChange={(category) => {
 								dismissSearch();
-								setFilters((f) => ({
-									...f,
-									category,
-								}));
+								setFilters((f) => ({ ...f, category }));
 							}}
-							className="-mx-4 mb-4"
+							sort={filters.sort}
+							onSortChange={(sort) => {
+								dismissSearch();
+								setFilters((f) => ({ ...f, sort }));
+							}}
+							radiusMeters={filters.radiusMeters}
+							onRadiusChange={(radiusMeters) => {
+								dismissSearch();
+								setFilters((f) => ({ ...f, radiusMeters }));
+							}}
+							activeTab={activeTab}
+							onTabChange={(tab) => {
+								dismissSearch();
+								setActiveTab(tab);
+							}}
+							address={address}
+							isLocating={isLocating}
+							isPermissionDenied={isPermissionDenied}
+							onRefreshLocation={() => getCurrentLocation(true)}
 						/>
 
-						<View className="mb-4 flex-row items-center gap-2">
-							<Text
-								type="body-xs"
-								className="font-bold text-muted-foreground uppercase tracking-wider"
-							>
-								Sort:
-							</Text>
-							<SortFilter
-								value={filters.sort}
-								onValueChange={(sort) => {
-									dismissSearch();
-									setFilters((f) => ({
-										...f,
-										sort,
-									}));
-								}}
-							/>
-						</View>
-
-						<View className="mb-4 flex-row items-center gap-2">
-							<Text
-								type="body-xs"
-								className="font-bold text-muted-foreground uppercase tracking-wider"
-							>
-								Radius:
-							</Text>
-							<RadiusFilter
-								value={filters.radiusMeters}
-								onValueChange={(radius) => {
-									dismissSearch();
-									setFilters((f) => ({
-										...f,
-										radiusMeters: radius,
-									}));
-								}}
-							/>
-						</View>
-
-						<QueryState
-							query={feedListingsQuery}
-							getIsLoading={(q) => (q.isLoading ? <LoadingState /> : false)}
-							getIsEmpty={(q) => {
-								return q.data?.listings?.length === 0
-									? {
-											title: hasSearch
-												? `No matches for "${debouncedSearch.trim()}"`
-												: "Nothing on the porch nearby",
-											description: hasSearch
-												? "Try a different search term or widen your search radius."
-												: "Be the first to post a free item in this category or expand your search radius!",
-											cta: (
-												<Button
-													onPress={() => {
-														dismissSearch();
-														setSearchQuery("");
-														setFilters({
-															category: "",
-															radiusMeters: "closest",
-															sort: "closest",
-														});
-													}}
-													appearance="soft"
-													color="primary"
-												>
-													Clear Filters
-												</Button>
-											),
-										}
-									: false;
-							}}
-						>
-							{featuredItem && (
-								<FeaturedCard
-									item={featuredItem}
-									onPress={handleListingPress}
-									searchTerm={debouncedSearch}
-								/>
-							)}
-							{bentoItems.length > 0 && (
-								<BentoGrid
-									items={bentoItems}
-									onPress={handleListingPress}
-									searchTerm={debouncedSearch}
-								/>
-							)}
-							<RecentSection
-								items={recentItems}
-								onPress={handleListingPress}
-								searchTerm={debouncedSearch}
-								title={hasSearch ? "More matches" : "Recently Posted Nearby"}
-							/>
-							{hasNextPage && (
-								<Button
-									color="neutral"
-									appearance="soft"
-									size="sm"
-									className="mb-4 self-center"
-									onPress={() => {
-										dismissSearch();
-										fetchNextPage();
-									}}
-									disabled={isFetchingNextPage}
+						{!coords && isLocating ? (
+							<LoadingState />
+						) : !coords ? (
+							<View className="my-8 items-center justify-center rounded-2xl border border-border bg-card p-6 shadow-sm">
+								<View className="mb-3 size-14 items-center justify-center rounded-full bg-primary/10">
+									<Icon as={Compass} className="size-7 text-primary" />
+								</View>
+								<Text
+									type="h4"
+									className="mb-1 text-center font-bold text-foreground"
 								>
-									<Button.Label>
-										{isFetchingNextPage ? "Loading…" : "Load more"}
-									</Button.Label>
+									Discover Items Near You
+								</Text>
+								<Text
+									type="body-sm"
+									className="mb-5 text-center text-muted-foreground"
+								>
+									Allow location access to see free items right in your
+									neighborhood.
+								</Text>
+								<Button
+									onPress={() => getCurrentLocation(true)}
+									color="primary"
+									size="default"
+									isLoading={isLocating}
+									loadingText="Detecting..."
+								>
+									<Icon as={LocateFixed} className="size-4" />
+									<Button.Label>Enable Location</Button.Label>
 								</Button>
-							)}
-						</QueryState>
+							</View>
+						) : (
+							<QueryState
+								query={feedListingsQuery}
+								getIsLoading={(q) => (q.isLoading ? <LoadingState /> : false)}
+								getIsEmpty={(q) => {
+									return q.data?.listings?.length === 0
+										? {
+												title: hasSearch
+													? `No matches for "${debouncedSearch.trim()}"`
+													: "Nothing on the porch nearby",
+												description: hasSearch
+													? "Try a different search term or widen your search radius."
+													: "Be the first to post a free item in this category or expand your search radius!",
+												cta: (
+													<Button
+														onPress={() => {
+															dismissSearch();
+															setSearchQuery("");
+															setFilters({
+																category: "",
+																radiusMeters: "closest",
+																sort: "closest",
+															});
+														}}
+														appearance="soft"
+														color="primary"
+													>
+														Clear Filters
+													</Button>
+												),
+											}
+										: false;
+								}}
+							>
+								{featuredItem && (
+									<FeaturedCard
+										item={featuredItem}
+										onPress={handleListingPress}
+										searchTerm={debouncedSearch}
+									/>
+								)}
+								{bentoItems.length > 0 && (
+									<BentoGrid
+										items={bentoItems}
+										onPress={handleListingPress}
+										searchTerm={debouncedSearch}
+									/>
+								)}
+								<RecentSection
+									items={recentItems}
+									onPress={handleListingPress}
+									searchTerm={debouncedSearch}
+									title={hasSearch ? "More matches" : "Recently Posted Nearby"}
+								/>
+								{hasNextPage && (
+									<Button
+										color="neutral"
+										appearance="soft"
+										size="sm"
+										className="mb-4 self-center"
+										onPress={() => {
+											dismissSearch();
+											fetchNextPage();
+										}}
+										disabled={isFetchingNextPage}
+									>
+										<Button.Label>
+											{isFetchingNextPage ? "Loading…" : "Load more"}
+										</Button.Label>
+									</Button>
+								)}
+							</QueryState>
+						)}
 					</ScrollView>
 				) : (
 					<View className="relative flex-1">
@@ -485,7 +484,7 @@ export const ListingsPage = () => {
 									dismissSearch();
 									setSelectedListing(listing);
 								}}
-								centerCoords={DEFAULT_COORDS}
+								centerCoords={coords ?? undefined}
 							/>
 						) : (
 							<NativeMap
@@ -494,7 +493,7 @@ export const ListingsPage = () => {
 									dismissSearch();
 									setSelectedListing(listing);
 								}}
-								centerCoords={DEFAULT_COORDS}
+								centerCoords={coords ?? undefined}
 							/>
 						)}
 
@@ -512,39 +511,41 @@ export const ListingsPage = () => {
 							/>
 						</View>
 
-						{/* Floating tab selector overlaid */}
-						<View className="absolute bottom-4 left-4">
-							<View className="flex-row rounded-full border border-border bg-card p-1 shadow-md">
-								{TABS.map((tab) => {
-									const isActive = activeTab === tab;
-									return (
-										<Pressable
-											key={tab}
-											onPress={() => {
-												dismissSearch();
-												setActiveTab(tab);
-											}}
-											className={cn(
-												"rounded-full px-4 py-1.5",
-												isActive ? "bg-primary" : "bg-transparent",
-											)}
-										>
-											<Text
-												type="body-xs"
+						{/* Floating tab selector overlaid - hidden when a pin is selected */}
+						{!selectedListing && (
+							<View className="absolute bottom-4 left-4">
+								<View className="flex-row rounded-full border border-border bg-card p-1 shadow-md">
+									{TABS.map((tab) => {
+										const isActive = activeTab === tab;
+										return (
+											<Pressable
+												key={tab}
+												onPress={() => {
+													dismissSearch();
+													setActiveTab(tab);
+												}}
 												className={cn(
-													"font-bold",
-													isActive
-														? "text-primary-foreground"
-														: "text-muted-foreground",
+													"rounded-full px-4 py-1.5",
+													isActive ? "bg-primary" : "bg-transparent",
 												)}
 											>
-												{tab}
-											</Text>
-										</Pressable>
-									);
-								})}
+												<Text
+													type="body-xs"
+													className={cn(
+														"font-bold",
+														isActive
+															? "text-primary-foreground"
+															: "text-muted-foreground",
+													)}
+												>
+													{tab}
+												</Text>
+											</Pressable>
+										);
+									})}
+								</View>
 							</View>
-						</View>
+						)}
 
 						{/* Bottom mini-card overlay */}
 						{selectedListing && (
@@ -570,7 +571,7 @@ export const ListingsPage = () => {
 											{selectedListing.title}
 										</Text>
 										<Text type="body-xs" className="text-muted-foreground">
-											{selectedListing.address ?? DEFAULT_LOCATION}
+											{selectedListing.address ?? "Nearby"}
 										</Text>
 										<View className="mt-1 flex-row items-center gap-2">
 											<Badge

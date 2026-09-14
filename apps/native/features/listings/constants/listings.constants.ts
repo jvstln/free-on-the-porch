@@ -1,16 +1,8 @@
 import type {
 	ListingCategoryDto,
 	ListingConditionDto,
+	ListingStatusDto,
 } from "@free-on-the-porch/shared/schemas";
-
-// ─── Location ─────────────────────────────────────────────────────────────────
-
-export const DEFAULT_LOCATION = "Maplewood";
-
-export const DEFAULT_COORDS = {
-	lat: 40.7312,
-	lng: -74.2738,
-};
 
 // ─── Labels ───────────────────────────────────────────────────────────────────
 
@@ -33,6 +25,14 @@ export const CATEGORY_LABEL: Record<ListingCategoryDto, string> = {
 	TOOLS: "Tools",
 	GARDEN: "Garden",
 	OTHER: "Other",
+};
+
+export const STATUS_LABEL: Record<ListingStatusDto, string> = {
+	AVAILABLE: "Available",
+	RESERVED: "Reserved",
+	PICKED_UP: "Picked Up (Claimed)",
+	EXPIRED: "Expired",
+	REMOVED: "Removed",
 };
 
 export const CATEGORY_MAP: Record<string, ListingCategoryDto | undefined> = {

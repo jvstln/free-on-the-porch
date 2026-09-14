@@ -1,91 +1,32 @@
-import type {
-	ListingCategoryDto,
-	ListingConditionDto,
-	ListingStatusDto,
+import {
+	type CreateListingDto,
+	CreateListingSchema,
+	LISTING_CATEGORY,
+	LISTING_CONDITION,
+	LISTING_STATUS,
 } from "@free-on-the-porch/shared/schemas";
 import { revalidateLogic } from "@tanstack/react-form";
-import * as ImagePicker from "expo-image-picker";
-import {
-	Camera,
-	Image as ImageIcon,
-	MapPin,
-	Plus,
-	Send,
-	Trash2,
-} from "lucide-react-native";
-import { useState } from "react";
-import { Pressable, ScrollView, TouchableOpacity } from "react-native";
-import { z } from "zod";
+import { LocateFixed, MapPin, Send } from "lucide-react-native";
+import { useEffect, useState } from "react";
+import { ScrollView } from "react-native";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { useAppForm } from "@/components/ui/form";
 import { Icon } from "@/components/ui/icon";
-import { Image } from "@/components/ui/image";
+import {
+	ImagePicker,
+	type ImagePickerAsset,
+} from "@/components/ui/image-picker";
 import { Text } from "@/components/ui/text";
 import { toast } from "@/components/ui/toast";
 import { KeyboardAvoidingView, View } from "@/components/ui/view";
+import { useLocation } from "@/hooks/use-location";
 import { resolveColorAlias } from "@/lib/colors.util";
-import { cn } from "@/lib/utils";
 import {
 	CATEGORY_LABEL,
 	CONDITION_LABEL,
+	STATUS_LABEL,
 } from "../constants/listings.constants";
-
-// Form categories (exclude SPORTS which isn't in the create form)
-const FORM_CATEGORIES = Object.entries(CATEGORY_LABEL)
-	.filter(([key]) => key !== "SPORTS")
-	.map(([, label]) => label);
-
-// Map display label to DTO value
-const CATEGORY_MAP: Record<string, ListingCategoryDto> = Object.fromEntries(
-	Object.entries(CATEGORY_LABEL)
-		.filter(([key]) => key !== "SPORTS")
-		.map(([value, label]) => [label, value as ListingCategoryDto]),
-);
-
-// Reverse map: DTO value → display label
-const REVERSE_CATEGORY_MAP: Record<string, string> = Object.fromEntries(
-	Object.entries(CATEGORY_LABEL).map(([value, label]) => [value, label]),
-);
-
-const CONDITIONS: ListingConditionDto[] = [
-	"NEW",
-	"LIKE_NEW",
-	"GOOD",
-	"FAIR",
-	"WORN",
-];
-
-const STATUS_OPTIONS: ListingStatusDto[] = [
-	"AVAILABLE",
-	"PICKED_UP",
-	"EXPIRED",
-	"REMOVED",
-];
-
-const STATUS_LABELS: Record<ListingStatusDto, string> = {
-	AVAILABLE: "Available",
-	RESERVED: "Reserved",
-	PICKED_UP: "Picked Up (Claimed)",
-	EXPIRED: "Expired",
-	REMOVED: "Removed",
-};
-
-const listingFormSchema = z.object({
-	title: z
-		.string()
-		.min(3, "Title must be at least 3 characters")
-		.max(80, "Title must be under 80 characters"),
-	description: z.string().max(500, "Description must be under 500 characters"),
-});
-
-type ListingFormValues = {
-	title: string;
-	description: string;
-	category: ListingCategoryDto;
-	condition: ListingConditionDto;
-	status?: ListingStatusDto;
-};
+import { ListingLocationMap } from "./listing-location-map";
 
 type PhotoAsset = {
 	uri: string;
@@ -93,104 +34,137 @@ type PhotoAsset = {
 };
 
 type Props = {
-	initialValues?: Partial<ListingFormValues>;
-	onSubmit: (values: {
-		title: string;
-		description: string;
-		category: ListingCategoryDto;
-		condition: ListingConditionDto;
-		status?: ListingStatusDto;
-		photos: PhotoAsset[];
-	}) => Promise<void>;
+	initialValues?: Partial<CreateListingDto>;
+	initialPhotos?: PhotoAsset[];
+	onSubmit: (
+		values: CreateListingDto & { photos: PhotoAsset[] },
+	) => Promise<void>;
 	isSubmitting: boolean;
 	submitLabel?: string;
 	showStatusSelector?: boolean;
 };
 
+const CATEGORY_OPTIONS = LISTING_CATEGORY.map((cat) => ({
+	value: cat,
+	label: CATEGORY_LABEL[cat] ?? cat,
+}));
+
+const CONDITION_OPTIONS = LISTING_CONDITION.map((cond) => ({
+	value: cond,
+	label: CONDITION_LABEL[cond] ?? cond,
+	color: resolveColorAlias(cond),
+}));
+
+const STATUS_OPTIONS = LISTING_STATUS.filter((s) => s !== "RESERVED").map(
+	(status) => ({
+		value: status,
+		label: STATUS_LABEL[status] ?? status,
+	}),
+);
+
+const MAX_PHOTOS = 5;
+
 export function ListingForm({
 	initialValues,
+	initialPhotos,
 	onSubmit,
 	isSubmitting,
 	submitLabel = "Post Item",
 	showStatusSelector = false,
 }: Props) {
-	// Initialize states
-	const [activeCategory, setActiveCategory] = useState<string>(() => {
-		if (initialValues?.category) {
-			return REVERSE_CATEGORY_MAP[initialValues.category] || "Other";
+	const [photos, setPhotos] = useState<ImagePickerAsset[]>(initialPhotos ?? []);
+	const {
+		coords,
+		address: currentAddress,
+		getCurrentLocation,
+		isLoading: isLocating,
+		error: locationError,
+	} = useLocation();
+
+	const handleGetLocation = async () => {
+		const result = await getCurrentLocation(true);
+		if (result) {
+			form.setFieldValue("location", result.location);
+			form.setFieldValue("address", result.address);
+			toast.success(`Location set: ${result.address}`);
+		} else {
+			toast.error(
+				locationError ??
+					"Could not capture GPS location. Please check device permissions.",
+			);
 		}
-		return "Furniture";
-	});
-
-	const [activeCondition, setActiveCondition] = useState<ListingConditionDto>(
-		() => initialValues?.condition || "GOOD",
-	);
-
-	const [activeStatus, setActiveStatus] = useState<ListingStatusDto>(
-		() => initialValues?.status || "AVAILABLE",
-	);
-
-	const [photos, setPhotos] = useState<PhotoAsset[]>([]);
+	};
 
 	const form = useAppForm({
 		defaultValues: {
-			title: initialValues?.title || "",
-			description: initialValues?.description || "",
-		},
+			title: initialValues?.title ?? "",
+			description: initialValues?.description ?? "",
+			category: initialValues?.category ?? "FURNITURE",
+			condition: initialValues?.condition ?? "GOOD",
+			address: initialValues?.address ?? currentAddress ?? "",
+			location: initialValues?.location ?? coords ?? undefined,
+			status: initialValues?.status ?? "AVAILABLE",
+		} as CreateListingDto,
 		validationLogic: revalidateLogic(),
 		validators: {
-			onDynamic: listingFormSchema,
+			onDynamic: CreateListingSchema,
 		},
 		onSubmit: async ({ value }) => {
-			const category = CATEGORY_MAP[activeCategory] || "OTHER";
+			let loc = value.location;
+			let addr = value.address;
+
+			if (!loc) {
+				const res = await getCurrentLocation(false);
+				if (res) {
+					loc = res.location;
+					addr = addr || res.address;
+				} else {
+					toast.error(
+						"Please enable location access to post an item on the porch.",
+					);
+					return;
+				}
+			}
+
 			await onSubmit({
 				title: value.title,
-				description: value.description,
-				category,
-				condition: activeCondition,
-				...(showStatusSelector ? { status: activeStatus } : {}),
+				description: value.description || undefined,
+				category: value.category,
+				condition: value.condition,
+				address: addr || undefined,
+				location: loc,
+				...(showStatusSelector ? { status: value.status } : {}),
 				photos,
 			});
 		},
 	});
 
-	const MAX_PHOTOS = 5;
+	// Automatically detect and set current user location if not editing an existing listing
+	useEffect(() => {
+		if (initialValues?.location) return;
 
-	const pickImage = async (fromCamera: boolean) => {
-		const permissionMethod = fromCamera
-			? ImagePicker.requestCameraPermissionsAsync
-			: ImagePicker.requestMediaLibraryPermissionsAsync;
-
-		const { status } = await permissionMethod();
-		if (status !== "granted") {
-			toast.error(
-				fromCamera
-					? "Camera permission is required"
-					: "Photo library permission is required",
-			);
-			return;
+		if (coords) {
+			form.setFieldValue("location", coords);
+			if (currentAddress && !form.getFieldValue("address")) {
+				form.setFieldValue("address", currentAddress);
+			}
+		} else {
+			getCurrentLocation(false).then((result) => {
+				if (result) {
+					form.setFieldValue("location", result.location);
+					if (!form.getFieldValue("address")) {
+						form.setFieldValue("address", result.address);
+					}
+				}
+			});
 		}
-
-		const launchMethod = fromCamera
-			? ImagePicker.launchCameraAsync
-			: ImagePicker.launchImageLibraryAsync;
-
-		const result = await launchMethod({
-			mediaTypes: ["images"],
-			allowsMultipleSelection: true,
-			selectionLimit: MAX_PHOTOS - photos.length,
-			quality: 0.8,
-		});
-
-		if (!result.canceled && result.assets.length > 0) {
-			const newPhotos = result.assets.map((asset) => ({ uri: asset.uri }));
-			setPhotos((prev) => [...prev, ...newPhotos].slice(0, MAX_PHOTOS));
-		}
-	};
-
-	const removePhoto = (index: number) => {
-		setPhotos((prev) => prev.filter((_, i) => i !== index));
-	};
+	}, [
+		coords,
+		currentAddress,
+		getCurrentLocation,
+		form,
+		initialValues?.location,
+	]);
 
 	return (
 		<KeyboardAvoidingView className="flex-1">
@@ -199,71 +173,18 @@ export function ListingForm({
 				showsVerticalScrollIndicator={false}
 				contentContainerStyle={{ paddingBottom: 40 }}
 			>
-				{/* Add Photos Section */}
+				{/* Photos Section */}
 				<View className="mt-4 mb-6">
 					<Text type="body-sm" className="mb-3 font-bold text-secondary">
 						Add Photos ({photos.length}/{MAX_PHOTOS})
 					</Text>
-
-					{photos.length > 0 && (
-						<View className="mb-3 flex-row flex-wrap gap-2">
-							{photos.map((photo, index) => (
-								<View key={photo.uri} className="relative size-20">
-									<Image
-										source={{ uri: photo.uri }}
-										className="size-20 rounded-xl"
-										contentFit="cover"
-									/>
-									<Pressable
-										onPress={() => removePhoto(index)}
-										className="absolute -top-1.5 -right-1.5 size-6 items-center justify-center rounded-full bg-destructive"
-									>
-										<Icon
-											as={Trash2}
-											className="size-3 text-destructive-foreground"
-										/>
-									</Pressable>
-								</View>
-							))}
-						</View>
-					)}
-
-					{photos.length < MAX_PHOTOS && (
-						<View className="flex-row gap-3">
-							<TouchableOpacity
-								onPress={() => pickImage(true)}
-								className="aspect-square flex-1 items-center justify-center rounded-2xl border border-border border-dashed bg-muted/30 py-4"
-							>
-								<Icon as={Camera} className="mb-1 size-6 text-primary" />
-								<Text
-									type="body-xs"
-									className="font-bold text-muted-foreground"
-								>
-									Camera
-								</Text>
-							</TouchableOpacity>
-
-							<TouchableOpacity
-								onPress={() => pickImage(false)}
-								className="aspect-square flex-1 items-center justify-center rounded-2xl border border-border border-dashed bg-muted/30 py-4"
-							>
-								<Icon as={ImageIcon} className="mb-1 size-6 text-primary" />
-								<Text
-									type="body-xs"
-									className="font-bold text-muted-foreground"
-								>
-									Gallery
-								</Text>
-							</TouchableOpacity>
-
-							<TouchableOpacity
-								onPress={() => pickImage(false)}
-								className="aspect-square flex-1 items-center justify-center rounded-2xl bg-muted/50 py-4"
-							>
-								<Icon as={Plus} className="size-8 text-border" />
-							</TouchableOpacity>
-						</View>
-					)}
+					<ImagePicker
+						value={photos}
+						onChange={setPhotos}
+						max={MAX_PHOTOS}
+						title="Add photos of the item"
+						description={`Snap it on your porch or choose an existing photo (up to ${MAX_PHOTOS})`}
+					/>
 				</View>
 
 				{/* TanStack Form Fields */}
@@ -277,7 +198,6 @@ export function ListingForm({
 						)}
 					</form.AppField>
 
-					{/* Description */}
 					<form.AppField name="description">
 						{(field) => (
 							<field.TextareaField
@@ -287,142 +207,112 @@ export function ListingForm({
 							/>
 						)}
 					</form.AppField>
+
+					<form.AppField name="category">
+						{(field) => (
+							<field.ToggleGroupField
+								label="Category"
+								options={CATEGORY_OPTIONS}
+							/>
+						)}
+					</form.AppField>
+
+					<form.AppField name="condition">
+						{(field) => (
+							<field.ToggleGroupField
+								label="Condition"
+								options={CONDITION_OPTIONS}
+							/>
+						)}
+					</form.AppField>
+
+					{showStatusSelector && (
+						<form.AppField name="status">
+							{(field) => (
+								<field.ToggleGroupField
+									label="Item Status"
+									options={STATUS_OPTIONS}
+								/>
+							)}
+						</form.AppField>
+					)}
 				</View>
 
-				{/* Categories Section */}
-				<View className="mb-6">
-					<Text type="body-sm" className="mb-3 font-bold text-secondary">
-						Category
-					</Text>
-					<View className="flex-row flex-wrap gap-2">
-						{FORM_CATEGORIES.map((cat) => {
-							const isSelected = activeCategory === cat;
-							return (
-								<Pressable
-									key={cat}
-									onPress={() => setActiveCategory(cat)}
-									className={cn(
-										"rounded-full border px-4 py-2 transition-all duration-200",
-										isSelected
-											? "border-primary bg-primary"
-											: "border-transparent bg-muted",
-									)}
-								>
-									<Text
-										type="body-xs"
-										className={cn(
-											"font-semibold",
-											isSelected ? "text-white" : "text-muted-foreground",
-										)}
-									>
-										{cat}
-									</Text>
-								</Pressable>
-							);
-						})}
-					</View>
-				</View>
-
-				{/* Condition Selector Section */}
-				<View className="mb-6">
-					<Text type="body-sm" className="mb-3 font-bold text-secondary">
-						Condition
-					</Text>
-					<View className="flex-row flex-wrap gap-2">
-						{CONDITIONS.map((cond) => {
-							const isSelected = activeCondition === cond;
-							const colorKey = resolveColorAlias(cond);
-							const colorClasses: Record<string, string> = {
-								primary: "border-primary bg-primary",
-								warning: "border-warning bg-warning",
-								destructive: "border-destructive bg-destructive",
-								success: "border-success bg-success",
-								default: "border-primary bg-primary",
-							};
-							const textColorClasses: Record<string, string> = {
-								primary: "text-primary-foreground",
-								warning: "text-warning-foreground",
-								destructive: "text-destructive-foreground",
-								success: "text-success-foreground",
-								default: "text-primary-foreground",
-							};
-							return (
-								<Pressable
-									key={cond}
-									onPress={() => setActiveCondition(cond)}
-									className={cn(
-										"rounded-full border px-4 py-2 transition-all duration-200",
-										isSelected
-											? colorClasses[colorKey]
-											: "border-transparent bg-muted",
-									)}
-								>
-									<Text
-										type="body-xs"
-										className={cn(
-											"font-semibold",
-											isSelected
-												? textColorClasses[colorKey]
-												: "text-muted-foreground",
-										)}
-									>
-										{CONDITION_LABEL[cond]}
-									</Text>
-								</Pressable>
-							);
-						})}
-					</View>
-				</View>
-
-				{/* Status Selector Section (Conditional) */}
-				{showStatusSelector && (
-					<View className="mb-6">
-						<Text type="body-sm" className="mb-3 font-bold text-secondary">
-							Item Status
+				{/* Pickup Location Section */}
+				<View className="mb-6 gap-3">
+					<View className="gap-1">
+						<Text type="body-sm" className="font-bold text-secondary">
+							Pickup Location
 						</Text>
-						<View className="flex-row flex-wrap gap-2">
-							{STATUS_OPTIONS.map((status) => {
-								const isSelected = activeStatus === status;
-								return (
-									<Pressable
-										key={status}
-										onPress={() => setActiveStatus(status)}
-										className={cn(
-											"rounded-full border px-4 py-2 transition-all duration-200",
-											isSelected
-												? "border-primary bg-primary"
-												: "border-transparent bg-muted",
-										)}
-									>
-										<Text
-											type="body-xs"
-											className={cn(
-												"font-semibold",
-												isSelected ? "text-white" : "text-muted-foreground",
-											)}
-										>
-											{STATUS_LABELS[status]}
-										</Text>
-									</Pressable>
-								);
-							})}
-						</View>
+						<Text type="body-xs" className="text-muted-foreground">
+							Approximate area shown to neighbors. Specific address is shared
+							only when a pickup is confirmed.
+						</Text>
 					</View>
-				)}
 
-				{/* Pickup Location Card */}
-				<View className="mb-6">
-					<Text type="body-sm" className="mb-3 font-bold text-secondary">
-						Set Pickup Location
-					</Text>
-					<Card className="relative h-48 w-full items-center justify-center overflow-hidden rounded-2xl border border-muted bg-muted p-0 shadow-sm">
-						<View className="items-center gap-2">
-							<Icon as={MapPin} className="size-8 text-muted-foreground" />
-							<Text type="body-xs" className="text-muted-foreground">
-								Location picker coming soon
-							</Text>
-						</View>
-					</Card>
+					<form.Subscribe
+						selector={(state) => ({
+							location: state.values.location,
+							address: state.values.address,
+						})}
+					>
+						{({ location, address }) => (
+							<View className="gap-3">
+								<ListingLocationMap
+									location={location ?? coords ?? null}
+									address={
+										address ||
+										currentAddress ||
+										(isLocating ? "Locating current area…" : null)
+									}
+								/>
+
+								<Button
+									appearance="outline"
+									color="default"
+									size="sm"
+									className="w-full"
+									onPress={handleGetLocation}
+									isLoading={isLocating}
+									loadingText="Detecting GPS..."
+								>
+									<Icon as={LocateFixed} className="size-4 text-primary" />
+									<Button.Label className="font-medium text-xs">
+										{location
+											? "Refresh GPS Location"
+											: "Detect Current GPS Location"}
+									</Button.Label>
+								</Button>
+
+								<form.AppField name="address">
+									{(field) => (
+										<field.InputField
+											label="Neighborhood / Area Name"
+											placeholder="e.g. Near Main Street, Front porch"
+										/>
+									)}
+								</form.AppField>
+
+								{location && (
+									<View className="flex-row items-center justify-between px-1">
+										<View className="flex-row items-center gap-1.5">
+											<Icon
+												as={MapPin}
+												className="size-3.5 text-muted-foreground"
+											/>
+											<Text type="body-xs" className="text-muted-foreground">
+												GPS: {location.lat.toFixed(4)},{" "}
+												{location.lng.toFixed(4)}
+											</Text>
+										</View>
+										<Text type="body-xs" className="text-muted-foreground">
+											200m privacy circle
+										</Text>
+									</View>
+								)}
+							</View>
+						)}
+					</form.Subscribe>
 				</View>
 
 				{/* Submit Button */}
@@ -431,15 +321,14 @@ export function ListingForm({
 						{(isFormSubmitting) => (
 							<Button
 								size="lg"
-								className="flex-row items-center justify-center gap-2 rounded-xl bg-primary py-4"
+								color="primary"
+								className="w-full"
 								onPress={form.handleSubmit}
 								isLoading={isFormSubmitting || isSubmitting}
 								loadingText="Saving..."
 							>
-								<Button.Label className="font-bold text-lg text-white">
-									{submitLabel}
-								</Button.Label>
-								<Icon as={Send} className="size-5 text-white" />
+								{submitLabel}
+								<Icon as={Send} className="size-4" />
 							</Button>
 						)}
 					</form.Subscribe>

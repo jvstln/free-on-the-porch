@@ -1,8 +1,4 @@
-import type {
-	ListingCategoryDto,
-	ListingConditionDto,
-	ListingStatusDto,
-} from "@free-on-the-porch/shared/schemas";
+import type { CreateListingDto } from "@free-on-the-porch/shared/schemas";
 import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import { Pressable } from "react-native";
@@ -74,19 +70,17 @@ export function EditListingPage({ id }: Props) {
 		);
 	}
 
-	const handleSubmit = async (values: {
-		title: string;
-		description: string;
-		category: ListingCategoryDto;
-		condition: ListingConditionDto;
-		status?: ListingStatusDto;
-	}) => {
+	const handleSubmit = async (
+		values: CreateListingDto & { photos: { uri: string }[] },
+	) => {
 		try {
 			await updateMutation.mutateAsync({
 				title: values.title,
 				description: values.description || undefined,
 				category: values.category,
 				condition: values.condition,
+				address: values.address,
+				location: values.location,
 				status: values.status,
 			});
 
@@ -122,8 +116,11 @@ export function EditListingPage({ id }: Props) {
 					description: listing.description || "",
 					category: listing.category,
 					condition: listing.condition,
+					address: listing.address || undefined,
+					location: listing.location,
 					status: listing.status,
 				}}
+				initialPhotos={listing.images.map((img) => ({ uri: img.url }))}
 				onSubmit={handleSubmit}
 				isSubmitting={updateMutation.isPending}
 				submitLabel="Save Changes"

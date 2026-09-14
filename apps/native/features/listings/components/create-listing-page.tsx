@@ -1,7 +1,5 @@
-import type {
-	ListingCategoryDto,
-	ListingConditionDto,
-} from "@free-on-the-porch/shared/schemas";
+import type { CreateListingDto } from "@free-on-the-porch/shared/schemas";
+import { getErrorMessage } from "@free-on-the-porch/shared/utils";
 import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import { Pressable } from "react-native";
@@ -18,13 +16,9 @@ export function CreateListingPage() {
 	const insets = useSafeAreaInsets();
 	const createMutation = useCreateListing();
 
-	const handleSubmit = async (values: {
-		title: string;
-		description: string;
-		category: ListingCategoryDto;
-		condition: ListingConditionDto;
-		photos: { uri: string }[];
-	}) => {
+	const handleSubmit = async (
+		values: CreateListingDto & { photos: { uri: string }[] },
+	) => {
 		try {
 			await createMutation.mutateAsync({
 				data: {
@@ -32,21 +26,26 @@ export function CreateListingPage() {
 					description: values.description || undefined,
 					category: values.category,
 					condition: values.condition,
+					address: values.address,
+					location: values.location,
+					status: values.status,
 				},
 				photos: values.photos.length > 0 ? values.photos : undefined,
 			});
 
 			toast.success("Listing posted!");
 			router.push("/dashboard/listings");
-		} catch (_err) {
-			toast.error("Failed to create listing. Please try again.");
+		} catch (error) {
+			toast.error("Failed to create listing. Please try again.", {
+				description: getErrorMessage(error),
+			});
 		}
 	};
 
 	return (
 		<View className="flex-1 bg-background">
 			<View
-				className="flex-row items-center border-border border-b bg-card px-4 py-3"
+				className="flex-row items-center border-border border-b bg-card px-4 pb-3"
 				style={{ paddingTop: Math.max(insets.top, 12) }}
 			>
 				<Pressable

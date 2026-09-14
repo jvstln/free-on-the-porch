@@ -29,10 +29,11 @@ try {
 export function WebMapFallback({
 	listings,
 	onSelectPin,
+	centerCoords: _centerCoords,
 }: {
 	listings: ListingDto[];
 	onSelectPin: (item: ListingDto) => void;
-	centerCoords: { lat: number; lng: number };
+	centerCoords?: { lat: number; lng: number };
 }) {
 	const [pan, setPan] = useState({ x: 0, y: 0 });
 	const [zoom, setZoom] = useState(1);
@@ -262,8 +263,10 @@ export function NativeMap({
 }: {
 	listings: ListingDto[];
 	onSelectPin: (item: ListingDto) => void;
-	centerCoords: { lat: number; lng: number };
+	centerCoords?: { lat: number; lng: number };
 }) {
+	const defaultCenter = { lat: 37.7858, lng: -122.4064 };
+	const center = centerCoords ?? defaultCenter;
 	const mapRef = useRef<{
 		animateToRegion: (region: {
 			latitude: number;
@@ -275,8 +278,8 @@ export function NativeMap({
 
 	const handleCenter = () => {
 		mapRef.current?.animateToRegion({
-			latitude: centerCoords.lat,
-			longitude: centerCoords.lng,
+			latitude: center.lat,
+			longitude: center.lng,
 			latitudeDelta: 0.05,
 			longitudeDelta: 0.05,
 		});
@@ -288,18 +291,18 @@ export function NativeMap({
 				ref={mapRef}
 				style={{ flex: 1 }}
 				initialRegion={{
-					latitude: centerCoords.lat,
-					longitude: centerCoords.lng,
-					latitudeDelta: 0.05,
-					longitudeDelta: 0.05,
+					latitude: center.lat,
+					longitude: center.lng,
+					latitudeDelta: 0.08,
+					longitudeDelta: 0.08,
 				}}
 			>
 				{listings.map((item, idx) => {
 					const angle = (idx * 2 * Math.PI) / listings.length;
 					const distOffset = 0.005 + idx * 0.001;
 					const coordinate = {
-						latitude: centerCoords.lat + distOffset * Math.sin(angle),
-						longitude: centerCoords.lng + distOffset * Math.cos(angle),
+						latitude: center.lat + distOffset * Math.sin(angle),
+						longitude: center.lng + distOffset * Math.cos(angle),
 					};
 
 					return (

@@ -1,5 +1,5 @@
 import type { Href } from "expo-router";
-import { useRouter } from "expo-router";
+import { usePathname, useRouter } from "expo-router";
 import {
 	TabList,
 	TabSlot,
@@ -64,6 +64,7 @@ export default function DashboardLayout() {
 	const session = authClient.useSession();
 	const setAuthSheetView = useGlobalStore((state) => state.setAuthSheetView);
 	const router = useRouter();
+	const pathname = usePathname();
 
 	const isAuthenticated = !!session.data;
 
@@ -95,7 +96,7 @@ export default function DashboardLayout() {
 							<TabButton
 								key={tab.name}
 								{...tab}
-								isFocused={false}
+								isFocused={pathname === "/dashboard/listings/new"}
 								onPress={() => router.push(tab.href)}
 							/>
 						);

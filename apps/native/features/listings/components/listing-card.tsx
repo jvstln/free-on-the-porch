@@ -12,7 +12,6 @@ import { cn } from "@/lib/utils";
 import {
 	CATEGORY_LABEL,
 	CONDITION_LABEL,
-	DEFAULT_LOCATION,
 	formatDistance,
 } from "../constants/listings.constants";
 import { HighlightedTitle } from "./highlighted-title";
@@ -169,9 +168,14 @@ export function FeaturedCard({ item, onPress, searchTerm }: FeaturedCardProps) {
 								{formatDistance(item.distanceMeters)}
 							</Text>
 						</View>
-						<Text type="body-xs" className="font-medium text-muted-foreground">
-							{item.address ?? DEFAULT_LOCATION}
-						</Text>
+						{item.address ? (
+							<Text
+								type="body-xs"
+								className="font-medium text-muted-foreground"
+							>
+								{item.address}
+							</Text>
+						) : null}
 					</View>
 				</View>
 			</View>
@@ -179,7 +183,7 @@ export function FeaturedCard({ item, onPress, searchTerm }: FeaturedCardProps) {
 	);
 }
 
-// 3. Recent Listing List Row
+// 3. Compact Recent List Row (for "Recently Posted" section)
 type RecentListRowProps = {
 	item: ListingDto;
 	onPress: (id: string) => void;
@@ -195,17 +199,20 @@ export function RecentListRow({
 	const distanceText = formatDistance(item.distanceMeters);
 
 	return (
-		<Pressable onPress={() => onPress(item.id)} className="active:opacity-90">
-			<View className="flex-row items-center rounded-2xl border border-border bg-card p-3">
+		<Pressable
+			onPress={() => onPress(item.id)}
+			className="rounded-2xl border border-border bg-card p-3 shadow-black/5 shadow-sm active:opacity-80"
+		>
+			<View className="flex-row items-center">
 				{thumb ? (
 					<Image
 						source={{ uri: thumb }}
-						className="size-16 rounded-xl bg-muted"
+						className="size-16 rounded-xl"
 						contentFit="cover"
 					/>
 				) : (
 					<View className="size-16 items-center justify-center rounded-xl bg-muted">
-						<Icon as={Tag} className="size-8 text-muted-foreground" />
+						<Icon as={Tag} className="size-6 text-muted-foreground" />
 					</View>
 				)}
 
@@ -218,9 +225,7 @@ export function RecentListRow({
 						numberOfLines={1}
 					/>
 					<Text type="body-xs" className="font-medium text-muted-foreground">
-						{[distanceText, item.address ?? DEFAULT_LOCATION]
-							.filter(Boolean)
-							.join(" · ")}
+						{[distanceText, item.address].filter(Boolean).join(" · ")}
 					</Text>
 				</View>
 

@@ -33,7 +33,11 @@ export const listingsService = {
 
 		for (const [key, value] of Object.entries(body)) {
 			if (value !== undefined && value !== null) {
-				formData.append(key, String(value));
+				if (typeof value === "object") {
+					formData.append(key, JSON.stringify(value));
+				} else {
+					formData.append(key, String(value));
+				}
 			}
 		}
 

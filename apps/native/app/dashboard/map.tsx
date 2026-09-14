@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect } from "react";
 import { Platform } from "react-native";
 import { Spinner } from "@/components/ui/spinner";
 import { Text } from "@/components/ui/text";
@@ -9,19 +9,27 @@ import {
 	WebMapFallback,
 } from "@/features/listings/components/listings-map";
 import { useFeedListings } from "@/features/listings/hooks/use-listings";
-
-// Default center: Maplewood, NJ (the app's community)
-const DEFAULT_CENTER = { lat: 40.7312, lng: -74.2644 };
+import { useLocation } from "@/hooks/use-location";
 
 export default function MapRoute() {
 	const router = useRouter();
-	const [center] = useState(DEFAULT_CENTER);
+	const { coords, getCurrentLocation } = useLocation();
 
-	const { data, isLoading } = useFeedListings({
-		lat: center.lat,
-		lng: center.lng,
-		radiusMeters: 10000,
-	});
+	useEffect(() => {
+		if (!coords) {
+			getCurrentLocation(false);
+		}
+	}, [coords, getCurrentLocation]);
+
+	const { data, isLoading } = useFeedListings(
+		coords
+			? {
+					lat: coords.lat,
+					lng: coords.lng,
+					radiusMeters: 10000,
+				}
+			: null,
+	);
 
 	const listings = data?.listings ?? [];
 
@@ -63,7 +71,7 @@ export default function MapRoute() {
 			<MapComponent
 				listings={listings}
 				onSelectPin={handleSelectPin}
-				centerCoords={center}
+				centerCoords={coords ?? undefined}
 			/>
 		</View>
 	);

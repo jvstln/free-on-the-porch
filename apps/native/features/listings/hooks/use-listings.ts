@@ -12,19 +12,38 @@ import {
 import { toast } from "@/components/ui/toast";
 import { listingsService } from "../listings.api";
 
+export type FeedQueryParams = Partial<Omit<FeedListingsQueryDto, "cursor">> & {
+	lat?: number | null;
+	lng?: number | null;
+};
+
 /**
  * Feed listings with cursor-based infinite scroll.
  * Pages are keyed by cursor so React Query can stitch them together.
+ * Only executes when coordinates are available.
  */
 export const useFeedListings = (
-	query: Omit<FeedListingsQueryDto, "cursor">,
+	query: FeedQueryParams | null,
+	options?: { enabled?: boolean },
 ) => {
+	const hasCoords = query?.lat != null && query?.lng != null;
+
 	return useInfiniteQuery({
 		queryKey: ["listings", "feed", query],
-		queryFn: ({ pageParam }) =>
-			listingsService.getFeed({ ...query, cursor: pageParam ?? undefined }),
+		queryFn: ({ pageParam }) => {
+			if (!query || query.lat == null || query.lng == null) {
+				throw new Error("Coordinates are required to fetch listings feed.");
+			}
+			return listingsService.getFeed({
+				...query,
+				lat: query.lat,
+				lng: query.lng,
+				cursor: pageParam ?? undefined,
+			});
+		},
 		initialPageParam: null as string | null,
 		getNextPageParam: (lastPage) => lastPage.pagination.nextCursor,
+		enabled: (options?.enabled ?? true) && hasCoords,
 		select: (data) => ({
 			pages: data.pages,
 			pageParams: data.pageParams,

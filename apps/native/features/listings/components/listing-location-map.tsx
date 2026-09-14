@@ -70,7 +70,7 @@ export function ListingLocationMap({ location, address }: Props) {
 				<View className="absolute right-3 bottom-3 left-3 flex-row items-center gap-2 rounded-xl border border-border bg-card/95 p-3 shadow-sm">
 					<Icon as={MapPin} className="size-5 text-primary" />
 					<Text type="body-xs" className="flex-1 font-semibold text-foreground">
-						{address || "Maplewood Neighborhood"}
+						{address || "Current Location"}
 					</Text>
 				</View>
 			</Card>
@@ -138,7 +138,7 @@ export function ListingLocationMap({ location, address }: Props) {
 			<View className="absolute right-3 bottom-3 left-3 flex-row items-center gap-2 rounded-xl border border-border bg-card/95 p-3 shadow-sm">
 				<Icon as={MapPin} className="size-5 text-primary" />
 				<Text type="body-xs" className="flex-1 font-semibold text-foreground">
-					{address || "Maplewood Neighborhood"}
+					{address || "Current Location"}
 				</Text>
 			</View>
 		</Card>
