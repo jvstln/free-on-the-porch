@@ -27,3 +27,5 @@ uniwind-types.d.ts
 
 expo-env.d.ts
 # @end expo-cli
+# Google OAuth config — will be added later, local only (contains client_secret)
+google-services.json

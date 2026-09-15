@@ -9,6 +9,7 @@ import {
 	type BottomSheetTitleProps,
 	type BottomSheetTriggerProps,
 } from "heroui-native/bottom-sheet";
+import type React from "react";
 
 function BottomSheet(props: BottomSheetRootProps) {
 	return <BottomSheetHeroUi {...props} />;
@@ -18,9 +19,16 @@ function BottomSheetTrigger(props: BottomSheetTriggerProps) {
 	return <BottomSheetHeroUi.Trigger {...props} />;
 }
 
-function BottomSheetContent(props: BottomSheetContentProps) {
+function BottomSheetContent({
+	disableFullWindowOverlay,
+	...props
+}: BottomSheetContentProps &
+	Pick<
+		React.ComponentProps<typeof BottomSheetHeroUi.Portal>,
+		"disableFullWindowOverlay"
+	>) {
 	return (
-		<BottomSheetHeroUi.Portal>
+		<BottomSheetHeroUi.Portal disableFullWindowOverlay>
 			<BottomSheetHeroUi.Overlay />
 			<BottomSheetHeroUi.Content {...props} />
 		</BottomSheetHeroUi.Portal>

@@ -18,13 +18,15 @@
 				"android.permission.ACCESS_FINE_LOCATION",
 				"android.permission.CAMERA",
 				"android.permission.RECORD_AUDIO"
-			]
+			],
+			"googleServicesFile": "./google-services.json"
 		},
 		"ios": {
 			"bundleIdentifier": "com.free-on-the-porch.app",
 			"infoPlist": {
 				"ITSAppUsesNonExemptEncryption": false
-			}
+			},
+			"googleServicesFile": "./GoogleService-Info.plist"
 		},
 		"name": "free-on-the-pouch",
 		"slug": "free-on-the-pouch",
@@ -33,6 +35,7 @@
 			"expo-router",
 			"expo-secure-store",
 			"expo-web-browser",
+			"react-native-nitro-google-signin",
 			[
 				"expo-splash-screen",
 				{

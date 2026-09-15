@@ -9,12 +9,9 @@
 			"distribution": "internal",
 			"android": {
 				"buildType": "apk"
-			},
-			"ios": {
-				"simulator": true
 			}
 		},
-		"development:device": {
+		"development-device": {
 			"developmentClient": true,
 			"distribution": "internal",
 			"android": {
@@ -29,6 +26,14 @@
 		},
 		"production": {
 			"autoIncrement": true
+		},
+		"development-simulator": {
+			"developmentClient": true,
+			"distribution": "internal",
+			"ios": {
+				"simulator": true
+			},
+			"environment": "development"
 		}
 	},
 	"submit": {

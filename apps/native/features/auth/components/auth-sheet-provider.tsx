@@ -36,6 +36,7 @@ export const AuthSheetProvider = ({
 				enableOverDrag={false}
 				enableDynamicSizing={false}
 				contentContainerClassName="h-full"
+				disableFullWindowOverlay
 			>
 				<BottomSheetScrollView>
 					{showHeaderAndFooter && (

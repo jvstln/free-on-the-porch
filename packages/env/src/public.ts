@@ -9,6 +9,10 @@ export const env = createEnv({
 		PUBLIC_APP_NAME: process.env.PUBLIC_APP_NAME,
 		PUBLIC_EMAIL: process.env.PUBLIC_EMAIL,
 		PUBLIC_SCHEME: process.env.PUBLIC_SCHEME,
+		PUBLIC_GOOGLE_WEB_CLIENT_ID: process.env.PUBLIC_GOOGLE_WEB_CLIENT_ID,
+		PUBLIC_GOOGLE_IOS_CLIENT_ID: process.env.PUBLIC_GOOGLE_IOS_CLIENT_ID,
+		PUBLIC_GOOGLE_ANDROID_CLIENT_ID:
+			process.env.PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
 	},
 	emptyStringAsUndefined: true,
 });

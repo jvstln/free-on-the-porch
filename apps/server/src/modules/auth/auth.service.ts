@@ -93,8 +93,18 @@ const createBetterAuth = <
 				});
 			},
 		},
+		socialProviders: {
+			google: {
+				clientId: [
+					env.PUBLIC_GOOGLE_WEB_CLIENT_ID,
+					env.PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+					env.PUBLIC_GOOGLE_IOS_CLIENT_ID,
+				].filter((value): value is string => Boolean(value)),
+				clientSecret: env.GOOGLE_CLIENT_SECRET,
+			},
+		},
 		secret: env.BETTER_AUTH_SECRET,
-		baseURL: `${env.PUBLIC_SERVER_URL}/api/v1/auth`,
+		baseURL: `${env.PUBLIC_SERVER_URL}`,
 		basePath: "/api/v1/auth",
 		advanced: {
 			defaultCookieAttributes: {

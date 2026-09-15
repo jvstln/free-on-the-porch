@@ -15,6 +15,7 @@ import { Text } from "@/components/ui/text";
 import { toast } from "@/components/ui/toast";
 import { View } from "@/components/ui/view";
 import { authClient } from "@/lib/auth-client";
+import { GoogleAuthButton } from "./google-auth";
 
 type RegisterFormProps = {
 	onRegister: (email: string) => void;
@@ -121,13 +122,8 @@ export function RegisterForm({ onRegister, onError }: RegisterFormProps) {
 			</View>
 
 			{/* Social buttons */}
-			<View className="flex-row gap-3">
-				<Button appearance="outline" color="neutral" className="flex-1">
-					Google
-				</Button>
-				<Button appearance="outline" color="neutral" className="flex-1">
-					Apple
-				</Button>
+			<View className="-mt-2 flex-row gap-3">
+				<GoogleAuthButton />
 			</View>
 		</View>
 	);

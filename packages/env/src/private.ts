@@ -47,6 +47,7 @@ export const env = createEnv({
 		MAILJET_SECRET: z.string().optional(),
 		RESEND_API_KEY: z.string().optional(),
 		MAIL_PROVIDER: z.enum(["console", "mailjet", "resend"]).default("console"),
+		GOOGLE_CLIENT_SECRET: z.string().optional(),
 
 		...publicEnvSchema,
 	},

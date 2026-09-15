@@ -10,6 +10,7 @@ import { Text } from "@/components/ui/text";
 import { toast } from "@/components/ui/toast";
 import { View } from "@/components/ui/view";
 import { authClient } from "@/lib/auth-client";
+import { GoogleAuthButton } from "./google-auth";
 
 type LoginFormProps = {
 	onLogin?: () => void;
@@ -113,12 +114,7 @@ export function LoginForm({
 
 			{/* Social buttons */}
 			<View className="flex-row gap-3">
-				<Button appearance="outline" color="neutral" className="flex-1">
-					Google
-				</Button>
-				<Button appearance="outline" color="neutral" className="flex-1">
-					Apple
-				</Button>
+				<GoogleAuthButton />
 			</View>
 		</View>
 	);
