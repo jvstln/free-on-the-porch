@@ -8,7 +8,7 @@ import {
 	UsersIcon,
 } from "lucide-react-native";
 import { useEffect } from "react";
-import { LogoContained } from "@/components/logo";
+import { AnimatedLogo } from "@/components/logo";
 import { Badge } from "@/components/ui/badge";
 import { Button, LinkButton } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -60,7 +60,7 @@ export function WelcomePage() {
 
 				{/* Brand Header */}
 				<View className="my-6 items-center">
-					<LogoContained containerClassName="mb-4" />
+					<AnimatedLogo containerClassName="mb-4" />
 					<Text
 						type="h1"
 						className="mb-2 text-center font-extrabold text-3xl text-primary tracking-tight"

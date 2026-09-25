@@ -6,7 +6,7 @@
 // Note: `verification` (better-auth) has no FK to `user` (it's keyed by an
 // identifier string, not user.id) so it has no relational edge here.
 import { defineRelations } from "drizzle-orm";
-import { account, session, user, userSettings } from "./auth";
+import { account, session, user, userSettings, verification } from "./auth";
 import { comment, listing, listingClaimRequest, listingImage } from "./listing";
 import { message, notification, thread, threadMember } from "./messaging";
 import { block, report } from "./moderation";
@@ -27,6 +27,7 @@ export const relations = defineRelations(
 		notification,
 		report,
 		block,
+		verification,
 	},
 	(r) => ({
 		// ---- Auth / better-auth ----

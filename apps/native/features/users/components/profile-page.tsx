@@ -2,7 +2,6 @@ import type { CurrentUserDto } from "@free-on-the-porch/shared/schemas";
 import { useRouter } from "expo-router";
 import { Edit, Gift, LogOut, Settings, Tag } from "lucide-react-native";
 import { FlatList } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -150,7 +149,10 @@ export function ProfilePage() {
 
 						{/* Stats Row */}
 						<View className="flex-row gap-4">
-							<Card className="flex-1 items-center rounded-2xl border border-border bg-card p-4 shadow-sm">
+							<Card
+								className="flex-1 items-center rounded-2xl border border-border bg-card p-4 shadow-sm active:opacity-80"
+								onTouchEnd={() => router.push("/dashboard/listings/me")}
+							>
 								<View className="mb-1 size-10 items-center justify-center rounded-full border border-border/40 bg-background">
 									<Icon as={Tag} className="size-5 text-secondary" />
 								</View>
@@ -183,14 +185,24 @@ export function ProfilePage() {
 
 						{/* Section Title */}
 						<View className="mt-2 flex-row items-center justify-between">
-							<Text type="h4" className="font-bold text-foreground">
-								My Shared Items
-							</Text>
-							{sharedCount > 0 && (
-								<Badge color="primary" appearance="soft" size="sm">
-									<Text className="font-bold text-xs">{sharedCount}</Text>
-								</Badge>
-							)}
+							<View className="flex-row items-center gap-2">
+								<Text type="h4" className="font-bold text-foreground">
+									My Shared Items
+								</Text>
+								{sharedCount > 0 && (
+									<Badge color="primary" appearance="soft" size="sm">
+										<Text className="font-bold text-xs">{sharedCount}</Text>
+									</Badge>
+								)}
+							</View>
+							<Button
+								appearance="ghost"
+								color="primary"
+								size="xs"
+								onPress={() => router.push("/dashboard/listings/me")}
+							>
+								Manage All →
+							</Button>
 						</View>
 					</View>
 				}

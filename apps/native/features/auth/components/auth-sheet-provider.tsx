@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LogoContained } from "@/components/logo";
+import { AnimatedLogo } from "@/components/logo";
 import {
 	BottomSheet,
 	BottomSheetContent,
@@ -41,7 +41,7 @@ export const AuthSheetProvider = ({
 				<BottomSheetScrollView>
 					{showHeaderAndFooter && (
 						<View className="mb-8 items-center text-center">
-							<LogoContained className="size-12" containerClassName="mb-4" />
+							<AnimatedLogo className="size-12" containerClassName="mb-4" />
 							<BottomSheetTitle className="text-primary">
 								Free on the Porch
 							</BottomSheetTitle>

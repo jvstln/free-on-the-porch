@@ -8,4 +8,3 @@ export const db = drizzle({
 });
 
 export * from "./schema";
-export * from "./schema/common";

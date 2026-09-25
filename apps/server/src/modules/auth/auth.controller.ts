@@ -1,5 +1,6 @@
 import { All, Controller, Get, Header, Query, Req, Res } from "@nestjs/common";
 import type { Request, Response } from "express";
+import type { VerificationFlowType } from "../../infrastructures/mail/templates";
 import { Public } from "./auth.decorator";
 import { AuthService } from "./auth.service";
 
@@ -16,13 +17,38 @@ export class AuthController {
 	@Get("verify-status")
 	@Header("Content-Type", "text/html; charset=utf-8")
 	async verifyStatus(
-		@Query("error") error: string | undefined,
-		@Query("redirect") redirect: string | undefined,
+		@Query("error") error?: string,
+		@Query("message") message?: string,
+		@Query("redirect") redirect?: string,
+		@Query("type") type?: VerificationFlowType,
+		@Query("title") title?: string,
+		@Query("subtitle") subtitle?: string,
 	) {
 		return this.authService.renderVerificationCallbackHtml({
-			error,
+			type: type || "email-verification",
+			error: error || message,
+			title,
+			subtitle,
 			redirect,
 		});
+	}
+
+	@Get("link-password")
+	@Header("Content-Type", "text/html; charset=utf-8")
+	async linkPassword(
+		@Query("token") token?: string,
+		@Query("redirect") redirect?: string,
+	) {
+		return this.authService.linkPasswordAccount(token, redirect);
+	}
+
+	@Get("link-password-account")
+	@Header("Content-Type", "text/html; charset=utf-8")
+	async linkPasswordAccount(
+		@Query("token") token?: string,
+		@Query("redirect") redirect?: string,
+	) {
+		return this.authService.linkPasswordAccount(token, redirect);
 	}
 
 	@All("*")

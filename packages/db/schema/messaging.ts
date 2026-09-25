@@ -15,16 +15,14 @@ import {
 	varchar,
 } from "drizzle-orm/pg-core";
 import { user } from "./auth";
-import { timestamps } from "./common";
+import { id, timestamps } from "./common";
 import { notificationTypeEnum, threadTypeEnum } from "./enums";
 import { listing } from "./listing";
 
 export const thread = pgTable(
 	"thread",
 	{
-		id: text()
-			.primaryKey()
-			.$defaultFn(() => crypto.randomUUID()),
+		id,
 		type: threadTypeEnum().notNull(),
 		listingId: text().references(() => listing.id, { onDelete: "cascade" }),
 		...timestamps,
@@ -49,9 +47,7 @@ export const thread = pgTable(
 export const threadMember = pgTable(
 	"thread_member",
 	{
-		id: text()
-			.primaryKey()
-			.$defaultFn(() => crypto.randomUUID()),
+		id,
 		threadId: text()
 			.notNull()
 			.references(() => thread.id, { onDelete: "cascade" }),
@@ -75,9 +71,7 @@ export const threadMember = pgTable(
 export const message = pgTable(
 	"message",
 	{
-		id: text()
-			.primaryKey()
-			.$defaultFn(() => crypto.randomUUID()),
+		id,
 		body: varchar({ length: 1000 }).notNull(),
 		read: boolean().default(false).notNull(),
 		senderId: text()
@@ -97,9 +91,7 @@ export const message = pgTable(
 export const notification = pgTable(
 	"notification",
 	{
-		id: text()
-			.primaryKey()
-			.$defaultFn(() => crypto.randomUUID()),
+		id,
 		type: notificationTypeEnum().notNull(),
 		title: varchar({ length: 100 }).notNull(),
 		body: varchar({ length: 300 }).notNull(),

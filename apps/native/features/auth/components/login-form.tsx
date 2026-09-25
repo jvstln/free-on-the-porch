@@ -5,12 +5,11 @@ import { ArrowRightIcon, LockIcon, MailIcon } from "lucide-react-native";
 import { Button, LinkButton } from "@/components/ui/button";
 import { useAppForm } from "@/components/ui/form";
 import { Icon } from "@/components/ui/icon";
-import { Separator } from "@/components/ui/separator";
 import { Text } from "@/components/ui/text";
 import { toast } from "@/components/ui/toast";
 import { View } from "@/components/ui/view";
 import { authClient } from "@/lib/auth-client";
-import { GoogleAuthButton } from "./google-auth";
+import { SocialAuth } from "./social-auth";
 
 type LoginFormProps = {
 	onLogin?: () => void;
@@ -100,22 +99,7 @@ export function LoginForm({
 				)}
 			</form.Subscribe>
 
-			{/* Social Divider */}
-			<View className="my-4 flex-row items-center gap-3 px-1">
-				<Separator className="grow border-border/30 border-t bg-surface" />
-				<Text
-					type="body-xs"
-					className="font-medium text-muted-foreground uppercase tracking-wider"
-				>
-					Or continue with
-				</Text>
-				<Separator className="grow border-border/30 border-t bg-surface" />
-			</View>
-
-			{/* Social buttons */}
-			<View className="flex-row gap-3">
-				<GoogleAuthButton />
-			</View>
+			<SocialAuth />
 		</View>
 	);
 }

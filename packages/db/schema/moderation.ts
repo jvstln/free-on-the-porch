@@ -13,16 +13,14 @@ import {
 	varchar,
 } from "drizzle-orm/pg-core";
 import { user } from "./auth";
-import { timestamps } from "./common";
+import { id, timestamps } from "./common";
 import { reportReasonEnum } from "./enums";
 import { listing } from "./listing";
 
 export const report = pgTable(
 	"report",
 	{
-		id: text()
-			.primaryKey()
-			.$defaultFn(() => crypto.randomUUID()),
+		id,
 		reason: reportReasonEnum().notNull(),
 		details: varchar({ length: 300 }),
 		resolved: boolean().default(false).notNull(),
@@ -55,9 +53,7 @@ export const report = pgTable(
 export const block = pgTable(
 	"block",
 	{
-		id: text()
-			.primaryKey()
-			.$defaultFn(() => crypto.randomUUID()),
+		id,
 		blockerId: text()
 			.notNull()
 			.references(() => user.id, { onDelete: "cascade" }),

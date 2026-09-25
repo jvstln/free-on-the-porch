@@ -7,6 +7,7 @@ import {
 	Map as MapIcon,
 	ShieldAlert,
 	ShieldCheck,
+	Tag,
 	Trash2,
 } from "lucide-react-native";
 import { Alert, Pressable, ScrollView } from "react-native";
@@ -168,6 +169,36 @@ export function SettingsPage() {
 								}
 							/>
 						</View>
+					</Card>
+				</View>
+
+				{/* My Listings Section */}
+				<View className="mb-6">
+					<View className="mb-2 flex-row items-center gap-1.5">
+						<Icon as={Tag} className="size-4 text-primary" />
+						<Text
+							type="body-xs"
+							className="font-bold text-muted-foreground uppercase tracking-wide"
+						>
+							My Listings
+						</Text>
+					</View>
+
+					<Card className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+						<Pressable
+							onPress={() => router.push("/dashboard/listings/me")}
+							className="flex-row items-center justify-between py-1 active:opacity-70"
+						>
+							<View>
+								<Text type="body-sm" className="font-semibold text-foreground">
+									Manage My Porch Items
+								</Text>
+								<Text type="body-xs" className="mt-0.5 text-muted-foreground">
+									View and manage all items you have shared
+								</Text>
+							</View>
+							<Text className="font-bold text-primary text-xs">Manage →</Text>
+						</Pressable>
 					</Card>
 				</View>
 

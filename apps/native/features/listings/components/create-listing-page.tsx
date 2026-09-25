@@ -3,7 +3,6 @@ import { getErrorMessage } from "@free-on-the-porch/shared/utils";
 import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import { Pressable } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon } from "@/components/ui/icon";
 import type { ImagePickerAsset } from "@/components/ui/image-picker";
 import { Text } from "@/components/ui/text";

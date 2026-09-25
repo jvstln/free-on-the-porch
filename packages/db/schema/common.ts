@@ -1,4 +1,5 @@
-import { timestamp } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { text, timestamp } from "drizzle-orm/pg-core";
 
 // Shared timestamp columns spread into every table. createdAt is set at
 // insert time; updatedAt refreshes automatically on every UPDATE via
@@ -10,3 +11,5 @@ export const timestamps = {
 		.notNull()
 		.$onUpdate(() => new Date()),
 };
+
+export const id = text().primaryKey().default(sql`gen_random_uuid()`);

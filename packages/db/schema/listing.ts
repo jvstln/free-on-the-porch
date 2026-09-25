@@ -21,7 +21,7 @@ import {
 	varchar,
 } from "drizzle-orm/pg-core";
 import { user } from "./auth";
-import { timestamps } from "./common";
+import { id, timestamps } from "./common";
 import {
 	listingCategoryEnum,
 	listingConditionEnum,
@@ -104,9 +104,7 @@ export const geographyPoint = customType<{
 export const listing = pgTable(
 	"listing",
 	{
-		id: text()
-			.primaryKey()
-			.$defaultFn(() => crypto.randomUUID()),
+		id,
 		title: varchar({ length: 80 }).notNull(),
 		description: text(),
 		category: listingCategoryEnum().notNull(),
@@ -169,9 +167,7 @@ export const listing = pgTable(
 export const listingClaimRequest = pgTable(
 	"listing_claim_request",
 	{
-		id: text()
-			.primaryKey()
-			.$defaultFn(() => crypto.randomUUID()),
+		id,
 		listingId: text()
 			.notNull()
 			.references(() => listing.id, { onDelete: "cascade" }),
@@ -191,9 +187,7 @@ export const listingClaimRequest = pgTable(
 );
 
 export const listingImage = pgTable("listing_image", {
-	id: text()
-		.primaryKey()
-		.$defaultFn(() => crypto.randomUUID()),
+	id,
 	url: text().notNull(),
 	order: integer().default(0).notNull(),
 	listingId: text()
@@ -205,9 +199,7 @@ export const listingImage = pgTable("listing_image", {
 export const comment = pgTable(
 	"comment",
 	{
-		id: text()
-			.primaryKey()
-			.$defaultFn(() => crypto.randomUUID()),
+		id,
 		body: varchar({ length: 500 }).notNull(),
 		userId: text()
 			.notNull()

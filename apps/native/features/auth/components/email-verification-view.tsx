@@ -1,4 +1,3 @@
-import { env } from "@free-on-the-porch/env/public";
 import * as Linking from "expo-linking";
 import { ArrowRightIcon, MailIcon, RefreshCwIcon } from "lucide-react-native";
 import { useState } from "react";
@@ -25,7 +24,6 @@ export function EmailVerificationView({
 		await authClient.sendVerificationEmail(
 			{
 				email,
-				callbackURL: `${env.PUBLIC_SERVER_URL}/api/v1/auth/verify-status?redirect=${encodeURIComponent(`${env.PUBLIC_SCHEME}://dashboard`)}`,
 			},
 			{
 				onSuccess() {
@@ -63,8 +61,7 @@ export function EmailVerificationView({
 					<Text type="body-sm" className="font-bold text-foreground">
 						{email}
 					</Text>
-					. Please check your inbox and click the link to verify your account
-					and sign in.
+					. Please check your inbox and follow the instructions.
 				</Text>
 			</View>
 

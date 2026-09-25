@@ -1,5 +1,5 @@
 import type { ListingDto } from "@free-on-the-porch/shared/schemas";
-import { ChevronRight, MapPin, Tag } from "lucide-react-native";
+import { ChevronRight, Clock, MapPin, Tag } from "lucide-react-native";
 import { Pressable } from "react-native";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
@@ -13,6 +13,7 @@ import {
 	CATEGORY_LABEL,
 	CONDITION_LABEL,
 	formatDistance,
+	formatTimeAgo,
 } from "../constants/listings.constants";
 import { HighlightedTitle } from "./highlighted-title";
 
@@ -36,13 +37,14 @@ export function ListingCard({
 }: ListingCardProps) {
 	const thumb = item.images[0]?.url;
 	const isUnavailable = item.status !== "AVAILABLE";
+	const timeAgo = formatTimeAgo(item.createdAt);
 
 	return (
 		<Pressable
 			onPress={() => onPress(item.id)}
-			className={cn("active:opacity-80", className)}
+			className={cn("active:opacity-85", className)}
 		>
-			<View className="overflow-hidden rounded-2xl bg-card shadow-black/10 shadow-sm">
+			<View className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-black/5 shadow-sm">
 				<View className={cn("aspect-4/3 bg-surface", aspectRatioClassName)}>
 					{thumb ? (
 						<Image
@@ -60,20 +62,22 @@ export function ListingCard({
 					)}
 
 					{isUnavailable && (
-						<View className="absolute inset-0 items-center justify-center bg-black/40">
-							<Text type="body-sm" className="font-semibold text-white">
-								{item.status === "PICKED_UP" ? "Picked up" : "Unavailable"}
+						<View className="absolute inset-0 items-center justify-center bg-black/50">
+							<Text type="body-sm" className="font-bold text-white">
+								{item.status === "PICKED_UP" ? "Picked Up" : "Unavailable"}
 							</Text>
 						</View>
 					)}
 
-					<View className="absolute top-2 left-2">
+					<View className="absolute top-2 left-2 rounded-full shadow-black/20 shadow-sm">
 						<Badge
 							color={resolveColorAlias(item.condition)}
 							appearance="solid"
 							size="sm"
 						>
-							<Text>{CONDITION_LABEL[item.condition]}</Text>
+							<Text className="font-bold text-[10px] uppercase">
+								{CONDITION_LABEL[item.condition]}
+							</Text>
 						</Badge>
 					</View>
 				</View>
@@ -83,7 +87,7 @@ export function ListingCard({
 						title={item.title}
 						searchTerm={searchTerm}
 						type="body-sm"
-						className="font-semibold text-foreground"
+						className="font-bold text-foreground"
 						numberOfLines={1}
 					/>
 					{item.address ? (
@@ -95,18 +99,26 @@ export function ListingCard({
 							{item.address}
 						</Text>
 					) : null}
-					<View className="flex-row items-center justify-between">
-						<Text type="body-xs" className="text-muted-foreground">
+					<View className="flex-row items-center justify-between gap-1">
+						<Text
+							type="body-xs"
+							className="shrink font-medium text-muted-foreground"
+							numberOfLines={1}
+						>
 							{CATEGORY_LABEL[item.category]}
 						</Text>
-						{item.distanceMeters != null && (
-							<View className="flex-row items-center gap-1">
-								<Icon as={MapPin} className="size-3 text-secondary" />
-								<Text type="body-xs" className="text-secondary">
+						<View className="shrink-0 flex-row items-center gap-1">
+							{item.distanceMeters != null && (
+								<Text type="body-xs" className="font-semibold text-secondary">
 									{formatDistance(item.distanceMeters)}
 								</Text>
-							</View>
-						)}
+							)}
+							{timeAgo ? (
+								<Text type="body-xs" className="text-muted-foreground">
+									• {timeAgo}
+								</Text>
+							) : null}
+						</View>
 					</View>
 				</View>
 			</View>
@@ -123,6 +135,7 @@ type FeaturedCardProps = {
 
 export function FeaturedCard({ item, onPress, searchTerm }: FeaturedCardProps) {
 	const thumb = item.images[0]?.url;
+	const timeAgo = formatTimeAgo(item.createdAt);
 
 	return (
 		<Pressable
@@ -143,13 +156,15 @@ export function FeaturedCard({ item, onPress, searchTerm }: FeaturedCardProps) {
 						</View>
 					)}
 
-					<View className="absolute top-3 left-3">
+					<View className="absolute top-3 left-3 rounded-full shadow-black/20 shadow-sm">
 						<Badge
 							color={resolveColorAlias(item.condition)}
 							appearance="solid"
 							size="sm"
 						>
-							<Text>{CONDITION_LABEL[item.condition]}</Text>
+							<Text className="font-bold text-[10px] uppercase">
+								{CONDITION_LABEL[item.condition]}
+							</Text>
 						</Badge>
 					</View>
 				</View>
@@ -162,11 +177,26 @@ export function FeaturedCard({ item, onPress, searchTerm }: FeaturedCardProps) {
 						className="mb-1.5 font-bold text-foreground"
 					/>
 					<View className="flex-row items-center justify-between">
-						<View className="flex-row items-center gap-1">
-							<Icon as={MapPin} className="size-3.5 text-secondary" />
-							<Text type="body-xs" className="font-semibold text-secondary">
-								{formatDistance(item.distanceMeters)}
-							</Text>
+						<View className="flex-row items-center gap-1.5">
+							{item.distanceMeters != null && (
+								<View className="flex-row items-center gap-1">
+									<Icon as={MapPin} className="size-3.5 text-secondary" />
+									<Text type="body-xs" className="font-semibold text-secondary">
+										{formatDistance(item.distanceMeters)}
+									</Text>
+								</View>
+							)}
+							{timeAgo ? (
+								<View className="flex-row items-center gap-1">
+									<Icon as={Clock} className="size-3 text-muted-foreground" />
+									<Text
+										type="body-xs"
+										className="font-medium text-muted-foreground"
+									>
+										{timeAgo}
+									</Text>
+								</View>
+							) : null}
 						</View>
 						{item.address ? (
 							<Text
@@ -197,6 +227,10 @@ export function RecentListRow({
 }: RecentListRowProps) {
 	const thumb = item.images[0]?.url;
 	const distanceText = formatDistance(item.distanceMeters);
+	const timeText = formatTimeAgo(item.createdAt);
+	const metaText = [distanceText, timeText, item.address]
+		.filter(Boolean)
+		.join(" · ");
 
 	return (
 		<Pressable
@@ -225,7 +259,7 @@ export function RecentListRow({
 						numberOfLines={1}
 					/>
 					<Text type="body-xs" className="font-medium text-muted-foreground">
-						{[distanceText, item.address].filter(Boolean).join(" · ")}
+						{metaText}
 					</Text>
 				</View>
 

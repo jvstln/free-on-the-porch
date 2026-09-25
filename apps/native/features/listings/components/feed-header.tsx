@@ -9,6 +9,7 @@ import {
 	Map as MapIcon,
 	MapPin,
 	SlidersHorizontal,
+	X,
 } from "lucide-react-native";
 import { useState } from "react";
 import { Pressable } from "react-native";
@@ -25,7 +26,7 @@ import { Text } from "@/components/ui/text";
 import { ToggleGroup } from "@/components/ui/toggle-group";
 import { View } from "@/components/ui/view";
 import { cn } from "@/lib/utils";
-import { CATEGORY_LABEL } from "../constants/listings.constants";
+import { CATEGORY_ICON, CATEGORY_LABEL } from "../constants/listings.constants";
 
 export interface FeedHeaderProps {
 	// Category
@@ -81,7 +82,7 @@ export function FeedHeader({
 
 	return (
 		<View className="gap-2.5 pb-2">
-			{/* Category horizontal scroll */}
+			{/* Category horizontal scroll with rich icons */}
 			<ToggleGroup
 				value={category ?? ""}
 				onValueChange={(val) => {
@@ -90,17 +91,31 @@ export function FeedHeader({
 					);
 				}}
 				type="pill"
-				size="xs"
+				size="sm"
 				scrollable
 				className="-mx-4"
 				contentContainerClassName="px-4 gap-1.5"
 			>
-				<ToggleGroup.Item value="">All</ToggleGroup.Item>
-				{LISTING_CATEGORY.map((cat) => (
-					<ToggleGroup.Item key={cat} value={cat}>
-						{CATEGORY_LABEL[cat] ?? cat}
-					</ToggleGroup.Item>
-				))}
+				<ToggleGroup.Item
+					value=""
+					className="flex-row items-center gap-1.5 px-3"
+				>
+					<Icon as={CATEGORY_ICON.ALL} className="size-3.5" />
+					All
+				</ToggleGroup.Item>
+				{LISTING_CATEGORY.map((cat) => {
+					const CatIcon = CATEGORY_ICON[cat];
+					return (
+						<ToggleGroup.Item
+							key={cat}
+							value={cat}
+							className="flex-row items-center gap-1.5 px-3"
+						>
+							{CatIcon && <Icon as={CatIcon} className="size-3.5" />}
+							{CATEGORY_LABEL[cat] ?? cat}
+						</ToggleGroup.Item>
+					);
+				})}
 			</ToggleGroup>
 
 			{/* Compact control row: Location on left, Filter & View toggles on right */}
@@ -216,6 +231,57 @@ export function FeedHeader({
 					</Button>
 				</View>
 			</View>
+
+			{/* Active Filter Chips Bar */}
+			{(hasActiveFilters || !!category) && (
+				<View className="flex-row flex-wrap items-center gap-1.5 pt-0.5">
+					{category && (
+						<Pressable
+							onPress={() => onCategoryChange("")}
+							className="h-6 flex-row items-center gap-1 rounded-full border border-border bg-card px-2 active:bg-surface"
+						>
+							<Text type="body-xs" className="font-semibold text-foreground">
+								{CATEGORY_LABEL[category]}
+							</Text>
+							<Icon as={X} className="size-3 text-muted-foreground" />
+						</Pressable>
+					)}
+					{sort !== "closest" && (
+						<Pressable
+							onPress={() => onSortChange("closest")}
+							className="h-6 flex-row items-center gap-1 rounded-full border border-border bg-card px-2 active:bg-surface"
+						>
+							<Text type="body-xs" className="font-semibold text-foreground">
+								Newest
+							</Text>
+							<Icon as={X} className="size-3 text-muted-foreground" />
+						</Pressable>
+					)}
+					{radiusMeters !== "closest" && (
+						<Pressable
+							onPress={() => onRadiusChange("closest")}
+							className="h-6 flex-row items-center gap-1 rounded-full border border-border bg-card px-2 active:bg-surface"
+						>
+							<Text type="body-xs" className="font-semibold text-foreground">
+								Within {radiusMeters}km
+							</Text>
+							<Icon as={X} className="size-3 text-muted-foreground" />
+						</Pressable>
+					)}
+					<Pressable
+						onPress={() => {
+							onCategoryChange("");
+							onSortChange("closest");
+							onRadiusChange("closest");
+						}}
+						className="ml-auto"
+					>
+						<Text type="body-xs" className="font-medium text-primary">
+							Reset all
+						</Text>
+					</Pressable>
+				</View>
+			)}
 
 			{/* Filters Bottom Sheet */}
 			<BottomSheet

@@ -28,7 +28,7 @@
 			},
 			"googleServicesFile": "./GoogleService-Info.plist"
 		},
-		"name": "free-on-the-pouch",
+		"name": "Free on the Porch",
 		"slug": "free-on-the-pouch",
 		"plugins": [
 			"expo-font",

@@ -1,4 +1,3 @@
-import { env } from "@free-on-the-porch/env/public";
 import { RegisterSchema } from "@free-on-the-porch/shared/schemas";
 import { revalidateLogic } from "@tanstack/react-form";
 import {
@@ -10,12 +9,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAppForm } from "@/components/ui/form";
 import { Icon } from "@/components/ui/icon";
-import { Separator } from "@/components/ui/separator";
-import { Text } from "@/components/ui/text";
 import { toast } from "@/components/ui/toast";
 import { View } from "@/components/ui/view";
 import { authClient } from "@/lib/auth-client";
-import { GoogleAuthButton } from "./google-auth";
+import { SocialAuth } from "./social-auth";
 
 type RegisterFormProps = {
 	onRegister: (email: string) => void;
@@ -40,14 +37,15 @@ export function RegisterForm({ onRegister, onError }: RegisterFormProps) {
 					name: value.name,
 					email: value.email,
 					password: value.password,
-					callbackURL: `${env.PUBLIC_SERVER_URL}/api/v1/auth/verify-status?redirect=${encodeURIComponent(`${env.PUBLIC_SCHEME}://dashboard`)}`,
 				},
 				{
 					onError(error) {
 						toast.error(error.error?.message || "Failed to sign up");
 						onError?.(error);
 					},
-					onSuccess() {
+					onSuccess(data) {
+						console.log(data);
+
 						toast.success("Account created! Please verify your email.");
 						onRegister(value.email);
 						formApi.reset();
@@ -109,22 +107,7 @@ export function RegisterForm({ onRegister, onError }: RegisterFormProps) {
 				)}
 			</form.Subscribe>
 
-			{/* Social Divider */}
-			<View className="my-3 flex-row items-center gap-3 px-1">
-				<Separator className="grow border-border/30 border-t bg-surface" />
-				<Text
-					type="body-xs"
-					className="font-medium text-muted-foreground uppercase tracking-wider"
-				>
-					Or continue with
-				</Text>
-				<Separator className="grow border-border/30 border-t bg-surface" />
-			</View>
-
-			{/* Social buttons */}
-			<View className="-mt-2 flex-row gap-3">
-				<GoogleAuthButton />
-			</View>
+			<SocialAuth />
 		</View>
 	);
 }

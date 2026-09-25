@@ -12,10 +12,10 @@ import {
 	timestamp,
 	uniqueIndex,
 } from "drizzle-orm/pg-core";
-import { timestamps } from "./common";
+import { id, timestamps } from "./common";
 
 export const user = pgTable("user", {
-	id: text().primaryKey(),
+	id,
 	name: text().notNull(),
 	email: text().notNull().unique(),
 	emailVerified: boolean().default(false).notNull(),
@@ -27,7 +27,7 @@ export const user = pgTable("user", {
 export const session = pgTable(
 	"session",
 	{
-		id: text().primaryKey(),
+		id,
 		expiresAt: timestamp({ mode: "date" }).notNull(),
 		token: text().notNull().unique(),
 		ipAddress: text(),
@@ -43,7 +43,7 @@ export const session = pgTable(
 export const account = pgTable(
 	"account",
 	{
-		id: text().primaryKey(),
+		id,
 		accountId: text().notNull(),
 		providerId: text().notNull(),
 		userId: text()
@@ -64,7 +64,7 @@ export const account = pgTable(
 export const verification = pgTable(
 	"verification",
 	{
-		id: text().primaryKey(),
+		id,
 		identifier: text().notNull(),
 		value: text().notNull(),
 		expiresAt: timestamp({ mode: "date" }).notNull(),
@@ -76,9 +76,7 @@ export const verification = pgTable(
 export const userSettings = pgTable(
 	"user_settings",
 	{
-		id: text()
-			.primaryKey()
-			.$defaultFn(() => crypto.randomUUID()),
+		id,
 		userId: text()
 			.notNull()
 			.references(() => user.id, { onDelete: "cascade" }),

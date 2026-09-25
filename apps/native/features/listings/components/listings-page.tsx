@@ -21,6 +21,7 @@ import { SearchInput } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
 import { QueryState } from "@/components/ui/query-state";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 import { Text } from "@/components/ui/text";
 import { ScrollView, View } from "@/components/ui/view";
 import { UserMenu } from "@/features/users/components/user-menu";
@@ -52,27 +53,20 @@ function LoadingState() {
 			{/* Featured card loading skeleton */}
 			<FeaturedCardSkeleton />
 
-			{/* Bento grid loading skeleton */}
-			<View className="gap-4">
-				<View className="flex-row gap-4">
-					<Skeleton className="aspect-3/4 flex-1" />
-					<View className="flex-1 gap-4">
-						<Skeleton className="aspect-16/10" />
-						<Skeleton className="aspect-16/10" />
-					</View>
+			{/* 2-Column Grid loading skeleton */}
+			<View className="gap-3.5">
+				<View className="flex-row gap-3.5">
+					<Skeleton className="aspect-4/3 flex-1 rounded-2xl" />
+					<Skeleton className="aspect-4/3 flex-1 rounded-2xl" />
 				</View>
-				<View className="flex-row gap-4">
-					<View className="flex-1 gap-4">
-						<Skeleton className="aspect-16/10" />
-						<Skeleton className="aspect-16/10" />
-					</View>
-					<Skeleton className="aspect-3/4 flex-1" />
+				<View className="flex-row gap-3.5">
+					<Skeleton className="aspect-4/3 flex-1 rounded-2xl" />
+					<Skeleton className="aspect-4/3 flex-1 rounded-2xl" />
 				</View>
 			</View>
 
 			{/* Recent section loading skeleton */}
-			<View className="mt-4 gap-3">
-				<RecentListRowSkeleton />
+			<View className="mt-2 gap-2.5">
 				<RecentListRowSkeleton />
 				<RecentListRowSkeleton />
 			</View>
@@ -80,9 +74,9 @@ function LoadingState() {
 	);
 }
 
-// ─── Bento Grid Card Layout ───────────────────────────────────────────────────
+// ─── Resilient 2-Column Listing Grid ──────────────────────────────────────────
 
-function BentoGrid({
+function ListingGrid({
 	items,
 	onPress,
 	searchTerm,
@@ -91,71 +85,34 @@ function BentoGrid({
 	onPress: (id: string) => void;
 	searchTerm?: string;
 }) {
-	return (
-		<View className="mb-4 gap-4">
-			{/* Bento Row 1 */}
-			<View className="flex-row gap-4">
-				{items[0] && (
-					<ListingCard
-						item={items[0]}
-						onPress={onPress}
-						className="flex-1"
-						aspectRatioClassName="aspect-[3/4]"
-						searchTerm={searchTerm}
-					/>
-				)}
-				<View className="flex-1 gap-4">
-					{items[1] && (
-						<ListingCard
-							item={items[1]}
-							onPress={onPress}
-							aspectRatioClassName="aspect-[16/10]"
-							searchTerm={searchTerm}
-						/>
-					)}
-					{items[2] && (
-						<ListingCard
-							item={items[2]}
-							onPress={onPress}
-							aspectRatioClassName="aspect-[16/10]"
-							searchTerm={searchTerm}
-						/>
-					)}
-				</View>
-			</View>
+	if (items.length === 0) return null;
 
-			{/* Bento Row 2 (Reversed Layout) */}
-			{items.length > 3 && (
-				<View className="flex-row gap-4">
-					<View className="flex-1 gap-4">
-						{items[3] && (
-							<ListingCard
-								item={items[3]}
-								onPress={onPress}
-								aspectRatioClassName="aspect-[16/10]"
-								searchTerm={searchTerm}
-							/>
-						)}
-						{items[4] && (
-							<ListingCard
-								item={items[4]}
-								onPress={onPress}
-								aspectRatioClassName="aspect-[16/10]"
-								searchTerm={searchTerm}
-							/>
-						)}
-					</View>
-					{items[5] && (
+	return (
+		<View className="mb-6 gap-3.5">
+			{Array.from({ length: Math.ceil(items.length / 2) }, (_, rowIndex) => {
+				const itemA = items[rowIndex * 2];
+				const itemB = items[rowIndex * 2 + 1];
+				return (
+					<View key={itemA.id} className="flex-row gap-3.5">
 						<ListingCard
-							item={items[5]}
+							item={itemA}
 							onPress={onPress}
 							className="flex-1"
-							aspectRatioClassName="aspect-[3/4]"
 							searchTerm={searchTerm}
 						/>
-					)}
-				</View>
-			)}
+						{itemB ? (
+							<ListingCard
+								item={itemB}
+								onPress={onPress}
+								className="flex-1"
+								searchTerm={searchTerm}
+							/>
+						) : (
+							<View className="flex-1" />
+						)}
+					</View>
+				);
+			})}
 		</View>
 	);
 }
@@ -298,7 +255,7 @@ export const ListingsPage = () => {
 	};
 
 	const [featuredItem, ...rest] = listings;
-	const bentoItems = rest.slice(0, 6);
+	const gridItems = rest.slice(0, 6);
 	const recentItems = rest.slice(6);
 
 	return (
@@ -339,6 +296,17 @@ export const ListingsPage = () => {
 						keyboardShouldPersistTaps="handled"
 						keyboardDismissMode="on-drag"
 						onScrollBeginDrag={dismissSearch}
+						onScroll={({ nativeEvent }) => {
+							const { layoutMeasurement, contentOffset, contentSize } =
+								nativeEvent;
+							const isCloseToBottom =
+								layoutMeasurement.height + contentOffset.y >=
+								contentSize.height - 300;
+							if (isCloseToBottom && hasNextPage && !isFetchingNextPage) {
+								fetchNextPage();
+							}
+						}}
+						scrollEventThrottle={300}
 						refreshControl={
 							<RefreshControl refreshing={isRefetching} onRefresh={refetch} />
 						}
@@ -435,6 +403,16 @@ export const ListingsPage = () => {
 										: false;
 								}}
 							>
+								{hasSearch && listings.length > 0 && (
+									<Text
+										type="body-xs"
+										className="mb-3 font-semibold text-muted-foreground"
+									>
+										Found {listings.length} item
+										{listings.length === 1 ? "" : "s"} for "
+										{debouncedSearch.trim()}"
+									</Text>
+								)}
 								{featuredItem && (
 									<FeaturedCard
 										item={featuredItem}
@@ -442,9 +420,9 @@ export const ListingsPage = () => {
 										searchTerm={debouncedSearch}
 									/>
 								)}
-								{bentoItems.length > 0 && (
-									<BentoGrid
-										items={bentoItems}
+								{gridItems.length > 0 && (
+									<ListingGrid
+										items={gridItems}
 										onPress={handleListingPress}
 										searchTerm={debouncedSearch}
 									/>
@@ -455,7 +433,11 @@ export const ListingsPage = () => {
 									searchTerm={debouncedSearch}
 									title={hasSearch ? "More matches" : "Recently Posted Nearby"}
 								/>
-								{hasNextPage && (
+								{isFetchingNextPage ? (
+									<View className="items-center justify-center py-4">
+										<Spinner size="sm" className="text-primary" />
+									</View>
+								) : hasNextPage ? (
 									<Button
 										color="neutral"
 										appearance="soft"
@@ -465,13 +447,10 @@ export const ListingsPage = () => {
 											dismissSearch();
 											fetchNextPage();
 										}}
-										disabled={isFetchingNextPage}
 									>
-										<Button.Label>
-											{isFetchingNextPage ? "Loading…" : "Load more"}
-										</Button.Label>
+										<Button.Label>Load more</Button.Label>
 									</Button>
-								)}
+								) : null}
 							</QueryState>
 						)}
 					</ScrollView>

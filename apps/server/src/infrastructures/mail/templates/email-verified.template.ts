@@ -1,31 +1,177 @@
 import { env } from "@free-on-the-porch/env/private";
 
+export type VerificationFlowType =
+	| "email-verification"
+	| "link-password"
+	| "reset-password"
+	| "generic";
+
 export interface VerificationCallbackOptions {
 	error?: string;
+	title?: string;
+	subtitle?: string;
 	redirect?: string;
+	type?: VerificationFlowType | string;
 	appName?: string;
 }
 
+interface ResolvedErrorInfo {
+	title: string;
+	subtitle: string;
+	reason: string;
+	code?: string;
+	isExpired: boolean;
+	actionSuggestion: string;
+}
+
+const escapeHtml = (str?: string): string => {
+	if (!str) return "";
+	return String(str)
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#039;");
+};
+
+const resolveErrorInfo = (
+	error?: string,
+	customTitle?: string,
+	customSubtitle?: string,
+): ResolvedErrorInfo | null => {
+	if (!error) return null;
+
+	const rawError = (error || "").trim();
+	const normalizedCode = rawError.toUpperCase().replace(/[\s-]+/g, "_");
+
+	const isExpired =
+		normalizedCode.includes("EXPIRED") ||
+		rawError.toLowerCase().includes("expired");
+
+	const defaultTitle = isExpired
+		? "Verification Link Expired"
+		: "Verification Failed";
+	const defaultSubtitle = isExpired
+		? "This verification link has expired or has already been used. Please return to the app to request a new link."
+		: "We couldn't verify your email address with this link.";
+
+	let title = customTitle || defaultTitle;
+	let subtitle = customSubtitle || defaultSubtitle;
+	let [, code, reason] = error.match(/^(?:([^:]+):\s*)?([^:]+)$/) ?? [];
+
+	let actionSuggestion =
+		"Please return to the app to try again or request a new link.";
+
+	if (isExpired) {
+		code = "TOKEN_EXPIRED";
+		reason =
+			reason ||
+			"This verification link has expired. Security links are time-limited for your protection.";
+		actionSuggestion =
+			"Please return to the app and request a new verification link.";
+	} else if (
+		normalizedCode === "INVALID_TOKEN" ||
+		normalizedCode.includes("TOKEN")
+	) {
+		title = customTitle || "Invalid Link";
+		subtitle =
+			customSubtitle ||
+			"This verification link appears to be invalid or incomplete.";
+		reason =
+			reason ||
+			"The verification token could not be validated. It may have been broken or altered.";
+		code = "INVALID_TOKEN";
+		actionSuggestion =
+			"Make sure you opened the full link, or request a fresh email from the app.";
+	} else if (
+		normalizedCode === "USER_NOT_FOUND" ||
+		normalizedCode.includes("USER_NOT_FOUND")
+	) {
+		title = customTitle || "Account Not Found";
+		subtitle =
+			customSubtitle ||
+			"We couldn't find an account matching this verification link.";
+		reason =
+			reason || "No active account was found for this verification token.";
+		code = "USER_NOT_FOUND";
+		actionSuggestion =
+			"Verify the email address you signed up with or create an account in the app.";
+	} else if (normalizedCode === "INVALID_USER") {
+		title = customTitle || "Account Mismatch";
+		subtitle =
+			customSubtitle ||
+			"This link does not match your currently active session.";
+		reason =
+			reason ||
+			"The user account associated with this verification link differs from the one currently signed in.";
+		code = "INVALID_USER";
+		actionSuggestion =
+			"Sign out and log in with the correct account before opening this link.";
+	} else if (
+		rawError === "User verification request not found" ||
+		normalizedCode === "NOT_FOUND"
+	) {
+		title = customTitle || "Verification Request Not Found";
+		subtitle =
+			customSubtitle ||
+			"We couldn't find an active verification request for this link.";
+		reason =
+			reason ||
+			"The verification request was not found. It may have expired or already been completed.";
+		code = "NOT_FOUND";
+		actionSuggestion =
+			"Try signing in to the app, or request another verification email.";
+	}
+
+	return {
+		title,
+		subtitle,
+		reason: reason || error,
+		code,
+		isExpired,
+		actionSuggestion,
+	};
+};
+
 export const getVerificationStatusHtml = ({
+	type = "email-verification",
 	error,
+	title: customTitle,
+	subtitle: customSubtitle,
 	redirect,
 	appName = env.PUBLIC_APP_NAME,
 }: VerificationCallbackOptions): string => {
-	const isError = Boolean(error);
+	const errorInfo = resolveErrorInfo(error, customTitle, customSubtitle);
+	const isError = Boolean(errorInfo);
 	const defaultRedirect = `${env.PUBLIC_SCHEME}://dashboard`;
-	const targetRedirect = redirect || defaultRedirect;
-	const isExpired = error === "token_expired" || error === "TOKEN_EXPIRED";
+	const targetRedirect = /^\/\??/.test(redirect || "/")
+		? defaultRedirect
+		: redirect;
 
-	const pageTitle = isError
-		? `Verification Issue - ${appName}`
-		: `Email Verified - ${appName}`;
+	const isResetPassword = type === "reset-password";
+	const defaultSuccessTitle = isResetPassword
+		? "Password Reset Successfully!"
+		: "Email Verified!";
+	const defaultSuccessSubtitle = isResetPassword
+		? "Your password has been updated. You can now sign in with your new credentials."
+		: "Your email address has been successfully verified. Your account is ready for neighborhood treasure hunting and sharing.";
+
+	const heading = errorInfo
+		? errorInfo.title
+		: customTitle || defaultSuccessTitle;
+
+	const subtitleText = errorInfo
+		? errorInfo.subtitle
+		: customSubtitle || defaultSuccessSubtitle;
+
+	const pageTitle = `${heading} - ${appName}`;
 
 	return `<!DOCTYPE html>
 <html lang="en">
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-	<title>${pageTitle}</title>
+	<title>${escapeHtml(pageTitle)}</title>
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -194,13 +340,82 @@ export const getVerificationStatusHtml = ({
 			font-size: 15px;
 			line-height: 1.6;
 			color: var(--color-text-muted);
-			margin-bottom: 28px;
+			margin-bottom: 24px;
 			max-width: 440px;
 			margin-left: auto;
 			margin-right: auto;
 		}
 
-		/* Device Specific Blocks */
+		/* Error Reason Card */
+		.error-reason-card {
+			background: #fff8f7;
+			border: 1px solid #fed7d7;
+			border-left: 4px solid var(--color-danger);
+			border-radius: var(--radius-md);
+			padding: 18px 20px;
+			text-align: left;
+			margin-bottom: 24px;
+			animation: fadeIn 0.3s ease;
+		}
+
+		.error-reason-header {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			margin-bottom: 8px;
+		}
+
+		.error-reason-icon-wrap {
+			color: var(--color-danger);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.error-reason-title {
+			font-size: 12px;
+			font-weight: 800;
+			text-transform: uppercase;
+			letter-spacing: 0.6px;
+			color: var(--color-danger);
+		}
+
+		.error-code-badge {
+			margin-left: auto;
+			background: var(--color-danger-soft);
+			color: #7f1d1d;
+			font-size: 11px;
+			font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+			font-weight: 700;
+			padding: 2px 8px;
+			border-radius: 6px;
+			border: 1px solid #fca5a5;
+		}
+
+		.error-reason-message {
+			font-size: 14.5px;
+			line-height: 1.5;
+			color: #450a0a;
+			font-weight: 600;
+			margin-bottom: 8px;
+		}
+
+		.error-reason-hint {
+			font-size: 13px;
+			line-height: 1.5;
+			color: #78350f;
+			background: #fffbeb;
+			border: 1px solid #fde68a;
+			border-radius: var(--radius-sm);
+			padding: 8px 12px;
+			margin-top: 10px;
+		}
+
+		.error-reason-hint strong {
+			color: #92400e;
+		}
+
+		/* Device Specific Banner */
 		.device-banner {
 			display: none;
 			padding: 12px 16px;
@@ -339,16 +554,6 @@ export const getVerificationStatusHtml = ({
 			line-height: 1.5;
 		}
 
-		.footer-note a {
-			color: var(--color-primary-light);
-			text-decoration: none;
-			font-weight: 600;
-		}
-
-		.footer-note a:hover {
-			text-decoration: underline;
-		}
-
 		/* Animations */
 		@keyframes fadeIn {
 			from { opacity: 0; transform: translateY(14px); }
@@ -399,7 +604,7 @@ export const getVerificationStatusHtml = ({
 						</g>
 					</svg>
 				</div>
-				<span class="brand-name">${appName}</span>
+				<span class="brand-name">${escapeHtml(appName)}</span>
 			</div>
 
 			<!-- Status Badge -->
@@ -418,36 +623,44 @@ export const getVerificationStatusHtml = ({
 				}
 			</div>
 
+			<!-- Main Title & Subtitle -->
+			<h1>${escapeHtml(heading)}</h1>
+			<p class="subtitle">${escapeHtml(subtitleText)}</p>
+
 			${
-				isError
-					? `<!-- Error State Content -->
-				<h1>${isExpired ? "Verification Link Expired" : "Verification Failed"}</h1>
-				<p class="subtitle">
+				errorInfo
+					? `<!-- Error Reason Details Callout -->
+				<div class="error-reason-card">
+					<div class="error-reason-header">
+						<div class="error-reason-icon-wrap" aria-hidden="true">
+							<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+								<circle cx="12" cy="12" r="10"/>
+								<line x1="12" y1="8" x2="12" y2="12"/>
+								<line x1="12" y1="16" x2="12.01" y2="16"/>
+							</svg>
+						</div>
+						<span class="error-reason-title">Reason</span>
+						${errorInfo.code ? `<span class="error-code-badge">${escapeHtml(errorInfo.code)}</span>` : ""}
+					</div>
+					<p class="error-reason-message">${escapeHtml(errorInfo.reason)}</p>
 					${
-						isExpired
-							? "This verification link has already expired or has been used. Please return to the app to request a new link."
-							: "We couldn't verify your email address with this link. It may be broken or corrupted."
+						errorInfo.actionSuggestion
+							? `<div class="error-reason-hint">
+								<strong>Next step:</strong> ${escapeHtml(errorInfo.actionSuggestion)}
+							</div>`
+							: ""
 					}
-				</p>
-
-				<div class="btn-group">
-					<a id="btn-open-app" href="${targetRedirect}" class="btn btn-primary">
-						Open ${appName}
-					</a>
 				</div>`
-					: `<!-- Success State Content -->
-				<h1>Email Verified!</h1>
-				<p class="subtitle">
-					Your email address has been successfully verified. Your account is ready for neighborhood treasure hunting and sharing.
-				</p>
-
-				<!-- Mobile Auto-Redirect Indicator -->
+					: `<!-- Auto-Redirect Indicator (Mobile) -->
 				<div id="mobile-redirect-banner" class="device-banner">
 					<div class="spinner"></div>
-					<span>Opening ${appName} in <strong id="countdown-text">2s</strong>...</span>
-				</div>
+					<span>Opening ${escapeHtml(appName)} in <strong id="countdown-text">2s</strong>...</span>
+				</div>`
+			}
 
-				<!-- Desktop Instructions -->
+			${
+				!isError
+					? `<!-- Desktop Steps -->
 				<div id="desktop-instructions" class="desktop-steps">
 					<div class="steps-title">
 						<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -459,7 +672,7 @@ export const getVerificationStatusHtml = ({
 					<ul class="steps-list">
 						<li class="step-item">
 							<div class="step-number">1</div>
-							<div>Open the <strong>${appName}</strong> app on your mobile device.</div>
+							<div>Open the <strong>${escapeHtml(appName)}</strong> app on your mobile device.</div>
 						</li>
 						<li class="step-item">
 							<div class="step-number">2</div>
@@ -470,11 +683,19 @@ export const getVerificationStatusHtml = ({
 							<div>Discover free porch giveaways or post items in seconds!</div>
 						</li>
 					</ul>
-				</div>
+				</div>`
+					: ""
+			}
 
-				<div class="btn-group">
-					<a id="btn-open-app" href="${targetRedirect}" class="btn btn-primary">
-						Open ${appName} App
+			<!-- Action Buttons -->
+			<div class="btn-group">
+				${
+					isError
+						? `<a id="btn-open-app" href="${escapeHtml(targetRedirect)}" class="btn btn-primary">
+						Open ${escapeHtml(appName)}
+					</a>`
+						: `<a id="btn-open-app" href="${escapeHtml(targetRedirect)}" class="btn btn-primary">
+						Open ${escapeHtml(appName)} App
 					</a>
 					<button id="btn-copy-link" type="button" class="btn btn-secondary">
 						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -482,9 +703,9 @@ export const getVerificationStatusHtml = ({
 							<path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
 						</svg>
 						Copy App Deep Link
-					</button>
-				</div>`
-			}
+					</button>`
+				}
+			</div>
 
 			<p class="footer-note">
 				You can safely close this browser window.
@@ -494,7 +715,7 @@ export const getVerificationStatusHtml = ({
 
 	<script>
 		(function() {
-			var redirectUrl = "${targetRedirect}";
+			var redirectUrl = "${escapeHtml(targetRedirect)}";
 			var isError = ${isError};
 			var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && window.innerWidth < 768);
 
@@ -504,7 +725,6 @@ export const getVerificationStatusHtml = ({
 			var copyBtn = document.getElementById("btn-copy-link");
 
 			if (isMobile) {
-				// Show mobile banner, hide desktop instructions
 				if (mobileBanner && !isError) {
 					mobileBanner.classList.add("visible");
 				}
@@ -512,7 +732,6 @@ export const getVerificationStatusHtml = ({
 					desktopInstructions.style.display = "none";
 				}
 
-				// Auto redirect on mobile after short countdown
 				if (!isError) {
 					var secondsLeft = 2;
 					var interval = setInterval(function() {
@@ -530,13 +749,11 @@ export const getVerificationStatusHtml = ({
 					}, 1000);
 				}
 			} else {
-				// On desktop, keep desktop instructions visible and don't auto-redirect to an unknown scheme
 				if (mobileBanner) {
 					mobileBanner.style.display = "none";
 				}
 			}
 
-			// Copy deep link button handler
 			if (copyBtn) {
 				copyBtn.addEventListener("click", function() {
 					if (navigator.clipboard && navigator.clipboard.writeText) {

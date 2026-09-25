@@ -40,7 +40,7 @@ export const UserMenu = () => {
 		{
 			label: "My Listings",
 			icon: Tag,
-			onPress: () => router.push("/dashboard/listings"),
+			onPress: () => router.push("/dashboard/listings/me"),
 		},
 		{
 			label: "Settings",
