@@ -1,14 +1,1 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-	<key>CLIENT_ID</key>
-	<string>42586771131-um1717lj05kvvev2ml4ctbhj2md0k8mi.apps.googleusercontent.com</string>
-	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.42586771131-um1717lj05kvvev2ml4ctbhj2md0k8mi</string>
-	<key>PLIST_VERSION</key>
-	<string>1</string>
-	<key>BUNDLE_ID</key>
-	<string>com.free-on-the-porch.app</string>
-</dict>
-</plist>
+{"installed":{"client_id":"42586771131-nufti3ke6v4g1c6b0upvg5nuk2qcn3uo.apps.googleusercontent.com","project_id":"free-on-the-porch","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs"}}
