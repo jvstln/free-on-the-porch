@@ -8,7 +8,8 @@
 	},
 	"scripts": {
 		"check-types": "tsc --noEmit",
-		"db:push": "drizzle-kit push",
+		"db:init": "tsx ./init.ts",
+		"db:push": "tsx ./init.ts && drizzle-kit push",
 		"db:studio": "drizzle-kit studio",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",

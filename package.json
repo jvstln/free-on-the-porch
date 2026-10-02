@@ -17,7 +17,7 @@
 		"db:generate": "pnpm --filter @free-on-the-porch/db db:generate",
 		"db:migrate": "pnpm --filter @free-on-the-porch/db db:migrate",
 		"db:seed": "pnpm --filter @free-on-the-porch/db db:seed",
-		"db:init": "docker compose exec -T db psql -U postgres -d free-on-the-porch -c \"CREATE EXTENSION IF NOT EXISTS postgis;\"",
+		"db:init": "pnpm --filter @free-on-the-porch/db db:init",
 		"check": "biome check --write .",
 		"format": "biome format --write ."
 	},

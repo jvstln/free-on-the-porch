@@ -20,7 +20,8 @@
 		// "noImplicitAny": true,
 		"strictBindCallApply": true,
 		"noFallthroughCasesInSwitch": true,
-		"types": ["node", "express", "multer", "jest", "supertest"]
+		"types": ["node", "express", "multer", "jest", "supertest"],
+		"verbatimModuleSyntax": false
 	},
 	"include": ["./src/**/*"]
 }
